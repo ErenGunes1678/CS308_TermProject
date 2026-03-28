@@ -1,60 +1,129 @@
-.footer {
-  background: #081a46;
-  color: white;
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { Mail, Lock, Eye, ArrowRight } from "lucide-react";
+import Navbar from "../../components/Navbar";
+import NewsletterBanner from "../../components/NewsletterBanner";
+import Footer from "../../components/Footer";
+import "./LoginPage.css";
 
-  padding: 60px 40px 20px;
+function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    console.log({ email, password });
+  }
+
+  return (
+    <div className="login-page-layout">
+      <Navbar />
+
+      <main className="login-hero">
+        <section className="login-hero-left">
+          <div className="bubble bubble-1"></div>
+          <div className="bubble bubble-2"></div>
+          <div className="bubble bubble-3"></div>
+          <div className="bubble bubble-4"></div>
+          <div className="bubble bubble-5"></div>
+
+          <div className="hero-brand">
+            <div className="hero-logo-circle">L</div>
+            <span>Lumière</span>
+          </div>
+
+          <div className="hero-content">
+            <div className="hero-pill">✦ Beauty Awaits</div>
+
+            <h1>Your beauty journey starts here</h1>
+
+            <p>
+              Join thousands of beauty lovers and access premium products,
+              exclusive deals, and personalized recommendations.
+            </p>
+
+            <ul className="hero-list">
+              <li>Access exclusive member discounts</li>
+              <li>Track your orders easily</li>
+              <li>Save your favorites wishlist</li>
+            </ul>
+          </div>
+
+          <div className="testimonial-card">
+            <div className="testimonial-avatar">E</div>
+
+            <div>
+              <h4>Emma K.</h4>
+              <span>Beauty Enthusiast</span>
+              <p>
+                “Lumière has completely transformed my beauty routine. The
+                quality is unmatched!”
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="login-hero-right">
+          <div className="auth-switch">
+            <button className="auth-tab active">Sign In</button>
+            <Link to="/register" className="auth-tab">
+              Create Account
+            </Link>
+          </div>
+
+          <div className="login-box">
+            <h2>Welcome back</h2>
+            <p>Sign in to your Lumière account</p>
+
+            <button type="button" className="google-login-btn">
+              <span className="google-g">G</span>
+              Continue with Google
+            </button>
+
+            <div className="or-line">
+              <span>or</span>
+            </div>
+
+            <form onSubmit={handleSubmit} className="login-form-v2">
+              <label>Email</label>
+              <div className="input-with-icon">
+                <Mail size={16} />
+                <input
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+
+              <label>Password</label>
+              <div className="input-with-icon">
+                <Lock size={16} />
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <Eye size={16} className="eye-icon" />
+              </div>
+
+              <div className="forgot-password-row">
+                <a href="#">Forgot password?</a>
+              </div>
+
+              <button type="submit" className="sign-in-btn">
+                Sign In <ArrowRight size={16} />
+              </button>
+            </form>
+          </div>
+        </section>
+      </main>
+
+      <NewsletterBanner />
+      <Footer />
+    </div>
+  );
 }
 
-.footer-grid {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr 1fr;
-
-  gap: 40px;
-}
-
-.footer-col h4 {
-  margin-bottom: 16px;
-}
-
-.footer-col a {
-  display: block;
-  margin-bottom: 10px;
-  font-size: 14px;
-  color: #cfd7e6;
-}
-
-.brand p {
-  margin: 20px 0;
-  max-width: 280px;
-}
-
-.logo-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.socials {
-  display: flex;
-  gap: 10px;
-}
-
-.contact-row {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.footer-bottom {
-  border-top: 1px solid rgba(255,255,255,0.1);
-  margin-top: 40px;
-  padding-top: 20px;
-
-  display: flex;
-  justify-content: space-between;
-}
-
-.footer-links {
-  display: flex;
-  gap: 20px;
-}
+export default LoginPage;

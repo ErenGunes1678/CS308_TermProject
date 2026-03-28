@@ -1,14 +1,12 @@
-    .footer {
+.footer {
   background: #081a46;
   color: white;
-
   padding: 60px 40px 20px;
 }
 
 .footer-grid {
   display: grid;
   grid-template-columns: 1.5fr 1fr 1fr 1fr;
-
   gap: 40px;
 }
 
@@ -21,6 +19,7 @@
   margin-bottom: 10px;
   font-size: 14px;
   color: #cfd7e6;
+  text-decoration: none;
 }
 
 .brand p {
@@ -46,10 +45,9 @@
 }
 
 .footer-bottom {
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   margin-top: 40px;
   padding-top: 20px;
-
   display: flex;
   justify-content: space-between;
 }
