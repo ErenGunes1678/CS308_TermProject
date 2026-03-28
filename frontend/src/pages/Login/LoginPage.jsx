@@ -66,9 +66,9 @@ function LoginPage() {
         <section className="login-hero-right">
           <div className="auth-switch">
             <button className="auth-tab active">Sign In</button>
-            <Link to="/register" className="auth-tab">
-              Create Account
-            </Link>
+            <button type="button" className="secondary-btn-link">
+            Hesap Oluştur
+          </button>
           </div>
 
           <div className="login-box">
