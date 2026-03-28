@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Mail, Lock, Eye, ArrowRight } from "lucide-react";
-import Navbar from "../../components/Navbar";
-import NewsletterBanner from "../../components/NewsletterBanner";
-import Footer from "../../components/Footer";
+import Navbar from "../../components/layout/Navbar";
+import NewsletterBanner from "../../components/layout/NewsletterBanner";
+import Footer from "../../components/layout/Footer";
 import "./LoginPage.css";
 
 function LoginPage() {
