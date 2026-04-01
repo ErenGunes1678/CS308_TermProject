@@ -1,15 +1,19 @@
+import "./env";
+
 import express from "express";
-import dotenv from "dotenv";
+import cors from "cors";
 import { pool } from "./config/db";
+import { sequelize } from "./models";
 import authRoutes from "./routes/authRoutes";
 
-dotenv.config();
-
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
+// Middleware
 app.use(express.json());
+app.use(cors());
 
+// Routes
 app.get("/", (req, res) => {
     res.send("Backend is working");
 });
@@ -31,6 +35,13 @@ app.get("/test-db", async (req, res) => {
 
 app.use("/auth", authRoutes);
 
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+// Sync Sequelize models then start server
+sequelize.sync({ alter: true }).then(() => {
+    console.log("Database synced successfully");
+    app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+    });
+}).catch((error: Error) => {
+    console.error("Failed to sync database:", error);
+    process.exit(1);
 });
