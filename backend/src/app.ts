@@ -5,6 +5,7 @@ import cors from "cors";
 import { pool } from "./config/db";
 import { sequelize } from "./models";
 import authRoutes from "./routes/authRoutes";
+import productRoutes from "./routes/productRoutes";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,6 +35,7 @@ app.get("/test-db", async (req, res) => {
 });
 
 app.use("/auth", authRoutes);
+app.use("/products", productRoutes);
 
 // Sync Sequelize models then start server
 sequelize.sync({ alter: true }).then(() => {
