@@ -1,126 +1,176 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Mail, Lock, Eye, ArrowRight } from "lucide-react";
-import Navbar from "../../components/layout/Navbar";
-import NewsletterBanner from "../../components/layout/NewsletterBanner";
-import Footer from "../../components/layout/Footer";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import Navbar from "../../components/layout/Navbar/Navbar";
+import Footer from "../../components/layout/Footer/Footer";
+import AuthHeroPanel from "./AuthHeroPanel";
+import AuthFormPanel from "./AuthFormPanel";
 import "./LoginPage.css";
 
-function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+const getModeFromQuery = (value) =>
+  value === "register" ? "register" : "login";
 
-  function handleSubmit(e) {
+const FALLBACK_TESTIMONIALS = [
+  {
+    id: "fallback-1",
+    author: "Emma K.",
+    role: "Beauty Enthusiast",
+    content:
+      "Lumière has completely transformed my beauty routine. The quality is unmatched!",
+    initial: "E",
+  },
+  {
+    id: "fallback-2",
+    author: "Sofia T.",
+    role: "Skincare Lover",
+    content:
+      "My orders always arrive fast, and the product recommendations feel surprisingly personal.",
+    initial: "S",
+  },
+  {
+    id: "fallback-3",
+    author: "Nina R.",
+    role: "Verified Buyer",
+    content:
+      "I found shades and formulas here that I now use every single day. It feels premium and easy.",
+    initial: "N",
+  },
+];
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+
+function LoginPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryMode = getModeFromQuery(searchParams.get("mode"));
+  const mode = queryMode;
+  const [showPassword, setShowPassword] = useState(false);
+  const [testimonials, setTestimonials] = useState(FALLBACK_TESTIMONIALS);
+  const [activeTestimonialIndex, setActiveTestimonialIndex] = useState(0);
+
+  const [loginForm, setLoginForm] = useState({
+    email: "",
+    password: "",
+  });
+
+  const [registerForm, setRegisterForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  function handleLoginSubmit(e) {
     e.preventDefault();
-    console.log({ email, password });
+    console.log("Login:", loginForm);
   }
+
+  function handleRegisterSubmit(e) {
+    e.preventDefault();
+
+    if (registerForm.password !== registerForm.confirmPassword) {
+      return;
+    }
+
+    console.log("Register:", registerForm);
+  }
+
+  const activeTestimonial = useMemo(
+    () => testimonials[activeTestimonialIndex] || FALLBACK_TESTIMONIALS[0],
+    [activeTestimonialIndex, testimonials]
+  );
+
+  const passwordsMatch =
+    registerForm.confirmPassword === "" ||
+    registerForm.password === registerForm.confirmPassword;
+
+  function handleModeChange(nextMode) {
+    if (nextMode === queryMode) {
+      return;
+    }
+
+    setSearchParams(nextMode === "register" ? { mode: "register" } : {});
+  }
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadTestimonials() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/testimonials`);
+
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (
+          isMounted &&
+          Array.isArray(data.testimonials) &&
+          data.testimonials.length > 0
+        ) {
+          setTestimonials(data.testimonials);
+          setActiveTestimonialIndex(0);
+        }
+      } catch (error) {
+        console.error("Failed to load testimonials:", error);
+      }
+    }
+
+    loadTestimonials();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (testimonials.length <= 1) {
+      return undefined;
+    }
+
+    const rotationTimer = window.setInterval(() => {
+      setActiveTestimonialIndex((currentIndex) => {
+        if (testimonials.length <= 1) {
+          return currentIndex;
+        }
+
+        let nextIndex = currentIndex;
+
+        while (nextIndex === currentIndex) {
+          nextIndex = Math.floor(Math.random() * testimonials.length);
+        }
+
+        return nextIndex;
+      });
+    }, 15000);
+
+    return () => {
+      window.clearInterval(rotationTimer);
+    };
+  }, [testimonials]);
 
   return (
     <div className="login-page-layout">
       <Navbar />
 
       <main className="login-hero">
-        <section className="login-hero-left">
-          <div className="bubble bubble-1"></div>
-          <div className="bubble bubble-2"></div>
-          <div className="bubble bubble-3"></div>
-          <div className="bubble bubble-4"></div>
-          <div className="bubble bubble-5"></div>
-
-          <div className="hero-brand">
-            <div className="hero-logo-circle">L</div>
-            <span>Lumière</span>
-          </div>
-
-          <div className="hero-content">
-            <div className="hero-pill">✦ Beauty Awaits</div>
-
-            <h1>Your beauty journey starts here</h1>
-
-            <p>
-              Join thousands of beauty lovers and access premium products,
-              exclusive deals, and personalized recommendations.
-            </p>
-
-            <ul className="hero-list">
-              <li>Access exclusive member discounts</li>
-              <li>Track your orders easily</li>
-              <li>Save your favorites wishlist</li>
-            </ul>
-          </div>
-
-          <div className="testimonial-card">
-            <div className="testimonial-avatar">E</div>
-
-            <div>
-              <h4>Emma K.</h4>
-              <span>Beauty Enthusiast</span>
-              <p>
-                “Lumière has completely transformed my beauty routine. The
-                quality is unmatched!”
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section className="login-hero-right">
-          <div className="auth-switch">
-            <button className="auth-tab active">Sign In</button>
-            <button type="button" className="secondary-btn-link">
-            Hesap Oluştur
-          </button>
-          </div>
-
-          <div className="login-box">
-            <h2>Welcome back</h2>
-            <p>Sign in to your Lumière account</p>
-
-            <button type="button" className="google-login-btn">
-              <span className="google-g">G</span>
-              Continue with Google
-            </button>
-
-            <div className="or-line">
-              <span>or</span>
-            </div>
-
-            <form onSubmit={handleSubmit} className="login-form-v2">
-              <label>Email</label>
-              <div className="input-with-icon">
-                <Mail size={16} />
-                <input
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-
-              <label>Password</label>
-              <div className="input-with-icon">
-                <Lock size={16} />
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-                <Eye size={16} className="eye-icon" />
-              </div>
-
-              <div className="forgot-password-row">
-                <a href="#">Forgot password?</a>
-              </div>
-
-              <button type="submit" className="sign-in-btn">
-                Sign In <ArrowRight size={16} />
-              </button>
-            </form>
-          </div>
-        </section>
+        <AuthHeroPanel activeTestimonial={activeTestimonial} />
+        <AuthFormPanel
+          mode={mode}
+          showPassword={showPassword}
+          loginForm={loginForm}
+          registerForm={registerForm}
+          passwordsMatch={passwordsMatch}
+          setShowPassword={setShowPassword}
+          setLoginForm={setLoginForm}
+          setRegisterForm={setRegisterForm}
+          onModeChange={handleModeChange}
+          onLoginSubmit={handleLoginSubmit}
+          onRegisterSubmit={handleRegisterSubmit}
+        />
       </main>
 
-      <NewsletterBanner />
       <Footer />
     </div>
   );

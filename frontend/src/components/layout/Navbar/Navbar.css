@@ -11,7 +11,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 72px;
+  height: 68px;
 }
 
 /* Logo */
@@ -19,9 +19,9 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-family: var(--font-auth);
+  font-size: 1.1rem;
+  font-weight: 800;
   color: var(--color-gray-800);
 }
 
@@ -29,14 +29,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: var(--gradient-primary);
   color: white;
-  font-family: var(--font-display);
-  font-size: 1rem;
-  font-weight: 700;
+  font-family: var(--font-auth);
+  font-size: 0.9rem;
+  font-weight: 800;
 }
 
 .navbar__logo-text {
@@ -55,7 +55,7 @@
 }
 
 .navbar__link {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 500;
   color: var(--color-gray-600);
   transition: color var(--transition-fast);

@@ -118,7 +118,7 @@ const Navbar = () => {
                     <Link to="/login" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
                       Login
                     </Link>
-                    <Link to="/register" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                    <Link to="/login?mode=register" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
                       Create Account
                     </Link>
                   </>
