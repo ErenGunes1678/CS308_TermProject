@@ -1,13 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Navbar from "../../components/layout/Navbar/Navbar";
 import Footer from "../../components/layout/Footer/Footer";
 import AuthHeroPanel from "./AuthHeroPanel";
 import AuthFormPanel from "./AuthFormPanel";
 import "./LoginPage.css";
+import { loginUser, registerUser } from "../../services/authService";
 
 const getModeFromQuery = (value) =>
   value === "register" ? "register" : "login";
+
+const getErrorMessage = (error, fallbackMessage) =>
+  error?.response?.data?.message ||
+  error?.response?.data?.error ||
+  fallbackMessage;
 
 const FALLBACK_TESTIMONIALS = [
   {
@@ -36,16 +42,17 @@ const FALLBACK_TESTIMONIALS = [
   },
 ];
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
-
 function LoginPage() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryMode = getModeFromQuery(searchParams.get("mode"));
   const mode = queryMode;
   const [showPassword, setShowPassword] = useState(false);
   const [testimonials, setTestimonials] = useState(FALLBACK_TESTIMONIALS);
   const [activeTestimonialIndex, setActiveTestimonialIndex] = useState(0);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [loginForm, setLoginForm] = useState({
     email: "",
@@ -59,19 +66,64 @@ function LoginPage() {
     confirmPassword: "",
   });
 
-  function handleLoginSubmit(e) {
+  async function handleLoginSubmit(e) {
     e.preventDefault();
-    console.log("Login:", loginForm);
+    setSuccessMessage("");
+    setErrorMessage("");
+    setIsSubmitting(true);
+
+    try {
+      const data = await loginUser(loginForm.email, loginForm.password);
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      navigate("/account");
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, "Unable to sign in."));
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
-  function handleRegisterSubmit(e) {
+  async function handleRegisterSubmit(e) {
     e.preventDefault();
+    setSuccessMessage("");
+    setErrorMessage("");
 
     if (registerForm.password !== registerForm.confirmPassword) {
+      setErrorMessage("Passwords do not match.");
       return;
     }
 
-    console.log("Register:", registerForm);
+    setIsSubmitting(true);
+
+    try {
+      await registerUser(
+        registerForm.name,
+        registerForm.email,
+        registerForm.password
+      );
+
+      setRegisterForm({
+        name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      });
+      setLoginForm({
+        email: registerForm.email,
+        password: "",
+      });
+      setSearchParams({});
+      setSuccessMessage(
+        "Account created successfully. Please sign in with your email and password."
+      );
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, "Unable to create account."));
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   const activeTestimonial = useMemo(
@@ -88,41 +140,10 @@ function LoginPage() {
       return;
     }
 
+    setErrorMessage("");
+    setSuccessMessage("");
     setSearchParams(nextMode === "register" ? { mode: "register" } : {});
   }
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadTestimonials() {
-      try {
-        const response = await fetch(`${API_BASE_URL}/testimonials`);
-
-        if (!response.ok) {
-          throw new Error(`Request failed with status ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (
-          isMounted &&
-          Array.isArray(data.testimonials) &&
-          data.testimonials.length > 0
-        ) {
-          setTestimonials(data.testimonials);
-          setActiveTestimonialIndex(0);
-        }
-      } catch (error) {
-        console.error("Failed to load testimonials:", error);
-      }
-    }
-
-    loadTestimonials();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   useEffect(() => {
     if (testimonials.length <= 1) {
@@ -162,6 +183,9 @@ function LoginPage() {
           loginForm={loginForm}
           registerForm={registerForm}
           passwordsMatch={passwordsMatch}
+          successMessage={successMessage}
+          errorMessage={errorMessage}
+          isSubmitting={isSubmitting}
           setShowPassword={setShowPassword}
           setLoginForm={setLoginForm}
           setRegisterForm={setRegisterForm}

@@ -7,6 +7,9 @@ function AuthFormPanel({
   loginForm,
   registerForm,
   passwordsMatch,
+  successMessage,
+  errorMessage,
+  isSubmitting,
   setShowPassword,
   setLoginForm,
   setRegisterForm,
@@ -47,6 +50,18 @@ function AuthFormPanel({
             <h2>{mode === "login" ? "Welcome back" : "Create account"}</h2>
 
             <div className="auth-divider" aria-hidden="true" />
+
+            {successMessage ? (
+              <div className="auth-message auth-message--success" role="status">
+                {successMessage}
+              </div>
+            ) : null}
+
+            {errorMessage ? (
+              <div className="auth-message auth-message--error" role="alert">
+                {errorMessage}
+              </div>
+            ) : null}
 
             {mode === "login" ? (
               <form onSubmit={onLoginSubmit} className="login-form-v2">
@@ -99,8 +114,13 @@ function AuthFormPanel({
                   <a href="#">Forgot password?</a>
                 </div>
 
-                <button type="submit" className="sign-in-btn">
-                  Sign In <ArrowRight size={16} />
+                <button
+                  type="submit"
+                  className="sign-in-btn"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Signing In..." : "Sign In"}{" "}
+                  <ArrowRight size={16} />
                 </button>
               </form>
             ) : (
@@ -192,8 +212,13 @@ function AuthFormPanel({
                   <p className="form-error-text">Passwords do not match.</p>
                 )}
 
-                <button type="submit" className="sign-in-btn">
-                  Create Account <ArrowRight size={16} />
+                <button
+                  type="submit"
+                  className="sign-in-btn"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Creating Account..." : "Create Account"}{" "}
+                  <ArrowRight size={16} />
                 </button>
               </form>
             )}

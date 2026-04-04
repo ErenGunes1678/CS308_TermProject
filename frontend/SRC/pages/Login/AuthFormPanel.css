@@ -134,6 +134,28 @@
   background: #dbe3ef;
 }
 
+.auth-message {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-family: var(--font-auth);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.auth-message--success {
+  background: rgba(255, 45, 117, 0.09);
+  border: 1px solid rgba(255, 45, 117, 0.18);
+  color: #db2f72;
+}
+
+.auth-message--error {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.16);
+  color: #dc2626;
+}
+
 .login-form-v2 {
   display: flex;
   flex-direction: column;
@@ -256,6 +278,13 @@
 .sign-in-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 14px 28px rgba(240, 52, 167, 0.28);
+}
+
+.sign-in-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+  transform: none;
+  box-shadow: 0 10px 26px rgba(240, 52, 167, 0.18);
 }
 
 @media (max-width: 1280px) {
