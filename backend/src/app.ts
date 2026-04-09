@@ -5,6 +5,7 @@ import cors from "cors";
 import { sequelize } from "./entities";
 import authRoutes from "./routes/authRoutes";
 import productRoutes from "./routes/productRoutes";
+import { seedMockProducts } from "./seeders/mock_db_data"; // Mock data seeding function
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,6 +30,7 @@ sequelize.authenticate()
     return sequelize.sync({ alter: true });
   })
   .then(() => {
+    seedMockProducts();
     console.log("Database synced successfully");
 
     app.listen(PORT, () => {

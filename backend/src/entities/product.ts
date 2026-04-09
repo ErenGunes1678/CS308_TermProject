@@ -28,7 +28,7 @@ module.exports = (sequelize: Sequelize) => {
             type: DataTypes.TEXT,
             allowNull: true,
         },
-        quantity_in_stocks: {
+        quantity_in_stock: {
             type: DataTypes.INTEGER,
             allowNull: false,
             defaultValue: 0
@@ -41,7 +41,7 @@ module.exports = (sequelize: Sequelize) => {
             type: DataTypes.BOOLEAN,
             allowNull: false,            defaultValue: false
         },
-        distributor_information: {
+        distributor_info: {
             type: DataTypes.STRING,
             allowNull: true,
         }

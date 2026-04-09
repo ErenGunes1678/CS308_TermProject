@@ -25,6 +25,7 @@ export const getAllProducts = async (req: Request, res: Response) => {
 export const addProduct = async (req: Request, res: Response) => {
     try {
         const {
+            id,
             name,
             model,
             serial_number,
@@ -33,8 +34,7 @@ export const addProduct = async (req: Request, res: Response) => {
             price,
             discounted_price,
             warranty_status,
-            distributor_info,
-            category_id
+            distributor_info
         } = req.body;
 
         if (!name || price === undefined) {
@@ -62,6 +62,7 @@ export const addProduct = async (req: Request, res: Response) => {
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
              RETURNING *`,
             [
+                id,
                 name,
                 model || null,
                 serial_number || null,
@@ -70,8 +71,7 @@ export const addProduct = async (req: Request, res: Response) => {
                 price,
                 discounted_price || null,
                 warranty_status ?? false,
-                distributor_info || null,
-                category_id || null
+                distributor_info || null
             ]
         );
 
@@ -112,7 +112,6 @@ export const editProduct = async (req: Request, res: Response) => {
             discounted_price,
             warranty_status,
             distributor_info,
-            category_id
         } = req.body;
 
         const result = await pool.query(
@@ -139,7 +138,6 @@ export const editProduct = async (req: Request, res: Response) => {
                 discounted_price ?? null,
                 warranty_status ?? null,
                 distributor_info || null,
-                category_id || null,
                 id
             ]
         );
