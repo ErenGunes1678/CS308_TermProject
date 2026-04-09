@@ -5,6 +5,8 @@ import cors from "cors";
 import { sequelize } from "./entities";
 import authRoutes from "./routes/authRoutes";
 import productRoutes from "./routes/productRoutes";
+import cartRoutes from "./routes/cartRoutes";
+import orderRoutes from "./routes/orderRoutes";
 import { seedMockProducts } from "./seeders/mock_db_data"; // Mock data seeding function
 
 const app = express();
@@ -20,7 +22,9 @@ app.get("/", (req, res) => {
 });
 
 app.use("/auth", authRoutes);
-app.use("/products", productRoutes);
+app.use("/product", productRoutes);
+app.use("/cart", cartRoutes);
+app.use("/order", orderRoutes);
 
 // Sync Sequelize models then start server
 sequelize.authenticate()

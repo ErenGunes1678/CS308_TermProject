@@ -39,7 +39,8 @@ module.exports = (sequelize: Sequelize) => {
         },
         warranty_status: {
             type: DataTypes.BOOLEAN,
-            allowNull: false,            defaultValue: false
+            allowNull: false,            
+            defaultValue: false
         },
         distributor_info: {
             type: DataTypes.STRING,
