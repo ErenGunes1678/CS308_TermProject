@@ -4,6 +4,7 @@ import MainLayout from '../components/layout/MainLayout';
 import HomePage from '../Pages/Home/HomePage';
 import LoginPage from '../Pages/Login/LoginPage';
 import ProfilePage from '../Pages/Profile/ProfilePage';
+import CartPage from '../pages/Cart/CartPage';
 
 // Placeholder pages - replace with real ones later
 const PlaceholderPage = ({ title }) => (
