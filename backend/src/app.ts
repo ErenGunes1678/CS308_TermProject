@@ -2,7 +2,7 @@ import "./env";
 
 import express from "express";
 import cors from "cors";
-import { sequelize } from "./models";
+import { sequelize } from "./entities";
 import authRoutes from "./routes/authRoutes";
 import productRoutes from "./routes/productRoutes";
 
