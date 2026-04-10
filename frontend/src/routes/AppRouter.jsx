@@ -1,9 +1,7 @@
-//update
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import MainLayout from '../components/layout/MainLayout';
-import HomePage from '../Pages/Home/HomePage';
-import LoginPage from '../Pages/Login/LoginPage';
-import ProfilePage from '../Pages/Profile/ProfilePage';
+import HomePage from '../pages/Home/HomePage';
+import ProductsPage from '../pages/Products/ProductsPage';
 
 // Placeholder pages - replace with real ones later
 const PlaceholderPage = ({ title }) => (
@@ -17,16 +15,15 @@ const AppRouter = () => {
     return (
         <BrowserRouter>
             <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<Navigate to="/login?mode=register" replace />} />
                 <Route element={<MainLayout />}>
-                <Route path="/" element={<HomePage />} />
-                    <Route path="/account" element={<ProfilePage />} />
-                    <Route path="/products" element={<PlaceholderPage title="All Products" />} />
-                    <Route path="/category/:slug" element={<PlaceholderPage title="Category" />} />
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/products" element={<ProductsPage />} />
+                    <Route path="/category/:slug" element={<ProductsPage />} />
                     <Route path="/product/:id" element={<PlaceholderPage title="Product Details" />} />
                     <Route path="/cart" element={<PlaceholderPage title="Shopping Cart" />} />
-                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/login" element={<PlaceholderPage title="Login" />} />
+                    <Route path="/register" element={<PlaceholderPage title="Register" />} />
+                    <Route path="/profile" element={<PlaceholderPage title="Profile" />} />
                     <Route path="/orders" element={<PlaceholderPage title="Orders" />} />
                     <Route path="/checkout" element={<PlaceholderPage title="Checkout" />} />
                     <Route path="/wishlist" element={<PlaceholderPage title="Wishlist" />} />
