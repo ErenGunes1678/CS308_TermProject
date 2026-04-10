@@ -5,6 +5,7 @@ import HomePage from '../Pages/Home/HomePage';
 import LoginPage from '../Pages/Login/LoginPage';
 import ProfilePage from '../Pages/Profile/ProfilePage';
 import ProductsPage from '../Pages/Products/ProductsPage';
+import CartPage from '../Pages/Cart/CartPage';
 
 // Placeholder pages - replace with real ones later
 const PlaceholderPage = ({ title }) => (
@@ -29,7 +30,7 @@ const AppRouter = () => {
                     <Route path="/products" element={<ProductsPage />} />
                     <Route path="/category/:slug" element={<ProductsPage />} />
                     <Route path="/product/:id" element={<PlaceholderPage title="Product Details" />} />
-                    <Route path="/cart" element={<PlaceholderPage title="Shopping Cart" />} />
+                    <Route path="/cart" element={<CartPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/orders" element={<PlaceholderPage title="Orders" />} />
                     <Route path="/checkout" element={<PlaceholderPage title="Checkout" />} />
