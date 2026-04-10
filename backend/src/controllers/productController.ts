@@ -1,18 +1,15 @@
 import { Request, Response } from "express";
-import { pool } from "../config/db";
+import db from "../entities";
 
-export const getAllProducts = async (req: Request, res: Response) => {
+const Product = db["products"];
+
+export const getAllProducts = async (_req: Request, res: Response) => {
     try {
-        const result = await pool.query(
-            `SELECT p.*, c.name AS category_name
-             FROM products p
-             LEFT JOIN categories c ON p.category_id = c.id
-             ORDER BY p.created_at DESC`
-        );
+        const products = await Product.findAll();
 
         return res.status(200).json({
             message: "Products fetched successfully",
-            products: result.rows
+            products
         });
     } catch (error) {
         console.error("Get all products error:", error);
@@ -25,14 +22,12 @@ export const getAllProducts = async (req: Request, res: Response) => {
 export const addProduct = async (req: Request, res: Response) => {
     try {
         const {
-            id,
             name,
             model,
             serial_number,
             description,
             quantity_in_stock,
             price,
-            discounted_price,
             warranty_status,
             distributor_info
         } = req.body;
@@ -44,40 +39,28 @@ export const addProduct = async (req: Request, res: Response) => {
         }
 
         if (serial_number) {
-            const existing = await pool.query(
-                "SELECT id FROM products WHERE serial_number = $1",
-                [serial_number]
-            );
-            if (existing.rows.length > 0) {
+            const existing = await Product.findOne({ where: { serial_number } });
+            if (existing) {
                 return res.status(409).json({
                     message: "A product with this serial number already exists"
                 });
             }
         }
 
-        const result = await pool.query(
-            `INSERT INTO products
-                (name, model, serial_number, description, quantity_in_stock, price,
-                 discounted_price, warranty_status, distributor_info, category_id)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-             RETURNING *`,
-            [
-                id,
-                name,
-                model || null,
-                serial_number || null,
-                description || null,
-                quantity_in_stock ?? 0,
-                price,
-                discounted_price || null,
-                warranty_status ?? false,
-                distributor_info || null
-            ]
-        );
+        const product = await Product.create({
+            name,
+            model,
+            serial_number,
+            description,
+            quantity_in_stock: quantity_in_stock ?? 0,
+            price,
+            warranty_status: warranty_status ?? false,
+            distributor_info
+        });
 
         return res.status(201).json({
             message: "Product added successfully",
-            product: result.rows[0]
+            product
         });
     } catch (error) {
         console.error("Add product error:", error);
@@ -91,12 +74,8 @@ export const editProduct = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 
-        const existing = await pool.query(
-            "SELECT id FROM products WHERE id = $1",
-            [id]
-        );
-
-        if (existing.rows.length === 0) {
+        const product = await Product.findByPk(id);
+        if (!product) {
             return res.status(404).json({
                 message: "Product not found"
             });
@@ -109,42 +88,24 @@ export const editProduct = async (req: Request, res: Response) => {
             description,
             quantity_in_stock,
             price,
-            discounted_price,
             warranty_status,
-            distributor_info,
+            distributor_info
         } = req.body;
 
-        const result = await pool.query(
-            `UPDATE products SET
-                name              = COALESCE($1, name),
-                model             = COALESCE($2, model),
-                serial_number     = COALESCE($3, serial_number),
-                description       = COALESCE($4, description),
-                quantity_in_stock = COALESCE($5, quantity_in_stock),
-                price             = COALESCE($6, price),
-                discounted_price  = COALESCE($7, discounted_price),
-                warranty_status   = COALESCE($8, warranty_status),
-                distributor_info  = COALESCE($9, distributor_info),
-                category_id       = COALESCE($10, category_id)
-             WHERE id = $11
-             RETURNING *`,
-            [
-                name || null,
-                model || null,
-                serial_number || null,
-                description || null,
-                quantity_in_stock ?? null,
-                price ?? null,
-                discounted_price ?? null,
-                warranty_status ?? null,
-                distributor_info || null,
-                id
-            ]
-        );
+        await product.update({
+            ...(name !== undefined && { name }),
+            ...(model !== undefined && { model }),
+            ...(serial_number !== undefined && { serial_number }),
+            ...(description !== undefined && { description }),
+            ...(quantity_in_stock !== undefined && { quantity_in_stock }),
+            ...(price !== undefined && { price }),
+            ...(warranty_status !== undefined && { warranty_status }),
+            ...(distributor_info !== undefined && { distributor_info }),
+        });
 
         return res.status(200).json({
             message: "Product updated successfully",
-            product: result.rows[0]
+            product
         });
     } catch (error) {
         console.error("Edit product error:", error);
@@ -158,18 +119,14 @@ export const removeProduct = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 
-        const existing = await pool.query(
-            "SELECT id FROM products WHERE id = $1",
-            [id]
-        );
-
-        if (existing.rows.length === 0) {
+        const product = await Product.findByPk(id);
+        if (!product) {
             return res.status(404).json({
                 message: "Product not found"
             });
         }
 
-        await pool.query("DELETE FROM products WHERE id = $1", [id]);
+        await product.destroy();
 
         return res.status(200).json({
             message: "Product removed successfully"
