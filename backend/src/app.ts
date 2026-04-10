@@ -2,10 +2,10 @@ import "./env";
 
 import express from "express";
 import cors from "cors";
-import { pool } from "./config/db";
-import { sequelize } from "./models";
+import { sequelize } from "./entities";
 import authRoutes from "./routes/authRoutes";
 import productRoutes from "./routes/productRoutes";
+import { seedMockProducts } from "./seeders/mock_db_data"; // Mock data seeding function
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,31 +19,25 @@ app.get("/", (req, res) => {
     res.send("Backend is working");
 });
 
-app.get("/test-db", async (req, res) => {
-    try {
-        const result = await pool.query("SELECT NOW()");
-        res.json({
-            message: "Database connection is successful",
-            time: result.rows[0]
-        });
-    } catch (error) {
-        console.error("Database connection error:", error);
-        res.status(500).json({
-            message: "Database connection failed"
-        });
-    }
-});
-
 app.use("/auth", authRoutes);
 app.use("/products", productRoutes);
 
 // Sync Sequelize models then start server
-sequelize.sync({ alter: true }).then(() => {
+sequelize.authenticate()
+  .then(() => {
+    console.log("Database connected!");
+
+    return sequelize.sync({ alter: true });
+  })
+  .then(() => {
+    seedMockProducts();
     console.log("Database synced successfully");
+
     app.listen(PORT, () => {
-        console.log(`Server is running on port ${PORT}`);
+      console.log(`Server is running on port ${PORT}`);
     });
-}).catch((error: Error) => {
-    console.error("Failed to sync database:", error);
+  })
+  .catch((error) => {
+    console.error("Startup error:", error);
     process.exit(1);
-});
+  });
