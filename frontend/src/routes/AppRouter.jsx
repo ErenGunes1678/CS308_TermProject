@@ -1,10 +1,13 @@
+//update
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from '../components/layout/MainLayout';
-import HomePage from '../pages/Home/HomePage';
-import LoginPage from '../pages/Login/LoginPage';
-import ProfilePage from '../pages/Profile/ProfilePage';
-import CartPage from '../pages/Cart/CartPage';
+import HomePage from '../Pages/Home/HomePage';
+import LoginPage from '../Pages/Login/LoginPage';
+import ProfilePage from '../Pages/Profile/ProfilePage';
+import ProductsPage from '../Pages/Products/ProductsPage';
+import CartPage from '../Pages/Cart/CartPage';
 
+// Placeholder pages - replace with real ones later
 const PlaceholderPage = ({ title }) => (
     <div style={{ padding: '4rem 2rem', textAlign: 'center' }}>
         <h1>{title}</h1>
@@ -17,12 +20,15 @@ const AppRouter = () => {
         <BrowserRouter>
             <Routes>
                 <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<Navigate to="/login?mode=register" replace />} />
+                <Route
+                    path="/register"
+                    element={<Navigate to="/login?mode=register" replace />}
+                />
                 <Route element={<MainLayout />}>
                     <Route path="/" element={<HomePage />} />
                     <Route path="/account" element={<ProfilePage />} />
-                    <Route path="/products" element={<PlaceholderPage title="All Products" />} />
-                    <Route path="/category/:slug" element={<PlaceholderPage title="Category" />} />
+                    <Route path="/products" element={<ProductsPage />} />
+                    <Route path="/category/:slug" element={<ProductsPage />} />
                     <Route path="/product/:id" element={<PlaceholderPage title="Product Details" />} />
                     <Route path="/cart" element={<CartPage />} />
                     <Route path="/profile" element={<ProfilePage />} />

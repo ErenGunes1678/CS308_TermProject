@@ -1,4 +1,3 @@
-//navbar
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import './Navbar.css';
@@ -13,10 +12,26 @@ const Navbar = () => {
   const wishlistCount = 0;
 
   const navLinks = [
-    { name: 'Makeup', path: '/category/makeup' },
-    { name: 'Skincare', path: '/category/skincare' },
-    { name: 'Haircare', path: '/category/haircare' },
-    { name: 'Men Care', path: '/category/men-care' },
+    {
+      name: 'Makeup',
+      path: '/category/makeup',
+      subcategories: ['Lipstick', 'Foundation', 'Eyeshadow', 'Mascara', 'Blush'],
+    },
+    {
+      name: 'Skincare',
+      path: '/category/skincare',
+      subcategories: ['Moisturizers', 'Serums', 'Cleansers', 'Sunscreen', 'Face Masks'],
+    },
+    {
+      name: 'Haircare',
+      path: '/category/haircare',
+      subcategories: ['Shampoo', 'Conditioner', 'Hair Oil', 'Styling', 'Treatments'],
+    },
+    {
+      name: 'Men Care',
+      path: '/category/men-care',
+      subcategories: ['Beard Care', 'Face Wash', 'Moisturizer', 'Grooming Kits'],
+    },
   ];
 
   return (
@@ -32,7 +47,7 @@ const Navbar = () => {
         {/* Nav Links */}
         <ul className="navbar__links">
           {navLinks.map((link) => (
-            <li key={link.name}>
+            <li key={link.name} className="navbar__link-wrapper">
               <Link
                 to={link.path}
                 className={`navbar__link ${location.pathname === link.path ? 'navbar__link--active' : ''
@@ -40,6 +55,24 @@ const Navbar = () => {
               >
                 {link.name}
               </Link>
+              {link.subcategories && (
+                <div className="navbar__cat-dropdown">
+                  {link.subcategories.map((sub) => (
+                    <Link
+                      key={sub}
+                      to={`${link.path}?sub=${sub.toLowerCase().replace(/\s+/g, '-')}`}
+                      className="navbar__cat-dropdown-item"
+                    >
+                      {sub}
+                    </Link>
+                  ))}
+                  <div className="navbar__cat-dropdown-footer">
+                    <Link to={link.path} className="navbar__cat-dropdown-all">
+                      View All {link.name} &rarr;
+                    </Link>
+                  </div>
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -118,7 +151,7 @@ const Navbar = () => {
                     <Link to="/login" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
                       Login
                     </Link>
-                    <Link to="/login?mode=register" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                    <Link to="/register" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
                       Create Account
                     </Link>
                   </>

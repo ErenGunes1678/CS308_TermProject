@@ -1,4 +1,3 @@
-//update
 import { Link } from 'react-router-dom';
 import ProductCard from '../../components/product/ProductCard/ProductCard';
 import './HomePage.css';
@@ -264,7 +263,7 @@ const HomePage = () => {
                             View All <span>&rarr;</span>
                         </Link>
                     </div>
-                    <div className="products-grid">
+                    <div className="home-products-grid">
                         {featuredProducts.map((product) => (
                             <ProductCard key={product.id} product={product} />
                         ))}
@@ -301,7 +300,7 @@ const HomePage = () => {
                             </p>
                         </div>
                     </div>
-                    <div className="products-grid">
+                    <div className="home-products-grid">
                         {bestSellers.map((product) => (
                             <ProductCard key={product.id} product={product} />
                         ))}
