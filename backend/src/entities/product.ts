@@ -5,7 +5,7 @@
 import { DataTypes, Sequelize } from "sequelize";
 
 module.exports = (sequelize: Sequelize) => {
-    return sequelize.define("products", {
+    const Product = sequelize.define("products", {
         id: {
             type: DataTypes.INTEGER,
             autoIncrement: true,
@@ -39,7 +39,8 @@ module.exports = (sequelize: Sequelize) => {
         },
         warranty_status: {
             type: DataTypes.BOOLEAN,
-            allowNull: false,            defaultValue: false
+            allowNull: false,
+            defaultValue: false
         },
         distributor_info: {
             type: DataTypes.STRING,
@@ -49,4 +50,14 @@ module.exports = (sequelize: Sequelize) => {
         tableName: "products",
         timestamps: false,
     });
+
+    (Product as any).associate = (db: any) => {
+        Product.hasMany(db.comments, {
+            foreignKey: "product_id",
+            as: "comments",
+            onDelete: "CASCADE",
+        });
+    };
+
+    return Product;
 };

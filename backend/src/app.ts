@@ -6,6 +6,7 @@ import { sequelize } from "./entities";
 import authRoutes from "./routes/authRoutes";
 import productRoutes from "./routes/productRoutes";
 import { seedMockProducts } from "./seeders/mock_db_data"; // Mock data seeding function
+import commentRoutes from "./routes/commentRoutes";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,6 +22,7 @@ app.get("/", (req, res) => {
 
 app.use("/auth", authRoutes);
 app.use("/products", productRoutes);
+app.use("/", commentRoutes);
 
 // Sync Sequelize models then start server
 sequelize.authenticate()

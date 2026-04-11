@@ -1,7 +1,7 @@
 import { DataTypes, Sequelize } from "sequelize";
 
 module.exports = (sequelize: Sequelize) => {
-    return sequelize.define("users", {
+    const User = sequelize.define("users", {
         id: {
             type: DataTypes.INTEGER,
             autoIncrement: true,
@@ -19,9 +19,29 @@ module.exports = (sequelize: Sequelize) => {
         password_hash: {
             type: DataTypes.STRING,
             allowNull: false,
+        },
+        role: {
+            type: DataTypes.ENUM("customer", "sales_manager", "product_manager"),
+            allowNull: false,
+            defaultValue: "customer",
         }
     }, {
         tableName: "users",
         timestamps: false,
     });
+
+    (User as any).associate = (db: any) => {
+        User.hasMany(db.comments, {
+            foreignKey: "user_id",
+            as: "comments",
+            onDelete: "CASCADE",
+        });
+
+        User.hasMany(db.comments, {
+            foreignKey: "approved_by",
+            as: "approvedComments",
+        });
+    };
+
+    return User;
 };
