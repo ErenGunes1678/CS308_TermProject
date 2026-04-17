@@ -1,11 +1,11 @@
-//update
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from '../components/layout/MainLayout';
-import HomePage from '../Pages/Home/HomePage';
-import LoginPage from '../Pages/Login/LoginPage';
-import ProfilePage from '../Pages/Profile/ProfilePage';
-import ProductsPage from '../Pages/Products/ProductsPage';
-import CartPage from '../Pages/Cart/CartPage';
+import HomePage from '../pages/Home/HomePage';
+import LoginPage from '../pages/Login/LoginPage';
+import ProfilePage from '../pages/Profile/ProfilePage';
+import ProductsPage from '../pages/Products/ProductsPage';
+import CartPage from '../pages/Cart/CartPage';
+import ProductDetailsPage from '../pages/ProductDetails/ProductDetailsPage';
 
 // Placeholder pages - replace with real ones later
 const PlaceholderPage = ({ title }) => (
@@ -29,7 +29,7 @@ const AppRouter = () => {
                     <Route path="/account" element={<ProfilePage />} />
                     <Route path="/products" element={<ProductsPage />} />
                     <Route path="/category/:slug" element={<ProductsPage />} />
-                    <Route path="/product/:id" element={<PlaceholderPage title="Product Details" />} />
+                    <Route path="/product/:id" element={<ProductDetailsPage />} />
                     <Route path="/cart" element={<CartPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/orders" element={<PlaceholderPage title="Orders" />} />
