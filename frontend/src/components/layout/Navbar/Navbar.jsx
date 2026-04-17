@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useCart } from '../../../hooks/useCart';
 import './Navbar.css';
 
 const Navbar = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const location = useLocation();
+  const { itemCount } = useCart();
 
   // TODO: Replace with real auth context later
   const isLoggedIn = false;
-  const cartItemCount = 0;
   const wishlistCount = 0;
+  const cartBadgeCount = itemCount > 99 ? '99+' : itemCount;
 
   const navLinks = [
     {
@@ -101,8 +103,8 @@ const Navbar = () => {
               <line x1="3" y1="6" x2="21" y2="6" />
               <path d="M16 10a4 4 0 0 1-8 0" />
             </svg>
-            {cartItemCount > 0 && (
-              <span className="navbar__badge">{cartItemCount}</span>
+            {itemCount > 0 && (
+              <span className="navbar__badge">{cartBadgeCount}</span>
             )}
           </Link>
 

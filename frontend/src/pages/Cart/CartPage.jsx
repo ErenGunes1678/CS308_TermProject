@@ -1,46 +1,18 @@
-import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useCart } from "../../hooks/useCart";
 import "./CartPage.css";
 
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      brand: "LumaBelle",
-      name: "Velvet Matte Lipstick",
-      price: 28,
-      image: "https://images.unsplash.com/photo-1586495777744-4413f21062fa",
-      quantity: 1,
-    },
-  ]);
-
-  const increaseQuantity = (id) => {
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, quantity: item.quantity + 1 } : item
-      )
-    );
-  };
-
-  const decreaseQuantity = (id) => {
-    setCartItems((prev) =>
-      prev
-        .map((item) =>
-          item.id === id
-            ? { ...item, quantity: Math.max(0, item.quantity - 1) }
-            : item
-        )
-        .filter((item) => item.quantity > 0)
-    );
-  };
-
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
-
-  const shipping = cartItems.length > 0 ? 5.99 : 0;
-  const total = subtotal + shipping;
-  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const {
+    cartItems,
+    itemCount,
+    subtotal,
+    shipping,
+    total,
+    amountUntilFreeShipping,
+    increaseCartItem,
+    decreaseCartItem,
+  } = useCart();
 
   if (cartItems.length === 0) {
     return (
@@ -51,9 +23,9 @@ export default function CartPage() {
           </div>
           <h2>Your bag is empty</h2>
           <p>Looks like you haven&apos;t added anything yet.</p>
-          <a className="start-shopping-btn" href="/products">
+          <Link className="start-shopping-btn" to="/products">
             Start Shopping →
-          </a>
+          </Link>
         </div>
       </div>
     );
@@ -66,7 +38,7 @@ export default function CartPage() {
       </div>
 
       <h1 className="cart-title">Shopping Bag</h1>
-      <p className="cart-count">({totalItems} items)</p>
+      <p className="cart-count">({itemCount} items)</p>
 
       <div className="cart-grid">
         <div className="cart-items">
@@ -83,9 +55,9 @@ export default function CartPage() {
                 <h3 className="product-name">{item.name}</h3>
 
                 <div className="quantity">
-                  <button onClick={() => decreaseQuantity(item.id)}>-</button>
+                  <button onClick={() => decreaseCartItem(item.id)}>-</button>
                   <span>{item.quantity}</span>
-                  <button onClick={() => increaseQuantity(item.id)}>+</button>
+                  <button onClick={() => increaseCartItem(item.id)}>+</button>
                 </div>
               </div>
 
@@ -95,16 +67,16 @@ export default function CartPage() {
             </div>
           ))}
 
-          <a className="continue-shopping" href="/products">
+          <Link className="continue-shopping" to="/products">
             ← Continue Shopping
-          </a>
+          </Link>
         </div>
 
         <div className="order-summary">
           <h2>Order Summary</h2>
 
           <div className="summary-line">
-            <span>Subtotal ({totalItems} items)</span>
+            <span>Subtotal ({itemCount} items)</span>
             <span>${subtotal.toFixed(2)}</span>
           </div>
 
@@ -112,6 +84,14 @@ export default function CartPage() {
             <span>Shipping</span>
             <span>${shipping.toFixed(2)}</span>
           </div>
+
+          {amountUntilFreeShipping > 0 ? (
+            <p className="free-shipping">
+              Add ${amountUntilFreeShipping.toFixed(2)} more for free shipping
+            </p>
+          ) : (
+            <p className="free-shipping">You have free shipping</p>
+          )}
 
           <div className="summary-total">
             <span>Total</span>

@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import './ProductDetailsPage.css';
+import { useCart } from '../../hooks/useCart';
+import { useWishlist } from '../../hooks/useWishlist';
 
 // TODO: Replace with API call using the id param
 const PLACEHOLDER = 'https://placehold.co/600x600/f5f5f5/999?text=Product';
@@ -170,17 +172,31 @@ const ALL_PRODUCTS = [
 const ProductDetailsPage = () => {
     const { id } = useParams();
     const product = ALL_PRODUCTS.find((p) => p.id === Number(id));
+    const { addToCart } = useCart();
+    const { isInWishlist, toggleWishlist } = useWishlist();
 
     const [selectedImage, setSelectedImage] = useState(0);
     const [quantity, setQuantity] = useState(1);
     const [activeTab, setActiveTab] = useState('description');
-    const [isWishlisted, setIsWishlisted] = useState(false);
+    const [cartToast, setCartToast] = useState(null);
 
     // Review form
     const [showReviewForm, setShowReviewForm] = useState(false);
     const [reviewRating, setReviewRating] = useState(0);
     const [reviewText, setReviewText] = useState('');
     const [reviewSubmitted, setReviewSubmitted] = useState(false);
+
+    useEffect(() => {
+        if (!cartToast) return undefined;
+
+        const toastTimer = window.setTimeout(() => {
+            setCartToast(null);
+        }, 2500);
+
+        return () => {
+            window.clearTimeout(toastTimer);
+        };
+    }, [cartToast]);
 
     if (!product) {
         return (
@@ -196,11 +212,30 @@ const ProductDetailsPage = () => {
 
     const isOutOfStock = product.stock === 0;
     const isLowStock = product.stock > 0 && product.stock <= 10;
+    const isWishlisted = isInWishlist(product.id);
 
     const handleAddToCart = () => {
         if (isOutOfStock) return;
-        // TODO: Hook into CartContext
-        alert(`Added ${quantity}x "${product.name}" to cart`);
+
+        const selectedProduct = {
+            ...product,
+            image: product.images[selectedImage],
+        };
+
+        addToCart(selectedProduct, quantity);
+
+        setCartToast({
+            productName: product.name,
+            quantity,
+            totalPrice: product.price * quantity,
+        });
+    };
+
+    const handleToggleWishlist = () => {
+        toggleWishlist({
+            ...product,
+            image: product.images[selectedImage],
+        });
     };
 
     const handleSubmitReview = (e) => {
@@ -379,8 +414,8 @@ const ProductDetailsPage = () => {
 
                         <button
                             className={`pdp-info__wishlist-btn ${isWishlisted ? 'pdp-info__wishlist-btn--active' : ''}`}
-                            onClick={() => setIsWishlisted(!isWishlisted)}
-                            aria-label="Add to wishlist"
+                            onClick={handleToggleWishlist}
+                            aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
                         >
                             <svg width="20" height="20" viewBox="0 0 24 24"
                                 fill={isWishlisted ? 'var(--color-primary)' : 'none'}
@@ -409,6 +444,22 @@ const ProductDetailsPage = () => {
                     </div>
                 </div>
             </section>
+
+            {cartToast && (
+                <div className="pdp-cart-toast" role="status" aria-live="polite">
+                    <div>
+                        <p className="pdp-cart-toast__label">Added to bag</p>
+                        <p className="pdp-cart-toast__name">{cartToast.productName}</p>
+                        <p className="pdp-cart-toast__meta">
+                            Qty {cartToast.quantity} · ${cartToast.totalPrice.toFixed(2)}
+                        </p>
+                    </div>
+
+                    <Link to="/cart" className="pdp-cart-toast__btn">
+                        View Bag
+                    </Link>
+                </div>
+            )}
 
             {/* Tabs: Description / Details / Reviews */}
             <section className="pdp-tabs-section">

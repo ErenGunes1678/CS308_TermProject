@@ -166,18 +166,20 @@
 
 .navbar__badge {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 18px;
-  height: 18px;
+  top: -3px;
+  right: -3px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
   border-radius: 50%;
   background: var(--color-primary);
   color: white;
-  font-size: 0.65rem;
+  font-size: 0.78rem;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
+  line-height: 1;
 }
 
 /* User button */
