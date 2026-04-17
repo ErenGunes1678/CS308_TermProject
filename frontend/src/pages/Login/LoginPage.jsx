@@ -10,6 +10,7 @@ import {
   loginUser,
   registerUser,
 } from "../../services/authService";
+import { useAuth } from "../../hooks/useAuth";
 
 const getModeFromQuery = (value) =>
   value === "register" ? "register" : "login";
@@ -43,6 +44,7 @@ const FALLBACK_TESTIMONIALS = [
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryMode = getModeFromQuery(searchParams.get("mode"));
   const mode = queryMode;
@@ -72,7 +74,8 @@ function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      await loginUser(loginForm);
+      const authData = await loginUser(loginForm);
+      login(authData);
       navigate("/account");
     } catch (error) {
       setErrorMessage(getAuthErrorMessage(error, "Unable to sign in."));
