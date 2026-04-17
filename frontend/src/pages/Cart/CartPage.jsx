@@ -97,6 +97,10 @@ export default function CartPage() {
             <span>Total</span>
             <span>${total.toFixed(2)}</span>
           </div>
+
+          <Link to="/checkout" className="checkout-btn">
+            Proceed to Checkout →
+          </Link>
         </div>
       </div>
     </div>

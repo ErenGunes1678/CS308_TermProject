@@ -250,6 +250,12 @@
   background: linear-gradient(90deg, #ff1f74 0%, #f5369c 100%);
   box-shadow: 0 10px 24px rgba(245, 54, 156, 0.22);
   transition: transform 0.15s ease, opacity 0.15s ease;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  box-sizing: border-box;
 }
 
 .checkout-btn:hover {
