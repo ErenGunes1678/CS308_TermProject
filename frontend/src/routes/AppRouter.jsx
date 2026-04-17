@@ -6,42 +6,47 @@ import ProfilePage from '../pages/Profile/ProfilePage';
 import ProductsPage from '../pages/Products/ProductsPage';
 import CartPage from '../pages/Cart/CartPage';
 import ProductDetailsPage from '../pages/ProductDetails/ProductDetailsPage';
+import CheckoutPage from '../pages/Checkout/CheckoutPage';
+import OrderSuccessPage from '../pages/Checkout/OrderSuccessPage';
 
 // Placeholder pages - replace with real ones later
 const PlaceholderPage = ({ title }) => (
-    <div style={{ padding: '4rem 2rem', textAlign: 'center' }}>
-        <h1>{title}</h1>
-        <p style={{ color: '#6B7280', marginTop: '1rem' }}>This page is coming soon.</p>
-    </div>
+  <div style={{ padding: '4rem 2rem', textAlign: 'center' }}>
+    <h1>{title}</h1>
+    <p style={{ color: '#6B7280', marginTop: '1rem' }}>This page is coming soon.</p>
+  </div>
 );
 
 const AppRouter = () => {
-    return (
-        <BrowserRouter>
-            <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route
-                    path="/register"
-                    element={<Navigate to="/login?mode=register" replace />}
-                />
-                <Route element={<MainLayout />}>
-                    <Route path="/" element={<HomePage />} />
-                    <Route path="/account" element={<ProfilePage />} />
-                    <Route path="/products" element={<ProductsPage />} />
-                    <Route path="/category/:slug" element={<ProductsPage />} />
-                    <Route path="/product/:id" element={<ProductDetailsPage />} />
-                    <Route path="/cart" element={<CartPage />} />
-                    <Route path="/profile" element={<ProfilePage />} />
-                    <Route path="/orders" element={<PlaceholderPage title="Orders" />} />
-                    <Route path="/checkout" element={<PlaceholderPage title="Checkout" />} />
-                    <Route path="/wishlist" element={<PlaceholderPage title="Wishlist" />} />
-                    <Route path="/search" element={<PlaceholderPage title="Search" />} />
-                    <Route path="/admin" element={<PlaceholderPage title="Admin Panel" />} />
-                    <Route path="*" element={<PlaceholderPage title="404 - Page Not Found" />} />
-                </Route>
-            </Routes>
-        </BrowserRouter>
-    );
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/register"
+          element={<Navigate to="/login?mode=register" replace />}
+        />
+        <Route element={<MainLayout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/account" element={<ProfilePage />} />
+          <Route path="/products" element={<ProductsPage />} />
+          <Route path="/category/:slug" element={<ProductsPage />} />
+          <Route path="/product/:id" element={<ProductDetailsPage />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/orders" element={<PlaceholderPage title="Orders" />} />
+
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/order-success" element={<OrderSuccessPage />} />
+
+          <Route path="/wishlist" element={<PlaceholderPage title="Wishlist" />} />
+          <Route path="/search" element={<PlaceholderPage title="Search" />} />
+          <Route path="/admin" element={<PlaceholderPage title="Admin Panel" />} />
+          <Route path="*" element={<PlaceholderPage title="404 - Page Not Found" />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
 };
 
 export default AppRouter;
