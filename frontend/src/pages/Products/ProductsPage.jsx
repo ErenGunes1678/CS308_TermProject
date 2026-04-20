@@ -1,6 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import ProductCard from '../../components/product/ProductCard/ProductCard';
+import ProductsEmptyState from '../../components/product-listing/ProductsEmptyState';
+import ProductsFiltersSidebar from '../../components/product-listing/ProductsFiltersSidebar';
+import ProductsGrid from '../../components/product-listing/ProductsGrid';
+import ProductsHero from '../../components/product-listing/ProductsHero';
+import ProductsToolbar from '../../components/product-listing/ProductsToolbar';
 import './ProductsPage.css';
 
 // Placeholder — replace with API data later
@@ -207,166 +211,34 @@ const ProductsPage = () => {
 
     return (
         <div className="products-page">
-            {/* ===== Category Hero Banner ===== */}
-            <section className="products-hero">
-                <div className="products-hero__overlay" />
-                <div className="products-hero__content container">
-                    <h1 className="products-hero__title">
-                        {categoryInfo ? categoryInfo.name : 'All Products'}
-                    </h1>
-                    <p className="products-hero__tagline">
-                        {categoryInfo ? categoryInfo.tagline : 'Browse our full collection'}
-                    </p>
-                </div>
-            </section>
+            <ProductsHero categoryInfo={categoryInfo} />
 
-            {/* ===== Main Content ===== */}
             <div className="products-page__body container">
-                {/* Sidebar Filters */}
-                <aside className="products-sidebar">
-                    <h3 className="products-sidebar__title">Filters</h3>
+                <ProductsFiltersSidebar
+                    brands={BRANDS}
+                    priceRange={priceRange}
+                    selectedBrands={selectedBrands}
+                    priceOpen={priceOpen}
+                    brandOpen={brandOpen}
+                    onPriceRangeChange={setPriceRange}
+                    onBrandToggle={handleBrandToggle}
+                    onTogglePriceOpen={() => setPriceOpen(!priceOpen)}
+                    onToggleBrandOpen={() => setBrandOpen(!brandOpen)}
+                />
 
-                    {/* Price Range */}
-                    <div className="filter-section">
-                        <button
-                            className="filter-section__header"
-                            onClick={() => setPriceOpen(!priceOpen)}
-                        >
-                            <span className="filter-section__label">Price Range</span>
-                            <svg
-                                className={`filter-section__chevron ${priceOpen ? '' : 'filter-section__chevron--closed'}`}
-                                width="16" height="16" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" strokeWidth="2"
-                            >
-                                <polyline points="6 9 12 15 18 9" />
-                            </svg>
-                        </button>
-                        {priceOpen && (
-                            <div className="filter-section__body">
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="200"
-                                    value={priceRange[1]}
-                                    onChange={(e) =>
-                                        setPriceRange([priceRange[0], Number(e.target.value)])
-                                    }
-                                    className="price-slider"
-                                    style={{
-                                        background: `linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) ${(priceRange[1] / 200) * 100}%, var(--color-gray-200) ${(priceRange[1] / 200) * 100}%, var(--color-gray-200) 100%)`,
-                                    }}
-                                />
-                                <div className="price-slider__labels">
-                                    <span>${priceRange[0]}</span>
-                                    <span>${priceRange[1]}</span>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Brand */}
-                    <div className="filter-section">
-                        <button
-                            className="filter-section__header"
-                            onClick={() => setBrandOpen(!brandOpen)}
-                        >
-                            <span className="filter-section__label">Brand</span>
-                            <svg
-                                className={`filter-section__chevron ${brandOpen ? '' : 'filter-section__chevron--closed'}`}
-                                width="16" height="16" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" strokeWidth="2"
-                            >
-                                <polyline points="6 9 12 15 18 9" />
-                            </svg>
-                        </button>
-                        {brandOpen && (
-                            <div className="filter-section__body">
-                                {BRANDS.map((brand) => (
-                                    <label key={brand} className="brand-checkbox">
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedBrands.includes(brand)}
-                                            onChange={() => handleBrandToggle(brand)}
-                                            className="brand-checkbox__input"
-                                        />
-                                        <span className="brand-checkbox__custom" />
-                                        <span className="brand-checkbox__label">{brand}</span>
-                                    </label>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </aside>
-
-                {/* Product Grid Area */}
                 <div className="products-main">
-                    {/* Toolbar */}
-                    <div className="products-toolbar">
-                        <p className="products-toolbar__count">
-                            <strong>{filteredProducts.length}</strong> products
-                        </p>
+                    <ProductsToolbar
+                        productCount={filteredProducts.length}
+                        viewMode={viewMode}
+                        sortBy={sortBy}
+                        onViewModeChange={setViewMode}
+                        onSortChange={setSortBy}
+                    />
 
-                        <div className="products-toolbar__right">
-                            {/* View toggle */}
-                            <div className="view-toggle">
-                                <button
-                                    className={`view-toggle__btn ${viewMode === 'grid' ? 'view-toggle__btn--active' : ''}`}
-                                    onClick={() => setViewMode('grid')}
-                                    aria-label="Grid view"
-                                >
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <rect x="3" y="3" width="7" height="7" />
-                                        <rect x="14" y="3" width="7" height="7" />
-                                        <rect x="3" y="14" width="7" height="7" />
-                                        <rect x="14" y="14" width="7" height="7" />
-                                    </svg>
-                                </button>
-                                <button
-                                    className={`view-toggle__btn ${viewMode === 'list' ? 'view-toggle__btn--active' : ''}`}
-                                    onClick={() => setViewMode('list')}
-                                    aria-label="List view"
-                                >
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <rect x="3" y="3" width="18" height="4" rx="1" />
-                                        <rect x="3" y="10" width="18" height="4" rx="1" />
-                                        <rect x="3" y="17" width="18" height="4" rx="1" />
-                                    </svg>
-                                </button>
-                            </div>
-
-                            {/* Sort dropdown */}
-                            <div className="sort-dropdown">
-                                <select
-                                    value={sortBy}
-                                    onChange={(e) => setSortBy(e.target.value)}
-                                    className="sort-dropdown__select"
-                                >
-                                    <option value="featured">Featured</option>
-                                    <option value="newest">Newest</option>
-                                    <option value="price-low">Price: Low to High</option>
-                                    <option value="price-high">Price: High to Low</option>
-                                    <option value="rating">Top Rated</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Product Grid */}
                     {filteredProducts.length > 0 ? (
-                        <div className={`products-grid ${viewMode === 'list' ? 'products-grid--list' : ''}`}>
-                            {filteredProducts.map((product) => (
-                                <ProductCard key={product.id} product={product} />
-                            ))}
-                        </div>
+                        <ProductsGrid products={filteredProducts} viewMode={viewMode} />
                     ) : (
-                        <div className="products-empty">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-gray-300)" strokeWidth="1.5">
-                                <circle cx="11" cy="11" r="8" />
-                                <path d="m21 21-4.35-4.35" />
-                            </svg>
-                            <h3>No products found</h3>
-                            <p>Try adjusting your filters to find what you're looking for.</p>
-                        </div>
+                        <ProductsEmptyState />
                     )}
                 </div>
             </div>
