@@ -8,6 +8,7 @@ import ProductBreadcrumb from '../../components/product/product-details/ProductB
 import ProductGallery from '../../components/product/product-details/ProductGallery';
 import ProductInfo from '../../components/product/product-details/ProductInfo';
 import ProductTabs from '../../components/product/product-details/ProductTabs';
+import { getProductById } from '../../services/productService';
 
 // TODO: Replace with API call using the id param
 const PLACEHOLDER = 'https://placehold.co/600x600/f5f5f5/999?text=Product';
@@ -174,9 +175,46 @@ const ALL_PRODUCTS = [
     },
 ];
 
+const CATEGORY_LABELS = {
+    makeup: 'Makeup',
+    skincare: 'Skincare',
+    haircare: 'Haircare',
+    'men-care': 'Men Care',
+};
+
+const mapApiProductToDetails = (apiProduct) => {
+    const stock = Number(apiProduct.quantity_in_stock ?? 0);
+
+    return {
+        ...apiProduct,
+        category: CATEGORY_LABELS[apiProduct.category] || apiProduct.category || 'Products',
+        categorySlug: apiProduct.category || 'products',
+        price: Number(apiProduct.price ?? 0),
+        originalPrice:
+            apiProduct.originalPrice === null || apiProduct.originalPrice === undefined
+                ? null
+                : Number(apiProduct.originalPrice),
+        rating: Number(apiProduct.rating ?? 0),
+        reviewCount: Number(apiProduct.reviewCount ?? 0),
+        stock,
+        images: [apiProduct.image || PLACEHOLDER],
+        details: {
+            'Serial Number': apiProduct.serial_number || 'N/A',
+            Model: apiProduct.model || 'N/A',
+            'Quantity in Stock': stock,
+            Warranty: apiProduct.warranty_status ? 'Active' : 'Not active',
+            Distributor: apiProduct.distributor_info || 'N/A',
+        },
+        reviews: [],
+    };
+};
+
 const ProductDetailsPage = () => {
     const { id } = useParams();
-    const product = ALL_PRODUCTS.find((p) => p.id === Number(id));
+    const fallbackProduct = ALL_PRODUCTS.find((p) => p.id === Number(id));
+    const [apiProduct, setApiProduct] = useState(null);
+    const [isLoadingProduct, setIsLoadingProduct] = useState(true);
+    const product = apiProduct || fallbackProduct;
     const { addToCart } = useCart();
     const { isInWishlist, toggleWishlist } = useWishlist();
 
@@ -192,6 +230,38 @@ const ProductDetailsPage = () => {
     const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
     useEffect(() => {
+        let isMounted = true;
+
+        const loadProduct = async () => {
+            setIsLoadingProduct(true);
+
+            try {
+                const productFromApi = await getProductById(id);
+
+                if (isMounted && productFromApi) {
+                    setApiProduct(mapApiProductToDetails(productFromApi));
+                    setSelectedImage(0);
+                    setQuantity(1);
+                }
+            } catch {
+                if (isMounted) {
+                    setApiProduct(null);
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoadingProduct(false);
+                }
+            }
+        };
+
+        loadProduct();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [id]);
+
+    useEffect(() => {
         if (!cartToast) return undefined;
 
         const toastTimer = window.setTimeout(() => {
@@ -202,6 +272,14 @@ const ProductDetailsPage = () => {
             window.clearTimeout(toastTimer);
         };
     }, [cartToast]);
+
+    if (!product && isLoadingProduct) {
+        return (
+            <div className="pdp-not-found">
+                <h2>Loading product...</h2>
+            </div>
+        );
+    }
 
     if (!product) {
         return (
