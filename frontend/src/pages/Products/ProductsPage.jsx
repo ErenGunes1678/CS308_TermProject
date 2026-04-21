@@ -47,8 +47,6 @@ const SUBCATEGORY_INFO = {
 
 const normalizeSlug = (value = '') => value.toLowerCase().trim().replace(/\s+/g, '-');
 
-const BRANDS = ['LumaBelle', 'GlowLab', 'HairLux', 'ForHim', 'Aurore', 'SkinStar', 'PurGlow'];
-
 const ProductsPage = () => {
     const { slug } = useParams(); // e.g. "makeup", "skincare", etc.
     const [searchParams] = useSearchParams();
@@ -73,6 +71,10 @@ const ProductsPage = () => {
             ? SUBCATEGORY_INFO[slug]?.[selectedSubcategory]
             : null;
     const heroInfo = subcategoryInfo || categoryInfo;
+    const brands = useMemo(
+        () => Array.from(new Set(products.map((product) => product.brand).filter(Boolean))).sort(),
+        [products]
+    );
 
     useEffect(() => {
         let isMounted = true;
@@ -166,7 +168,7 @@ const ProductsPage = () => {
 
             <div className="products-page__body container">
                 <ProductsFiltersSidebar
-                    brands={BRANDS}
+                    brands={brands}
                     priceRange={priceRange}
                     selectedBrands={selectedBrands}
                     priceOpen={priceOpen}
