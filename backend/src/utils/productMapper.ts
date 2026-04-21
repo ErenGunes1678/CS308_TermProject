@@ -22,6 +22,7 @@ export const mapProductForFrontend = (product: any) => {
         name: plainProduct.name,
         brand: plainProduct.brand,
         category: plainProduct.category,
+        subcategory: plainProduct.subcategory,
         price,
         originalPrice,
         rating: toNumber(plainProduct.rating) ?? 0,

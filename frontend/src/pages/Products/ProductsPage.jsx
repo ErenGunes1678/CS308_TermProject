@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
-import ProductsEmptyState from '../../components/product-listing/ProductsEmptyState';
-import ProductsFiltersSidebar from '../../components/product-listing/ProductsFiltersSidebar';
-import ProductsGrid from '../../components/product-listing/ProductsGrid';
-import ProductsHero from '../../components/product-listing/ProductsHero';
-import ProductsToolbar from '../../components/product-listing/ProductsToolbar';
+import { useParams, useSearchParams } from 'react-router-dom';
+import ProductsEmptyState from '../../components/product/product-listing/ProductsEmptyState';
+import ProductsFiltersSidebar from '../../components/product/product-listing/ProductsFiltersSidebar';
+import ProductsGrid from '../../components/product/product-listing/ProductsGrid';
+import ProductsHero from '../../components/product/product-listing/ProductsHero';
+import ProductsToolbar from '../../components/product/product-listing/ProductsToolbar';
 import './ProductsPage.css';
 
 // Placeholder — replace with API data later
@@ -16,6 +16,7 @@ const ALL_PRODUCTS = [
         name: 'Velvet Matte Lipstick',
         brand: 'LumaBelle',
         category: 'makeup',
+        subcategory: 'lipstick',
         price: 28,
         originalPrice: 35,
         rating: 4,
@@ -29,6 +30,7 @@ const ALL_PRODUCTS = [
         name: 'Radiance Boost Serum',
         brand: 'GlowLab',
         category: 'skincare',
+        subcategory: 'serums',
         price: 54,
         originalPrice: 68,
         rating: 4.5,
@@ -42,6 +44,7 @@ const ALL_PRODUCTS = [
         name: 'Pro Glow Eyeshadow Palette',
         brand: 'LumaBelle',
         category: 'makeup',
+        subcategory: 'eyeshadow',
         price: 62,
         originalPrice: null,
         rating: 4.5,
@@ -54,6 +57,7 @@ const ALL_PRODUCTS = [
         name: "Men's Beard & Face Kit",
         brand: 'ForHim',
         category: 'men-care',
+        subcategory: 'beard-care',
         price: 48,
         originalPrice: 60,
         rating: 4,
@@ -67,6 +71,7 @@ const ALL_PRODUCTS = [
         name: "Men's Active Cleanser",
         brand: 'ForHim',
         category: 'men-care',
+        subcategory: 'face-wash',
         price: 22,
         originalPrice: 28,
         rating: 4,
@@ -79,6 +84,7 @@ const ALL_PRODUCTS = [
         name: 'Luxury Perfume Collection',
         brand: 'Aurore',
         category: 'makeup',
+        subcategory: 'blush',
         price: 89,
         originalPrice: null,
         rating: 4.5,
@@ -92,6 +98,7 @@ const ALL_PRODUCTS = [
         name: 'Complete Skincare Bundle',
         brand: 'GlowLab',
         category: 'skincare',
+        subcategory: 'moisturizers',
         price: 118,
         originalPrice: 160,
         rating: 4,
@@ -106,6 +113,7 @@ const ALL_PRODUCTS = [
         name: 'Silk Repair Hair Oil',
         brand: 'HairLux',
         category: 'haircare',
+        subcategory: 'hair-oil',
         price: 38,
         originalPrice: null,
         rating: 4.5,
@@ -118,6 +126,7 @@ const ALL_PRODUCTS = [
         name: 'Deep Hydration Face Cream',
         brand: 'GlowLab',
         category: 'skincare',
+        subcategory: 'moisturizers',
         price: 42,
         originalPrice: null,
         rating: 4,
@@ -129,6 +138,7 @@ const ALL_PRODUCTS = [
         name: 'Volumizing Shampoo',
         brand: 'HairLux',
         category: 'haircare',
+        subcategory: 'shampoo',
         price: 26,
         originalPrice: 32,
         rating: 4,
@@ -145,10 +155,44 @@ const CATEGORY_INFO = {
     'men-care': { name: 'Men Care', tagline: 'Crafted for him' },
 };
 
+const SUBCATEGORY_INFO = {
+    makeup: {
+        lipstick: { name: 'Lipstick', tagline: 'Color that completes every look' },
+        foundation: { name: 'Foundation', tagline: 'Your base for a flawless finish' },
+        eyeshadow: { name: 'Eyeshadow', tagline: 'Build every eye look from soft to bold' },
+        mascara: { name: 'Mascara', tagline: 'Lift, lengthen, and define' },
+        blush: { name: 'Blush', tagline: 'Fresh color for a natural glow' },
+    },
+    skincare: {
+        moisturizers: { name: 'Moisturizers', tagline: 'Hydration for every skin routine' },
+        serums: { name: 'Serums', tagline: 'Targeted care for visible glow' },
+        cleansers: { name: 'Cleansers', tagline: 'Start fresh with gentle formulas' },
+        sunscreen: { name: 'Sunscreen', tagline: 'Daily protection made simple' },
+        'face-masks': { name: 'Face Masks', tagline: 'A reset for tired skin' },
+    },
+    haircare: {
+        shampoo: { name: 'Shampoo', tagline: 'Cleanse and care for every hair type' },
+        conditioner: { name: 'Conditioner', tagline: 'Smooth, soften, and detangle' },
+        'hair-oil': { name: 'Hair Oil', tagline: 'Shine and softness from root to tip' },
+        styling: { name: 'Styling', tagline: 'Shape your look with confidence' },
+        treatments: { name: 'Treatments', tagline: 'Extra care for stronger hair' },
+    },
+    'men-care': {
+        'beard-care': { name: 'Beard Care', tagline: 'Grooming essentials for a clean finish' },
+        'face-wash': { name: 'Face Wash', tagline: 'Fresh skin after every cleanse' },
+        moisturizer: { name: 'Moisturizer', tagline: 'Lightweight hydration for daily care' },
+        'grooming-kits': { name: 'Grooming Kits', tagline: 'Everything needed for a sharp routine' },
+    },
+};
+
+const normalizeSlug = (value = '') => value.toLowerCase().trim().replace(/\s+/g, '-');
+
 const BRANDS = ['LumaBelle', 'GlowLab', 'HairLux', 'ForHim', 'Aurore', 'SkinStar', 'PurGlow'];
 
 const ProductsPage = () => {
     const { slug } = useParams(); // e.g. "makeup", "skincare", etc.
+    const [searchParams] = useSearchParams();
+    const selectedSubcategory = searchParams.get('sub');
 
     // Filter state
     const [priceRange, setPriceRange] = useState([0, 200]);
@@ -161,6 +205,11 @@ const ProductsPage = () => {
     const [brandOpen, setBrandOpen] = useState(true);
 
     const categoryInfo = slug ? CATEGORY_INFO[slug] : null;
+    const subcategoryInfo =
+        slug && selectedSubcategory
+            ? SUBCATEGORY_INFO[slug]?.[selectedSubcategory]
+            : null;
+    const heroInfo = subcategoryInfo || categoryInfo;
 
     // Filter & sort products
     const filteredProducts = useMemo(() => {
@@ -169,6 +218,13 @@ const ProductsPage = () => {
         // Filter by category
         if (slug) {
             products = products.filter((p) => p.category === slug);
+        }
+
+        // Filter by navbar subcategory query, e.g. ?sub=lipstick
+        if (selectedSubcategory) {
+            products = products.filter(
+                (p) => normalizeSlug(p.subcategory) === normalizeSlug(selectedSubcategory)
+            );
         }
 
         // Filter by price range
@@ -201,7 +257,7 @@ const ProductsPage = () => {
         }
 
         return products;
-    }, [slug, priceRange, selectedBrands, sortBy]);
+    }, [slug, selectedSubcategory, priceRange, selectedBrands, sortBy]);
 
     const handleBrandToggle = (brand) => {
         setSelectedBrands((prev) =>
@@ -211,7 +267,7 @@ const ProductsPage = () => {
 
     return (
         <div className="products-page">
-            <ProductsHero categoryInfo={categoryInfo} />
+            <ProductsHero categoryInfo={heroInfo} />
 
             <div className="products-page__body container">
                 <ProductsFiltersSidebar

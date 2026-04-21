@@ -3,11 +3,11 @@ import { useParams, Link } from 'react-router-dom';
 import './ProductDetailsPage.css';
 import { useCart } from '../../hooks/useCart';
 import { useWishlist } from '../../hooks/useWishlist';
-import CartToast from '../../components/product-details/CartToast';
-import ProductBreadcrumb from '../../components/product-details/ProductBreadcrumb';
-import ProductGallery from '../../components/product-details/ProductGallery';
-import ProductInfo from '../../components/product-details/ProductInfo';
-import ProductTabs from '../../components/product-details/ProductTabs';
+import CartToast from '../../components/product/product-details/CartToast';
+import ProductBreadcrumb from '../../components/product/product-details/ProductBreadcrumb';
+import ProductGallery from '../../components/product/product-details/ProductGallery';
+import ProductInfo from '../../components/product/product-details/ProductInfo';
+import ProductTabs from '../../components/product/product-details/ProductTabs';
 
 // TODO: Replace with API call using the id param
 const PLACEHOLDER = 'https://placehold.co/600x600/f5f5f5/999?text=Product';

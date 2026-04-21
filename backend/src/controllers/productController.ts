@@ -52,6 +52,7 @@ export const addProduct = async (req: Request, res: Response) => {
             name,
             brand,
             category,
+            subcategory,
             model,
             serial_number,
             description,
@@ -66,9 +67,9 @@ export const addProduct = async (req: Request, res: Response) => {
             distributor_info
         } = req.body;
 
-        if (!name || !brand || !category || !model || !serial_number || !image || price === undefined) {
+        if (!name || !brand || !category || !subcategory || !model || !serial_number || !image || price === undefined) {
             return res.status(400).json({
-                message: "Name, brand, category, model, serial number, image, and price are required"
+                message: "Name, brand, category, subcategory, model, serial number, image, and price are required"
             });
         }
 
@@ -93,6 +94,7 @@ export const addProduct = async (req: Request, res: Response) => {
             name,
             brand,
             category,
+            subcategory,
             model,
             serial_number,
             description,
@@ -134,6 +136,7 @@ export const editProduct = async (req: Request, res: Response) => {
             name,
             brand,
             category,
+            subcategory,
             model,
             serial_number,
             description,
@@ -152,6 +155,7 @@ export const editProduct = async (req: Request, res: Response) => {
             ...(name !== undefined && { name }),
             ...(brand !== undefined && { brand }),
             ...(category !== undefined && { category }),
+            ...(subcategory !== undefined && { subcategory }),
             ...(model !== undefined && { model }),
             ...(serial_number !== undefined && { serial_number }),
             ...(description !== undefined && { description }),

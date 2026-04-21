@@ -23,6 +23,12 @@ module.exports = (sequelize: Sequelize) => {
       allowNull: false,
     },
 
+    subcategory: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: "general",
+    },
+
     model: {
       type: DataTypes.STRING,
       allowNull: false,

@@ -12,6 +12,7 @@ const mockProducts = [
     name: "Velvet Matte Lipstick",
     brand: "LumaBelle",
     category: "makeup",
+    subcategory: "lipstick",
     model: "Velvet Matte Pro",
     serial_number: "LB-VML-001",
     description: "A smooth matte lipstick with rich color payoff and comfortable all-day wear.",
@@ -29,6 +30,7 @@ const mockProducts = [
     name: "Radiance Boost Serum",
     brand: "GlowLab",
     category: "skincare",
+    subcategory: "serums",
     model: "Radiance Pro",
     serial_number: "GL-RBS-002",
     description: "A brightening serum with vitamin C, niacinamide, and hyaluronic acid.",
@@ -46,6 +48,7 @@ const mockProducts = [
     name: "Pro Glow Eyeshadow Palette",
     brand: "LumaBelle",
     category: "makeup",
+    subcategory: "eyeshadow",
     model: "Pro Glow 12",
     serial_number: "LB-PGP-003",
     description: "A 12-shade eyeshadow palette with matte, shimmer, and metallic finishes.",
@@ -63,6 +66,7 @@ const mockProducts = [
     name: "Men's Beard and Face Kit",
     brand: "ForHim",
     category: "men-care",
+    subcategory: "beard-care",
     model: "Beard Face Kit",
     serial_number: "FH-BFK-004",
     description: "A grooming kit with beard oil, cleanser, and lightweight moisturizer.",
@@ -80,6 +84,7 @@ const mockProducts = [
     name: "Men's Active Cleanser",
     brand: "ForHim",
     category: "men-care",
+    subcategory: "face-wash",
     model: "Active Cleanser",
     serial_number: "FH-MAC-005",
     description: "A daily facial cleanser made for active skin and post-workout refresh.",
@@ -97,6 +102,7 @@ const mockProducts = [
     name: "Luxury Perfume Collection",
     brand: "Aurore",
     category: "makeup",
+    subcategory: "blush",
     model: "Signature Trio",
     serial_number: "AU-LPC-006",
     description: "A gift-ready set of three signature fragrances for day, evening, and special occasions.",
@@ -114,6 +120,7 @@ const mockProducts = [
     name: "Complete Skincare Bundle",
     brand: "GlowLab",
     category: "skincare",
+    subcategory: "moisturizers",
     model: "Complete Set",
     serial_number: "GL-CSB-007",
     description: "A full skincare routine with cleanser, toner, serum, moisturizer, and SPF.",
@@ -131,6 +138,7 @@ const mockProducts = [
     name: "Silk Repair Hair Oil",
     brand: "HairLux",
     category: "haircare",
+    subcategory: "hair-oil",
     model: "Silk Repair Oil",
     serial_number: "HL-SHO-008",
     description: "A lightweight hair oil that adds shine and helps smooth dry ends.",
@@ -148,6 +156,7 @@ const mockProducts = [
     name: "Deep Hydration Face Cream",
     brand: "GlowLab",
     category: "skincare",
+    subcategory: "moisturizers",
     model: "Hydration Cream",
     serial_number: "GL-DHC-009",
     description: "A rich face cream that supports soft, hydrated skin through the day.",
@@ -165,6 +174,7 @@ const mockProducts = [
     name: "Volumizing Shampoo",
     brand: "HairLux",
     category: "haircare",
+    subcategory: "shampoo",
     model: "Volume Shampoo",
     serial_number: "HL-VS-010",
     description: "A gentle shampoo that cleanses roots and gives fine hair a fuller look.",
@@ -186,16 +196,28 @@ export async function seedMockProducts() {
     where: { serial_number: { [Op.in]: serials } },
   });
 
-  const existingSerials = new Set(existing.map((product: any) => product.serial_number));
+  const existingBySerial = new Map<string, any>(
+    existing.map((product: any) => [product.serial_number, product])
+  );
+  const existingSerials = new Set(existingBySerial.keys());
   const toCreate = mockProducts.filter(
     (product: any) => !existingSerials.has(product.serial_number)
   );
+  const toUpdate = mockProducts.filter(
+    (product: any) => existingSerials.has(product.serial_number)
+  );
 
-  if (toCreate.length === 0) {
-    console.log("Mock products already exist, skipping seeding.");
-    return;
+  if (toUpdate.length > 0) {
+    await Promise.all(
+      toUpdate.map((product: any) =>
+        existingBySerial.get(product.serial_number)?.update(product)
+      )
+    );
   }
 
-  await db.products.bulkCreate(toCreate);
-  console.log(`Seeded ${toCreate.length} mock products.`);
+  if (toCreate.length > 0) {
+    await db.products.bulkCreate(toCreate);
+  }
+
+  console.log(`Seeded ${toCreate.length} and updated ${toUpdate.length} mock products.`);
 }
