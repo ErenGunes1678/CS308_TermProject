@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import './ProductDetailsPage.css';
 import { useCart } from '../../hooks/useCart';
@@ -63,11 +63,16 @@ const ProductDetailsPage = () => {
     const [reviewText, setReviewText] = useState('');
     const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
+    useLayoutEffect(() => {
+        window.scrollTo(0, 0);
+    }, [id]);
+
     useEffect(() => {
         let isMounted = true;
 
         const loadProduct = async () => {
             setIsLoadingProduct(true);
+            setApiProduct(null);
 
             try {
                 const productFromApi = await getProductById(id);
@@ -109,8 +114,42 @@ const ProductDetailsPage = () => {
 
     if (!product && isLoadingProduct) {
         return (
-            <div className="pdp-not-found">
-                <h2>Loading product...</h2>
+            <div className="pdp pdp-skeleton">
+                <div className="pdp-breadcrumb">
+                    <div className="pdp-breadcrumb__inner container">
+                        <span className="pdp-skeleton__line pdp-skeleton__line--breadcrumb" />
+                    </div>
+                </div>
+
+                <section className="pdp-main container">
+                    <div className="pdp-gallery">
+                        <div className="pdp-gallery__main pdp-skeleton__box" />
+                        <div className="pdp-gallery__thumbs">
+                            <span className="pdp-gallery__thumb pdp-skeleton__box" />
+                            <span className="pdp-gallery__thumb pdp-skeleton__box" />
+                            <span className="pdp-gallery__thumb pdp-skeleton__box" />
+                        </div>
+                    </div>
+
+                    <div className="pdp-info">
+                        <span className="pdp-skeleton__line pdp-skeleton__line--brand" />
+                        <span className="pdp-skeleton__line pdp-skeleton__line--title" />
+                        <span className="pdp-skeleton__line pdp-skeleton__line--rating" />
+                        <span className="pdp-skeleton__line pdp-skeleton__line--price" />
+                        <span className="pdp-skeleton__line pdp-skeleton__line--text" />
+                        <span className="pdp-skeleton__line pdp-skeleton__line--text-short" />
+                        <span className="pdp-skeleton__line pdp-skeleton__line--button" />
+                    </div>
+                </section>
+
+                <section className="pdp-tabs-section">
+                    <div className="container">
+                        <div className="pdp-tabs">
+                            <span className="pdp-skeleton__line pdp-skeleton__line--tab" />
+                            <span className="pdp-skeleton__line pdp-skeleton__line--tab" />
+                        </div>
+                    </div>
+                </section>
             </div>
         );
     }
