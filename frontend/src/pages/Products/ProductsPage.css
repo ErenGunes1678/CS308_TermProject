@@ -1,6 +1,10 @@
 /* ===========================
    CATEGORY HERO BANNER
    =========================== */
+.products-page {
+    padding-bottom: 8rem;
+}
+
 .products-hero {
     position: relative;
     height: 180px;
@@ -8,9 +12,9 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    /* Replace with actual category banner image */
-    background: url('https://placehold.co/1400x200/1a1a2e/1a1a2e') center/cover no-repeat;
+    background: url('https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9') center/cover no-repeat;
     overflow: hidden;
+    margin-bottom: 5rem;
 }
 
 .products-hero__overlay {
@@ -48,8 +52,11 @@
     display: grid;
     grid-template-columns: 280px 1fr;
     gap: 2rem;
-    padding-top: 2rem;
-    padding-bottom: 6rem;
+    align-items: start;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 /* ===========================
