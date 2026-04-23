@@ -2,6 +2,7 @@ import "./env";
 
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import { sequelize } from "./entities";
 import authRoutes from "./routes/authRoutes";
 import productRoutes from "./routes/productRoutes";
@@ -14,7 +15,10 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cookieParser());
+app.use(cors({
+    credentials: true, // required so browser sends cookies
+}));
 
 // Routes
 app.get("/", (req, res) => {
