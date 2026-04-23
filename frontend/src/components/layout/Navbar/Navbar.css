@@ -1,0 +1,319 @@
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: var(--color-white);
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.navbar__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 72px;
+}
+
+/* Logo */
+.navbar__logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-gray-800);
+}
+
+.navbar__logo-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  color: white;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.navbar__logo-text {
+  color: var(--color-secondary-dark);
+}
+
+.navbar__logo-dot {
+  color: var(--color-primary);
+  margin-left: -0.3rem;
+}
+
+/* Nav Links */
+.navbar__links {
+  display: flex;
+  gap: 2rem;
+}
+
+.navbar__link {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--color-gray-600);
+  transition: color var(--transition-fast);
+  padding: 0.25rem 0;
+}
+
+.navbar__link:hover,
+.navbar__link--active {
+  color: var(--color-primary);
+}
+
+/* Category hover dropdown */
+.navbar__link-wrapper {
+  position: relative;
+}
+
+.navbar__cat-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 200px;
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 0.5rem;
+  margin-top: 0.75rem;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-50%) translateY(-4px);
+  transition: all 200ms ease;
+  z-index: 50;
+}
+
+/* Invisible bridge so hover doesn't break when moving to dropdown */
+.navbar__cat-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -0.75rem;
+  left: 0;
+  right: 0;
+  height: 0.75rem;
+}
+
+.navbar__link-wrapper:hover .navbar__cat-dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.navbar__cat-dropdown-item {
+  display: block;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.88rem;
+  color: var(--color-gray-600);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.navbar__cat-dropdown-item:hover {
+  background-color: var(--color-light-pink);
+  color: var(--color-primary);
+}
+
+.navbar__cat-dropdown-footer {
+  border-top: 1px solid var(--color-gray-200);
+  margin-top: 0.35rem;
+  padding-top: 0.35rem;
+}
+
+.navbar__cat-dropdown-all {
+  display: block;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+}
+
+.navbar__cat-dropdown-all:hover {
+  background-color: var(--color-light-pink);
+}
+
+/* Right actions */
+.navbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.navbar__icon-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: var(--color-gray-600);
+  transition: all var(--transition-fast);
+}
+
+.navbar__icon-btn:hover {
+  color: var(--color-gray-800);
+  background-color: var(--color-gray-100);
+}
+
+.navbar__badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* User button */
+.navbar__user-wrapper {
+  position: relative;
+}
+
+.navbar__user-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 4px;
+  border-radius: var(--radius-full);
+  color: var(--color-gray-600);
+  transition: all var(--transition-fast);
+}
+
+.navbar__user-btn:hover {
+  color: var(--color-gray-800);
+}
+
+.navbar__user-btn--logged-in {
+  background: transparent;
+}
+
+.navbar__user-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.navbar__chevron {
+  transition: transform var(--transition-fast);
+}
+
+.navbar__chevron--open {
+  transform: rotate(180deg);
+}
+
+/* Dropdown */
+.navbar__dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 0.5rem;
+  animation: dropdownFade 150ms ease;
+}
+
+@keyframes dropdownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.navbar__dropdown-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+}
+
+.navbar__dropdown-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  color: white;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.navbar__dropdown-name {
+  margin: 0;
+  color: var(--color-gray-800);
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.navbar__dropdown-email {
+  margin: 0.1rem 0 0;
+  color: var(--color-text-light);
+  font-size: 0.78rem;
+  line-height: 1.3;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.navbar__dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.9rem;
+  color: var(--color-gray-700);
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+}
+
+.navbar__dropdown-item:hover {
+  background-color: var(--color-gray-100);
+}
+
+.navbar__dropdown-item--logout {
+  color: var(--color-gray-500);
+}
+
+.navbar__dropdown-divider {
+  border: none;
+  border-top: 1px solid var(--color-gray-200);
+  margin: 0.25rem 0;
+}
