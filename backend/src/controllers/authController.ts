@@ -46,7 +46,7 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
     try {
-        const { email, password, session_id } = req.body; // 👈 session_id added
+        const { email, password, session_id } = req.body; // session_id added
 
         if (!email || !password) {
             return res.status(400).json({
@@ -66,7 +66,7 @@ export const login = async (req: Request, res: Response) => {
             return res.status(401).json({ message: "Invalid email or password" });
         }
 
-        // 👇 Merge guest cart into user cart on login
+        // Merge guest cart into user cart on login
         if (session_id) {
             await mergeGuestCart(session_id, user.id);
         }

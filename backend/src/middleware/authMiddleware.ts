@@ -24,7 +24,7 @@ export const requireAuth = (req: AuthRequest, res: Response, next: NextFunction)
     }
 };
 
-// 👇 only new addition
+// only new addition
 export const optionalAuth = (req: AuthRequest, res: Response, next: NextFunction): void => {
     const token = req.headers.authorization?.split(" ")[1];
 
