@@ -1,11 +1,12 @@
-/*update*/
+/* ===========================
+   HERO SECTION
+   =========================== */
 .hero {
     position: relative;
     min-height: 600px;
     display: flex;
     align-items: center;
-    /* Use a dark background; replace with your actual hero image */
-    background: url('https://placehold.co/1400x700/2D3748/2D3748') center/cover no-repeat;
+    background: url('https://images.unsplash.com/photo-1596462502278-27bfdc403348') center/cover no-repeat;
     overflow: hidden;
 }
 
@@ -278,7 +279,7 @@
     gap: 0.6rem;
 }
 
-.products-grid {
+.home-products-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 1.5rem;
@@ -322,8 +323,7 @@
     min-height: 350px;
     display: flex;
     align-items: center;
-    /* Replace with actual promo image */
-    background: url('https://placehold.co/1280x400/4a5568/4a5568') center/cover no-repeat;
+    background: url('https://images.unsplash.com/photo-1556228578-8c89e6adf883') center/cover no-repeat;
 }
 
 .promo-banner__overlay {
@@ -460,7 +460,7 @@
     }
 
     .categories-grid,
-    .products-grid {
+    .home-products-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 

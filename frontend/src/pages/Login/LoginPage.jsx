@@ -5,15 +5,15 @@ import Footer from "../../components/layout/Footer/Footer";
 import AuthHeroPanel from "./AuthHeroPanel";
 import AuthFormPanel from "./AuthFormPanel";
 import "./LoginPage.css";
-import { loginUser, registerUser } from "../../services/authService";
+import {
+  getAuthErrorMessage,
+  loginUser,
+  registerUser,
+} from "../../services/authService";
+import { useAuth } from "../../hooks/useAuth";
 
 const getModeFromQuery = (value) =>
   value === "register" ? "register" : "login";
-
-const getErrorMessage = (error, fallbackMessage) =>
-  error?.response?.data?.message ||
-  error?.response?.data?.error ||
-  fallbackMessage;
 
 const FALLBACK_TESTIMONIALS = [
   {
@@ -44,6 +44,7 @@ const FALLBACK_TESTIMONIALS = [
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryMode = getModeFromQuery(searchParams.get("mode"));
   const mode = queryMode;
@@ -73,14 +74,11 @@ function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      const data = await loginUser(loginForm.email, loginForm.password);
-
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-
+      const authData = await loginUser(loginForm);
+      login(authData);
       navigate("/account");
     } catch (error) {
-      setErrorMessage(getErrorMessage(error, "Unable to sign in."));
+      setErrorMessage(getAuthErrorMessage(error, "Unable to sign in."));
     } finally {
       setIsSubmitting(false);
     }
@@ -99,11 +97,7 @@ function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      await registerUser(
-        registerForm.name,
-        registerForm.email,
-        registerForm.password
-      );
+      await registerUser(registerForm);
 
       setRegisterForm({
         name: "",
@@ -120,7 +114,7 @@ function LoginPage() {
         "Account created successfully. Please sign in with your email and password."
       );
     } catch (error) {
-      setErrorMessage(getErrorMessage(error, "Unable to create account."));
+      setErrorMessage(getAuthErrorMessage(error, "Unable to create account."));
     } finally {
       setIsSubmitting(false);
     }

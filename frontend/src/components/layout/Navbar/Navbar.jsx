@@ -1,22 +1,50 @@
-//navbar
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../hooks/useAuth';
+import { useCart } from '../../../hooks/useCart';
 import './Navbar.css';
 
 const Navbar = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, isAuthenticated, logout } = useAuth();
+  const { itemCount } = useCart();
 
-  // TODO: Replace with real auth context later
-  const isLoggedIn = false;
-  const cartItemCount = 0;
   const wishlistCount = 0;
+  const cartBadgeCount = itemCount > 99 ? '99+' : itemCount;
+  const userInitial =
+    user?.name?.trim().charAt(0).toUpperCase() ||
+    user?.email?.trim().charAt(0).toUpperCase() ||
+    'U';
+
+  const handleLogout = () => {
+    logout();
+    setUserMenuOpen(false);
+    navigate('/login');
+  };
 
   const navLinks = [
-    { name: 'Makeup', path: '/category/makeup' },
-    { name: 'Skincare', path: '/category/skincare' },
-    { name: 'Haircare', path: '/category/haircare' },
-    { name: 'Men Care', path: '/category/men-care' },
+    {
+      name: 'Makeup',
+      path: '/category/makeup',
+      subcategories: ['Lipstick', 'Foundation', 'Eyeshadow', 'Mascara', 'Blush'],
+    },
+    {
+      name: 'Skincare',
+      path: '/category/skincare',
+      subcategories: ['Moisturizers', 'Serums', 'Cleansers', 'Sunscreen', 'Face Masks'],
+    },
+    {
+      name: 'Haircare',
+      path: '/category/haircare',
+      subcategories: ['Shampoo', 'Conditioner', 'Hair Oil', 'Styling', 'Treatments'],
+    },
+    {
+      name: 'Men Care',
+      path: '/category/men-care',
+      subcategories: ['Beard Care', 'Face Wash', 'Moisturizer', 'Grooming Kits'],
+    },
   ];
 
   return (
@@ -32,7 +60,7 @@ const Navbar = () => {
         {/* Nav Links */}
         <ul className="navbar__links">
           {navLinks.map((link) => (
-            <li key={link.name}>
+            <li key={link.name} className="navbar__link-wrapper">
               <Link
                 to={link.path}
                 className={`navbar__link ${location.pathname === link.path ? 'navbar__link--active' : ''
@@ -40,6 +68,24 @@ const Navbar = () => {
               >
                 {link.name}
               </Link>
+              {link.subcategories && (
+                <div className="navbar__cat-dropdown">
+                  {link.subcategories.map((sub) => (
+                    <Link
+                      key={sub}
+                      to={`${link.path}?sub=${sub.toLowerCase().replace(/\s+/g, '-')}`}
+                      className="navbar__cat-dropdown-item"
+                    >
+                      {sub}
+                    </Link>
+                  ))}
+                  <div className="navbar__cat-dropdown-footer">
+                    <Link to={link.path} className="navbar__cat-dropdown-all">
+                      View All {link.name} &rarr;
+                    </Link>
+                  </div>
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -68,19 +114,19 @@ const Navbar = () => {
               <line x1="3" y1="6" x2="21" y2="6" />
               <path d="M16 10a4 4 0 0 1-8 0" />
             </svg>
-            {cartItemCount > 0 && (
-              <span className="navbar__badge">{cartItemCount}</span>
+            {itemCount > 0 && (
+              <span className="navbar__badge">{cartBadgeCount}</span>
             )}
           </Link>
 
           {/* User Menu */}
           <div className="navbar__user-wrapper">
             <button
-              className={`navbar__user-btn ${isLoggedIn ? 'navbar__user-btn--logged-in' : ''}`}
+              className={`navbar__user-btn ${isAuthenticated ? 'navbar__user-btn--logged-in' : ''}`}
               onClick={() => setUserMenuOpen(!userMenuOpen)}
             >
-              {isLoggedIn ? (
-                <span className="navbar__user-avatar">U</span>
+              {isAuthenticated ? (
+                <span className="navbar__user-avatar">{userInitial}</span>
               ) : (
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -94,8 +140,16 @@ const Navbar = () => {
 
             {userMenuOpen && (
               <div className="navbar__dropdown">
-                {isLoggedIn ? (
+                {isAuthenticated ? (
                   <>
+                    <div className="navbar__dropdown-header">
+                      <span className="navbar__dropdown-avatar">{userInitial}</span>
+                      <div>
+                        <p className="navbar__dropdown-name">{user?.name || 'User'}</p>
+                        <p className="navbar__dropdown-email">{user?.email}</p>
+                      </div>
+                    </div>
+                    <hr className="navbar__dropdown-divider" />
                     <Link to="/profile" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                       My Account
@@ -104,12 +158,17 @@ const Navbar = () => {
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="18" rx="2" /><path d="m9 12 2 2 4-4" /></svg>
                       My Orders
                     </Link>
-                    <Link to="/admin" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-                      Admin Panel
-                    </Link>
+                    {user?.role === 'admin' && (
+                      <Link to="/admin" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                        Admin Panel
+                      </Link>
+                    )}
                     <hr className="navbar__dropdown-divider" />
-                    <button className="navbar__dropdown-item navbar__dropdown-item--logout">
+                    <button
+                      className="navbar__dropdown-item navbar__dropdown-item--logout"
+                      onClick={handleLogout}
+                    >
                       Logout
                     </button>
                   </>
@@ -118,7 +177,7 @@ const Navbar = () => {
                     <Link to="/login" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
                       Login
                     </Link>
-                    <Link to="/login?mode=register" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                    <Link to="/register" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
                       Create Account
                     </Link>
                   </>
