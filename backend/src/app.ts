@@ -20,11 +20,6 @@ app.use(cors({
     credentials: true, // required so browser sends cookies
 }));
 
-// Routes
-app.get("/", (req, res) => {
-    res.send("Backend is working");
-});
-
 app.use("/auth", authRoutes);
 app.use("/product", productRoutes);
 app.use("/cart", cartRoutes);
