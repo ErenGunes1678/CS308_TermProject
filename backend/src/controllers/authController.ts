@@ -1,13 +1,18 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import db from "../entities";
-
-const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret";
+import db, { sequelize } from "../entities";
+import {
+    clearAuthCookie,
+    clearGuestSessionCookie,
+    getGuestSessionId,
+    setAuthCookie,
+    signAuthToken,
+} from "../utils/auth";
 
 export const register = async (req: Request, res: Response) => {
     try {
         const { name, email, password } = req.body;
+        const sessionId = getGuestSessionId(req);
 
         if (!name || !email || !password) {
             return res.status(400).json({
@@ -27,11 +32,14 @@ export const register = async (req: Request, res: Response) => {
 
         const user = await db.users.create({ name, email, password_hash });
 
-        const token = jwt.sign(
-            { id: user.id, email: user.email },
-            JWT_SECRET,
-            { expiresIn: "1d" }
-        );
+        // Merge guest cart into user cart on login
+        if (sessionId) {
+            await mergeGuestCart(sessionId, user.id);
+            clearGuestSessionCookie(res);
+        }        
+
+        const token = signAuthToken({ id: user.id, email: user.email });
+        setAuthCookie(res, token);
 
         return res.status(201).json({
             message: "User registered successfully",
@@ -46,7 +54,8 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
     try {
-        const { email, password, session_id } = req.body; // session_id added
+        const { email, password } = req.body;
+        const sessionId = getGuestSessionId(req);
 
         if (!email || !password) {
             return res.status(400).json({
@@ -66,11 +75,14 @@ export const login = async (req: Request, res: Response) => {
             return res.status(401).json({ message: "Invalid email or password" });
         }
 
-        const token = jwt.sign(
-            { id: user.id, email: user.email },
-            JWT_SECRET,
-            { expiresIn: "1d" }
-        );
+        // Merge guest cart into user cart on login
+        if (sessionId) {
+            await mergeGuestCart(sessionId, user.id);
+            clearGuestSessionCookie(res);
+        }
+
+        const token = signAuthToken({ id: user.id, email: user.email });
+        setAuthCookie(res, token);
 
         return res.status(200).json({
             message: "Login successful",
@@ -82,3 +94,48 @@ export const login = async (req: Request, res: Response) => {
         return res.status(500).json({ message: "Server error during login" });
     }
 };
+
+export const logout = async (_req: Request, res: Response) => {
+    clearAuthCookie(res);
+
+    return res.status(200).json({
+        message: "Logout successful",
+    });
+};
+
+async function mergeGuestCart(sessionId: string, userId: number): Promise<void> {
+    await sequelize.transaction(async (t) => {
+        const guestCart = await db.carts.findOne({
+            where: { session_id: sessionId, user_id: null },
+            include: [{ model: db.cart_items, as: "items" }],
+            transaction: t,
+        });
+        if (!guestCart) return;
+
+        const [userCart] = await db.carts.findOrCreate({
+            where: { user_id: userId },
+            defaults: { user_id: userId },
+            transaction: t,
+        });
+
+        for (const item of guestCart.items) {
+            const existing = await db.cart_items.findOne({
+                where: { cart_id: userCart.id, product_id: item.product_id },
+                transaction: t,
+            });
+            if (existing) {
+                await existing.update(
+                    { quantity: existing.quantity + item.quantity },
+                    { transaction: t }
+                );
+            } else {
+                await db.cart_items.create({
+                    cart_id: userCart.id,
+                    product_id: item.product_id,
+                    quantity: item.quantity,
+                }, { transaction: t });
+            }
+        }
+        await guestCart.destroy({ transaction: t });
+    });
+}
