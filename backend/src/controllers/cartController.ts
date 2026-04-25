@@ -75,22 +75,51 @@ export const addToCart = async (req: AuthRequest, res: Response): Promise<void> 
     }
 };
 
-export const removeFromCart = async (req: AuthRequest, res: Response): Promise<void> => {
+export const decreaseFromCart = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const { item_id } = req.params;
         const sessionId = req.userId ? undefined : getOrCreateGuestSessionId(req, res);
         const cart = await getOrCreateCart(req.userId, sessionId);
 
-        const deleted = await db.cart_items.destroy({
+        const item = await db.cart_items.findOne({
             where: { id: item_id, cart_id: cart.id },
         });
 
-        if (!deleted) {
+        if (!item) {
             res.status(404).json({ message: "Item not found in your cart." });
             return;
         }
 
+        if (item.quantity > 1) {
+            await item.update({ quantity: item.quantity - 1 });
+            res.json({
+                message: "Item quantity decreased.",
+                item: { id: item.id, quantity: item.quantity },
+            });
+            return;
+        }
+
+        // quantity is 1 — removing the line entirely
+        await item.destroy();
         res.json({ message: "Item removed from cart." });
+    } catch (error: any) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+export const emptyCart = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const sessionId = req.userId ? undefined : getOrCreateGuestSessionId(req, res);
+        const cart = await getOrCreateCart(req.userId, sessionId);
+
+        const deleted = await db.cart_items.destroy({
+            where: { cart_id: cart.id },
+        });
+
+        res.json({
+            message: "Cart emptied.",
+            removed_items: deleted,
+        });
     } catch (error: any) {
         res.status(400).json({ message: error.message });
     }

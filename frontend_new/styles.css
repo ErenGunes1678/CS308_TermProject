@@ -283,6 +283,17 @@ input {
   font-weight: 700;
 }
 
+.cart-toolbar,
+.cart-item-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.cart-toolbar {
+  margin-top: 18px;
+}
+
 .empty-state {
   padding: 24px;
   text-align: center;

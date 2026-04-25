@@ -66,6 +66,7 @@ function renderProducts(products) {
           },
         });
         await refreshHeaderState();
+        await loadProducts();
         showMessage(messageBox, "Item added to cart successfully.");
       } catch (error) {
         showMessage(messageBox, error.message, "error");

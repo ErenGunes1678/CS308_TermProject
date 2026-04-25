@@ -12,9 +12,9 @@
         <section class="hero">
           <h1>Cart Page</h1>
           <p>
-            This page tests `GET /cart` and `DELETE /cart/item/:item_id`. It
-            works for both guests and logged-in users because your backend
-            supports both flows.
+            This page tests `GET /cart`, `DELETE /cart/item/:item_id`, and
+            `DELETE /cart`. It works for both guests and logged-in users
+            because your backend supports both flows.
           </p>
         </section>
 
@@ -45,8 +45,8 @@
       <main class="cart-panel">
         <h3>Your Cart</h3>
         <p class="muted">
-          Add products from the main page, then come here to verify the cart
-          data coming from the backend.
+          Add products from the main page, then come here to decrease quantity
+          one by one or empty the whole cart.
         </p>
         <div data-cart-root></div>
       </main>

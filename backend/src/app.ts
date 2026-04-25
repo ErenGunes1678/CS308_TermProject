@@ -31,7 +31,7 @@ sequelize.authenticate()
   .then(() => {
     console.log("Database connected!");
 
-    return sequelize.sync({ alter: true });
+    return sequelize.sync({ force: true });
   })
   .then(() => {
     seedMockProducts();

@@ -35,14 +35,14 @@ function buildCartMarkup(items) {
             <h4>${escapeHtml(product.name || "Unknown product")}</h4>
             <div class="product-meta">
               <span>Product ID: ${escapeHtml(product.id || item.product_id)}</span>
-              <span>Quantity: ${escapeHtml(quantity)}</span>
+              <span>Quantity in cart: ${escapeHtml(quantity)}</span>
               <span>Unit price: ${formatPrice(unitPrice)}</span>
               <span>Line total: ${formatPrice(lineTotal)}</span>
             </div>
           </div>
-          <div>
-            <button class="danger-button" type="button" data-remove-item="${item.id}">
-              Remove
+          <div class="cart-item-actions">
+            <button class="small-button" type="button" data-decrease-item="${item.id}">
+              Decrease 1
             </button>
           </div>
         </article>
@@ -52,6 +52,11 @@ function buildCartMarkup(items) {
 
   return `
     <div class="cart-list">${itemsMarkup}</div>
+    <div class="cart-toolbar">
+      <button class="danger-button" type="button" data-empty-cart>
+        Empty Cart
+      </button>
+    </div>
     <div class="cart-summary">
       <span>Total</span>
       <span>${formatPrice(total)}</span>
@@ -59,22 +64,37 @@ function buildCartMarkup(items) {
   `;
 }
 
-async function attachRemoveHandlers() {
-  document.querySelectorAll("[data-remove-item]").forEach((button) => {
+async function attachCartHandlers() {
+  document.querySelectorAll("[data-decrease-item]").forEach((button) => {
     button.addEventListener("click", async () => {
       clearMessage(messageBox);
 
       try {
-        await apiRequest(`/cart/item/${button.getAttribute("data-remove-item")}`, {
+        const data = await apiRequest(`/cart/item/${button.getAttribute("data-decrease-item")}`, {
           method: "DELETE",
         });
-        showMessage(messageBox, "Item removed from cart.");
+        showMessage(messageBox, data.message || "Cart updated.");
         await loadCart();
       } catch (error) {
         showMessage(messageBox, error.message, "error");
       }
     });
   });
+
+  const emptyCartButton = document.querySelector("[data-empty-cart]");
+  if (emptyCartButton) {
+    emptyCartButton.addEventListener("click", async () => {
+      clearMessage(messageBox);
+
+      try {
+        const data = await apiRequest("/cart", { method: "DELETE" });
+        showMessage(messageBox, data.message || "Cart emptied.");
+        await loadCart();
+      } catch (error) {
+        showMessage(messageBox, error.message, "error");
+      }
+    });
+  }
 }
 
 async function loadCart() {
@@ -83,7 +103,7 @@ async function loadCart() {
   try {
     const data = await getCart();
     cartRoot.innerHTML = buildCartMarkup(data.items || []);
-    await attachRemoveHandlers();
+    await attachCartHandlers();
     await refreshHeaderState();
   } catch (error) {
     cartRoot.innerHTML = "";
