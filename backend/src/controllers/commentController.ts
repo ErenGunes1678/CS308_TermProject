@@ -1,24 +1,17 @@
 import { Request, Response } from "express";
 import db from "../entities";
+import { AuthRequest } from "../middleware/authMiddleware";
 
 const Comment = db["comments"];
 const Product = db["products"];
 const User = db["users"];
 
-interface AuthRequest extends Request {
-    user?: {
-        id: number;
-        email?: string;
-        role?: string;
-    };
-}
-
 const getCurrentUser = async (req: AuthRequest) => {
-    if (!req.user?.id) {
+    if (!req.userId) {
         return null;
     }
 
-    return await User.findByPk(req.user.id);
+    return await User.findByPk(req.userId);
 };
 
 export const createComment = async (req: AuthRequest, res: Response) => {
@@ -26,7 +19,7 @@ export const createComment = async (req: AuthRequest, res: Response) => {
         const { productId } = req.params;
         const { rating, comment_text } = req.body;
 
-        if (!req.user?.id) {
+        if (!req.userId) {
             return res.status(401).json({
                 message: "Authentication required"
             });
@@ -136,7 +129,7 @@ export const getApprovedCommentsByProduct = async (req: Request, res: Response) 
 
 export const getPendingComments = async (req: AuthRequest, res: Response) => {
     try {
-        if (!req.user?.id) {
+        if (!req.userId) {
             return res.status(401).json({
                 message: "Authentication required"
             });
@@ -190,7 +183,7 @@ export const approveComment = async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
 
-        if (!req.user?.id) {
+        if (!req.userId) {
             return res.status(401).json({
                 message: "Authentication required"
             });
@@ -238,7 +231,7 @@ export const rejectComment = async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
 
-        if (!req.user?.id) {
+        if (!req.userId) {
             return res.status(401).json({
                 message: "Authentication required"
             });
