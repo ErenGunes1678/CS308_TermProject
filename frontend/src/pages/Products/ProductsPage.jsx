@@ -1,10 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import ProductsEmptyState from '../../components/product/product-listing/ProductsEmptyState';
-import ProductsFiltersSidebar from '../../components/product/product-listing/ProductsFiltersSidebar';
-import ProductsGrid from '../../components/product/product-listing/ProductsGrid';
-import ProductsHero from '../../components/product/product-listing/ProductsHero';
-import ProductsToolbar from '../../components/product/product-listing/ProductsToolbar';
+import ProductCard from '../../components/product/ProductCard/ProductCard';
 import { getProducts } from '../../services/productService';
 import './ProductsPage.css';
 
@@ -48,20 +44,18 @@ const SUBCATEGORY_INFO = {
 const normalizeSlug = (value = '') => value.toLowerCase().trim().replace(/\s+/g, '-');
 
 const ProductsPage = () => {
-    const { slug } = useParams(); // e.g. "makeup", "skincare", etc.
+    const { slug } = useParams();
     const [searchParams] = useSearchParams();
     const selectedSubcategory = searchParams.get('sub');
     const [products, setProducts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [loadError, setLoadError] = useState('');
 
-    // Filter state
     const [priceRange, setPriceRange] = useState([0, 200]);
     const [selectedBrands, setSelectedBrands] = useState([]);
     const [sortBy, setSortBy] = useState('featured');
-    const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+    const [viewMode, setViewMode] = useState('grid');
 
-    // Collapsible filter sections
     const [priceOpen, setPriceOpen] = useState(true);
     const [brandOpen, setBrandOpen] = useState(true);
 
@@ -108,33 +102,27 @@ const ProductsPage = () => {
         };
     }, []);
 
-    // Filter & sort products
     const filteredProducts = useMemo(() => {
         let visibleProducts = [...products];
 
-        // Filter by category
         if (slug) {
-            visibleProducts = visibleProducts.filter((p) => p.category === slug);
+            visibleProducts = visibleProducts.filter((product) => product.category === slug);
         }
 
-        // Filter by navbar subcategory query, e.g. ?sub=lipstick
         if (selectedSubcategory) {
             visibleProducts = visibleProducts.filter(
-                (p) => normalizeSlug(p.subcategory) === normalizeSlug(selectedSubcategory)
+                (product) => normalizeSlug(product.subcategory) === normalizeSlug(selectedSubcategory)
             );
         }
 
-        // Filter by price range
         visibleProducts = visibleProducts.filter(
-            (p) => p.price >= priceRange[0] && p.price <= priceRange[1]
+            (product) => product.price >= priceRange[0] && product.price <= priceRange[1]
         );
 
-        // Filter by brand
         if (selectedBrands.length > 0) {
-            visibleProducts = visibleProducts.filter((p) => selectedBrands.includes(p.brand));
+            visibleProducts = visibleProducts.filter((product) => selectedBrands.includes(product.brand));
         }
 
-        // Sort
         switch (sortBy) {
             case 'price-low':
                 visibleProducts.sort((a, b) => a.price - b.price);
@@ -149,51 +137,181 @@ const ProductsPage = () => {
                 visibleProducts.sort((a, b) => b.id - a.id);
                 break;
             default:
-                // featured — keep original order
                 break;
         }
 
         return visibleProducts;
-    }, [products, slug, selectedSubcategory, priceRange, selectedBrands, sortBy]);
+    }, [priceRange, products, selectedBrands, selectedSubcategory, slug, sortBy]);
 
     const handleBrandToggle = (brand) => {
         setSelectedBrands((prev) =>
-            prev.includes(brand) ? prev.filter((b) => b !== brand) : [...prev, brand]
+            prev.includes(brand) ? prev.filter((item) => item !== brand) : [...prev, brand]
         );
     };
 
+    const productCountLabel = isLoading ? 'Loading' : filteredProducts.length;
+    const sliderPercentage = (priceRange[1] / 200) * 100;
+
     return (
         <div className="products-page">
-            <ProductsHero categoryInfo={heroInfo} />
+            <section className="products-hero">
+                <div className="products-hero__overlay" />
+                <div className="products-hero__content container">
+                    <h1 className="products-hero__title">
+                        {heroInfo ? heroInfo.name : 'All Products'}
+                    </h1>
+                    <p className="products-hero__tagline">
+                        {heroInfo ? heroInfo.tagline : 'Browse our full collection'}
+                    </p>
+                </div>
+            </section>
 
             <div className="products-page__body container">
-                <ProductsFiltersSidebar
-                    brands={brands}
-                    priceRange={priceRange}
-                    selectedBrands={selectedBrands}
-                    priceOpen={priceOpen}
-                    brandOpen={brandOpen}
-                    onPriceRangeChange={setPriceRange}
-                    onBrandToggle={handleBrandToggle}
-                    onTogglePriceOpen={() => setPriceOpen(!priceOpen)}
-                    onToggleBrandOpen={() => setBrandOpen(!brandOpen)}
-                />
+                <aside className="products-sidebar">
+                    <div className="products-sidebar__header">
+                        <h3 className="products-sidebar__title">Filters</h3>
+                    </div>
+
+                    <div className="filter-section">
+                        <button className="filter-section__header" onClick={() => setPriceOpen(!priceOpen)}>
+                            <span className="filter-section__label">Price Range</span>
+                            <svg
+                                className={`filter-section__chevron ${priceOpen ? '' : 'filter-section__chevron--closed'}`}
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                            >
+                                <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                        </button>
+
+                        {priceOpen && (
+                            <div className="filter-section__body">
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="200"
+                                    value={priceRange[1]}
+                                    onChange={(event) => setPriceRange([priceRange[0], Number(event.target.value)])}
+                                    className="price-slider"
+                                    style={{
+                                        background: `linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) ${sliderPercentage}%, var(--color-gray-200) ${sliderPercentage}%, var(--color-gray-200) 100%)`,
+                                    }}
+                                />
+                                <div className="price-slider__labels">
+                                    <span>${priceRange[0]}</span>
+                                    <span>${priceRange[1]}</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="filter-section">
+                        <button className="filter-section__header" onClick={() => setBrandOpen(!brandOpen)}>
+                            <span className="filter-section__label">Brand</span>
+                            <svg
+                                className={`filter-section__chevron ${brandOpen ? '' : 'filter-section__chevron--closed'}`}
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                            >
+                                <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                        </button>
+
+                        {brandOpen && (
+                            <div className="filter-section__body">
+                                {brands.map((brand) => (
+                                    <label key={brand} className="brand-checkbox">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedBrands.includes(brand)}
+                                            onChange={() => handleBrandToggle(brand)}
+                                            className="brand-checkbox__input"
+                                        />
+                                        <span className="brand-checkbox__custom" />
+                                        <span className="brand-checkbox__label">{brand}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </aside>
 
                 <div className="products-main">
-                    <ProductsToolbar
-                        productCount={isLoading ? 'Loading' : filteredProducts.length}
-                        viewMode={viewMode}
-                        sortBy={sortBy}
-                        onViewModeChange={setViewMode}
-                        onSortChange={setSortBy}
-                    />
+                    <div className="products-toolbar">
+                        <p className="products-toolbar__count">
+                            <strong>{productCountLabel}</strong> products
+                        </p>
+
+                        <div className="products-toolbar__right">
+                            <div className="view-toggle">
+                                <button
+                                    className={`view-toggle__btn ${viewMode === 'grid' ? 'view-toggle__btn--active' : ''}`}
+                                    onClick={() => setViewMode('grid')}
+                                    aria-label="Grid view"
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <rect x="3" y="3" width="7" height="7" />
+                                        <rect x="14" y="3" width="7" height="7" />
+                                        <rect x="3" y="14" width="7" height="7" />
+                                        <rect x="14" y="14" width="7" height="7" />
+                                    </svg>
+                                </button>
+                                <button
+                                    className={`view-toggle__btn ${viewMode === 'list' ? 'view-toggle__btn--active' : ''}`}
+                                    onClick={() => setViewMode('list')}
+                                    aria-label="List view"
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <rect x="3" y="3" width="18" height="4" rx="1" />
+                                        <rect x="3" y="10" width="18" height="4" rx="1" />
+                                        <rect x="3" y="17" width="18" height="4" rx="1" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <div className="sort-dropdown">
+                                <select
+                                    value={sortBy}
+                                    onChange={(event) => setSortBy(event.target.value)}
+                                    className="sort-dropdown__select"
+                                >
+                                    <option value="featured">Featured</option>
+                                    <option value="newest">Newest</option>
+                                    <option value="price-low">Price: Low to High</option>
+                                    <option value="price-high">Price: High to Low</option>
+                                    <option value="rating">Top Rated</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
 
                     {loadError && <p className="products-toolbar__count">{loadError}</p>}
 
                     {!isLoading && filteredProducts.length > 0 ? (
-                        <ProductsGrid products={filteredProducts} viewMode={viewMode} />
+                        <div className={`products-grid ${viewMode === 'list' ? 'products-grid--list' : ''}`}>
+                            {filteredProducts.map((product) => (
+                                <ProductCard key={product.id} product={product} />
+                            ))}
+                        </div>
                     ) : (
-                        !isLoading && <ProductsEmptyState />
+                        !isLoading && (
+                            <div className="products-empty">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-gray-300)" strokeWidth="1.5">
+                                    <circle cx="11" cy="11" r="8" />
+                                    <path d="m21 21-4.35-4.35" />
+                                </svg>
+                                <h3>No products found</h3>
+                                <p>Try adjusting your filters to find what you're looking for.</p>
+                            </div>
+                        )
                     )}
                 </div>
             </div>

@@ -3,11 +3,6 @@ import { useParams, Link } from 'react-router-dom';
 import './ProductDetailsPage.css';
 import { useCart } from '../../hooks/useCart';
 import { useWishlist } from '../../hooks/useWishlist';
-import CartToast from '../../components/product/product-details/CartToast';
-import ProductBreadcrumb from '../../components/product/product-details/ProductBreadcrumb';
-import ProductGallery from '../../components/product/product-details/ProductGallery';
-import ProductInfo from '../../components/product/product-details/ProductInfo';
-import ProductTabs from '../../components/product/product-details/ProductTabs';
 import { getProductById } from '../../services/productService';
 
 const CATEGORY_LABELS = {
@@ -44,6 +39,57 @@ const mapApiProductToDetails = (apiProduct) => {
     };
 };
 
+const renderStars = (rating, size = 16) => {
+    const stars = [];
+    const full = Math.floor(rating);
+    const hasHalf = rating % 1 >= 0.5;
+
+    for (let index = 0; index < 5; index += 1) {
+        if (index < full) {
+            stars.push(
+                <svg key={index} width={size} height={size} viewBox="0 0 24 24" fill="var(--color-star)" stroke="var(--color-star)" strokeWidth="1">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+            );
+        } else if (index === full && hasHalf) {
+            stars.push(
+                <svg key={index} width={size} height={size} viewBox="0 0 24 24" fill="var(--color-star)" stroke="var(--color-star)" strokeWidth="1" opacity="0.5">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+            );
+        } else {
+            stars.push(
+                <svg key={index} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="var(--color-gray-300)" strokeWidth="1">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+            );
+        }
+    }
+
+    return stars;
+};
+
+const renderClickableStars = (reviewRating, onReviewRatingChange) =>
+    [1, 2, 3, 4, 5].map((star) => (
+        <button
+            key={star}
+            type="button"
+            className="pdp-review-form__star-btn"
+            onClick={() => onReviewRatingChange(star)}
+        >
+            <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill={star <= reviewRating ? 'var(--color-star)' : 'none'}
+                stroke={star <= reviewRating ? 'var(--color-star)' : 'var(--color-gray-300)'}
+                strokeWidth="1.5"
+            >
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+        </button>
+    ));
+
 const ProductDetailsPage = () => {
     const { id } = useParams();
     const [apiProduct, setApiProduct] = useState(null);
@@ -57,7 +103,6 @@ const ProductDetailsPage = () => {
     const [activeTab, setActiveTab] = useState('description');
     const [cartToast, setCartToast] = useState(null);
 
-    // Review form
     const [showReviewForm, setShowReviewForm] = useState(false);
     const [reviewRating, setReviewRating] = useState(0);
     const [reviewText, setReviewText] = useState('');
@@ -203,10 +248,9 @@ const ProductDetailsPage = () => {
         setQuantity((currentQuantity) => Math.min(product.stock, currentQuantity + 1));
     };
 
-    const handleSubmitReview = (e) => {
-        e.preventDefault();
+    const handleSubmitReview = (event) => {
+        event.preventDefault();
         if (reviewRating === 0 || reviewText.trim() === '') return;
-        // TODO: Send to API — comment needs approval by product manager
         setReviewSubmitted(true);
         setShowReviewForm(false);
         setReviewRating(0);
@@ -215,44 +259,298 @@ const ProductDetailsPage = () => {
 
     return (
         <div className="pdp">
-            <ProductBreadcrumb product={product} />
+            <div className="pdp-breadcrumb">
+                <div className="container pdp-breadcrumb__inner">
+                    <Link to="/">Home</Link>
+                    <span className="pdp-breadcrumb__sep">&rsaquo;</span>
+                    <Link to={`/category/${product.categorySlug}`}>{product.category}</Link>
+                    <span className="pdp-breadcrumb__sep">&rsaquo;</span>
+                    <span className="pdp-breadcrumb__current">{product.name}</span>
+                </div>
+            </div>
 
             <section className="pdp-main container">
-                <ProductGallery
-                    product={product}
-                    selectedImage={selectedImage}
-                    onSelectImage={setSelectedImage}
-                />
+                <div className="pdp-gallery">
+                    <div className="pdp-gallery__main">
+                        {product.badge && (
+                            <span className={`pdp-gallery__badge pdp-gallery__badge--${product.badge.toLowerCase()}`}>
+                                {product.badge}
+                            </span>
+                        )}
+                        {product.discount && (
+                            <span className="pdp-gallery__discount">-{product.discount}%</span>
+                        )}
+                        <img
+                            src={product.images[selectedImage]}
+                            alt={product.name}
+                            className="pdp-gallery__image"
+                        />
+                    </div>
+                    <div className="pdp-gallery__thumbs">
+                        {product.images.map((image, index) => (
+                            <button
+                                key={index}
+                                className={`pdp-gallery__thumb ${selectedImage === index ? 'pdp-gallery__thumb--active' : ''}`}
+                                onClick={() => setSelectedImage(index)}
+                            >
+                                <img src={image} alt={`${product.name} view ${index + 1}`} />
+                            </button>
+                        ))}
+                    </div>
+                </div>
 
-                <ProductInfo
-                    product={product}
-                    quantity={quantity}
-                    isOutOfStock={isOutOfStock}
-                    isLowStock={isLowStock}
-                    isWishlisted={isWishlisted}
-                    onDecreaseQuantity={decreaseQuantity}
-                    onIncreaseQuantity={increaseQuantity}
-                    onAddToCart={handleAddToCart}
-                    onToggleWishlist={handleToggleWishlist}
-                />
+                <div className="pdp-info">
+                    <Link to={`/category/${product.categorySlug}`} className="pdp-info__brand">
+                        {product.brand}
+                    </Link>
+                    <h1 className="pdp-info__name">{product.name}</h1>
+
+                    <div className="pdp-info__rating">
+                        <div className="pdp-info__stars">{renderStars(product.rating)}</div>
+                        <span className="pdp-info__review-count">({product.reviewCount} reviews)</span>
+                    </div>
+
+                    <div className="pdp-info__price-block">
+                        <span className="pdp-info__price">${product.price.toFixed(2)}</span>
+                        {product.originalPrice && (
+                            <span className="pdp-info__original-price">${product.originalPrice.toFixed(2)}</span>
+                        )}
+                        {product.discount && (
+                            <span className="pdp-info__save-tag">Save {product.discount}%</span>
+                        )}
+                    </div>
+
+                    <p className="pdp-info__description">{product.description}</p>
+
+                    <div className="pdp-info__stock">
+                        {isOutOfStock ? (
+                            <span className="pdp-info__stock-badge pdp-info__stock-badge--out">
+                                Out of Stock
+                            </span>
+                        ) : isLowStock ? (
+                            <span className="pdp-info__stock-badge pdp-info__stock-badge--low">
+                                Only {product.stock} left in stock
+                            </span>
+                        ) : (
+                            <span className="pdp-info__stock-badge pdp-info__stock-badge--in">
+                                In Stock ({product.stock} available)
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="pdp-info__actions">
+                        <div className="pdp-info__quantity">
+                            <button
+                                className="pdp-info__qty-btn"
+                                onClick={decreaseQuantity}
+                                disabled={isOutOfStock}
+                            >
+                                -
+                            </button>
+                            <span className="pdp-info__qty-value">{quantity}</span>
+                            <button
+                                className="pdp-info__qty-btn"
+                                onClick={increaseQuantity}
+                                disabled={isOutOfStock}
+                            >
+                                +
+                            </button>
+                        </div>
+
+                        <button
+                            className={`pdp-info__add-btn ${isOutOfStock ? 'pdp-info__add-btn--disabled' : ''}`}
+                            onClick={handleAddToCart}
+                            disabled={isOutOfStock}
+                        >
+                            {isOutOfStock ? 'Out of Stock' : 'Add to Cart'} {!isOutOfStock && <span>&rarr;</span>}
+                        </button>
+
+                        <button
+                            className={`pdp-info__wishlist-btn ${isWishlisted ? 'pdp-info__wishlist-btn--active' : ''}`}
+                            onClick={handleToggleWishlist}
+                            aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+                        >
+                            <svg
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill={isWishlisted ? 'var(--color-primary)' : 'none'}
+                                stroke={isWishlisted ? 'var(--color-primary)' : 'currentColor'}
+                                strokeWidth="2"
+                            >
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div className="pdp-info__trust">
+                        <div className="pdp-info__trust-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14" /><path d="M12 5l7 7-7 7" /></svg>
+                            Free shipping over $50
+                        </div>
+                        <div className="pdp-info__trust-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 4v6h6" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" /></svg>
+                            30-day easy returns
+                        </div>
+                        <div className="pdp-info__trust-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                            100% authentic
+                        </div>
+                    </div>
+                </div>
             </section>
 
-            <CartToast cartToast={cartToast} />
+            {cartToast && (
+                <div className="pdp-cart-toast" role="status" aria-live="polite">
+                    <div>
+                        <p className="pdp-cart-toast__label">Added to bag</p>
+                        <p className="pdp-cart-toast__name">{cartToast.productName}</p>
+                        <p className="pdp-cart-toast__meta">
+                            Qty {cartToast.quantity} · ${cartToast.totalPrice.toFixed(2)}
+                        </p>
+                    </div>
 
-            <ProductTabs
-                product={product}
-                approvedReviews={approvedReviews}
-                activeTab={activeTab}
-                showReviewForm={showReviewForm}
-                reviewRating={reviewRating}
-                reviewText={reviewText}
-                reviewSubmitted={reviewSubmitted}
-                onActiveTabChange={setActiveTab}
-                onShowReviewFormChange={setShowReviewForm}
-                onReviewRatingChange={setReviewRating}
-                onReviewTextChange={setReviewText}
-                onSubmitReview={handleSubmitReview}
-            />
+                    <Link to="/cart" className="pdp-cart-toast__btn">
+                        View Bag
+                    </Link>
+                </div>
+            )}
+
+            <section className="pdp-tabs-section">
+                <div className="container">
+                    <div className="pdp-tabs">
+                        <button
+                            className={`pdp-tabs__btn ${activeTab === 'description' ? 'pdp-tabs__btn--active' : ''}`}
+                            onClick={() => setActiveTab('description')}
+                        >
+                            Description
+                        </button>
+                        <button
+                            className={`pdp-tabs__btn ${activeTab === 'details' ? 'pdp-tabs__btn--active' : ''}`}
+                            onClick={() => setActiveTab('details')}
+                        >
+                            Product Details
+                        </button>
+                        <button
+                            className={`pdp-tabs__btn ${activeTab === 'reviews' ? 'pdp-tabs__btn--active' : ''}`}
+                            onClick={() => setActiveTab('reviews')}
+                        >
+                            Reviews ({product.reviews.length})
+                        </button>
+                    </div>
+
+                    <div className="pdp-tab-content">
+                        {activeTab === 'description' && (
+                            <div className="pdp-tab-description">
+                                <p>{product.description}</p>
+                            </div>
+                        )}
+
+                        {activeTab === 'details' && (
+                            <div className="pdp-tab-details">
+                                <table className="pdp-details-table">
+                                    <tbody>
+                                        {Object.entries(product.details).map(([key, value]) => (
+                                            <tr key={key}>
+                                                <td className="pdp-details-table__label">{key}</td>
+                                                <td className="pdp-details-table__value">{value}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+
+                        {activeTab === 'reviews' && (
+                            <div className="pdp-tab-reviews">
+                                <div className="pdp-reviews-summary">
+                                    <div className="pdp-reviews-summary__score">
+                                        <span className="pdp-reviews-summary__number">{product.rating}</span>
+                                        <div className="pdp-reviews-summary__stars">{renderStars(product.rating, 20)}</div>
+                                        <span className="pdp-reviews-summary__count">Based on {product.reviewCount} reviews</span>
+                                    </div>
+                                    <button
+                                        className="pdp-reviews-summary__write-btn"
+                                        onClick={() => setShowReviewForm(!showReviewForm)}
+                                    >
+                                        Write a Review
+                                    </button>
+                                </div>
+
+                                {reviewSubmitted && (
+                                    <div className="pdp-review-success">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" strokeWidth="2">
+                                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                            <polyline points="22 4 12 14.01 9 11.01" />
+                                        </svg>
+                                        Thank you! Your review has been submitted and is pending approval.
+                                    </div>
+                                )}
+
+                                {showReviewForm && (
+                                    <div className="pdp-review-form">
+                                        <h4 className="pdp-review-form__title">Write Your Review</h4>
+                                        <div className="pdp-review-form__stars-row">
+                                            <span>Your Rating:</span>
+                                            <div className="pdp-review-form__stars">
+                                                {renderClickableStars(reviewRating, setReviewRating)}
+                                            </div>
+                                        </div>
+                                        <textarea
+                                            className="pdp-review-form__textarea"
+                                            placeholder="Share your experience with this product..."
+                                            value={reviewText}
+                                            onChange={(event) => setReviewText(event.target.value)}
+                                            rows={4}
+                                        />
+                                        <div className="pdp-review-form__actions">
+                                            <button
+                                                className="pdp-review-form__submit"
+                                                onClick={handleSubmitReview}
+                                                disabled={reviewRating === 0 || reviewText.trim() === ''}
+                                            >
+                                                Submit Review
+                                            </button>
+                                            <button
+                                                className="pdp-review-form__cancel"
+                                                onClick={() => setShowReviewForm(false)}
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="pdp-reviews-list">
+                                    {approvedReviews.length > 0 ? (
+                                        approvedReviews.map((review) => (
+                                            <div key={review.id} className="pdp-review-card">
+                                                <div className="pdp-review-card__header">
+                                                    <div className="pdp-review-card__avatar">
+                                                        {review.author.charAt(0)}
+                                                    </div>
+                                                    <div>
+                                                        <p className="pdp-review-card__author">{review.author}</p>
+                                                        <p className="pdp-review-card__date">{review.date}</p>
+                                                    </div>
+                                                    <div className="pdp-review-card__stars">
+                                                        {renderStars(review.rating, 14)}
+                                                    </div>
+                                                </div>
+                                                <p className="pdp-review-card__text">{review.text}</p>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="pdp-reviews-empty">
+                                            <p>No reviews yet. Be the first to share your thoughts!</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </section>
         </div>
     );
 };

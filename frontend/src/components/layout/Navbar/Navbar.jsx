@@ -29,7 +29,7 @@ const Navbar = () => {
   useEffect(() => {
     const currentQuery = new URLSearchParams(location.search).get('q') || '';
     setSearchQuery(currentQuery);
-    setSearchOpen(location.pathname === '/search' && Boolean(currentQuery));
+    setSearchOpen(location.pathname === '/search');
   }, [location.pathname, location.search]);
 
   const handleSearchSubmit = (event) => {
@@ -123,14 +123,9 @@ const Navbar = () => {
               className="navbar__icon-btn"
               aria-label="Search"
               onClick={() => {
-                if (searchOpen && !searchQuery.trim()) {
-                  setSearchOpen(false);
-                  if (location.pathname === '/search') {
-                    navigate('/search');
-                  }
-                  return;
+                if (location.pathname !== '/search') {
+                  navigate('/search');
                 }
-
                 setSearchOpen(true);
               }}
             >
