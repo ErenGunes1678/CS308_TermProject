@@ -1,14 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-<<<<<<< HEAD
 import ProductCard from '../../components/product/ProductCard/ProductCard';
-=======
-import ProductsEmptyState from '../../components/product/product-listing/ProductsEmptyState';
-import ProductsFiltersSidebar from '../../components/product/product-listing/ProductsFiltersSidebar';
-import ProductsGrid from '../../components/product/product-listing/ProductsGrid';
-import ProductsHero from '../../components/product/product-listing/ProductsHero';
-import ProductsToolbar from '../../components/product/product-listing/ProductsToolbar';
->>>>>>> 1e2b0e0 (Search page frontend)
 import { getProducts } from '../../services/productService';
 import '../Products/ProductsPage.css';
 import './SearchPage.css';
@@ -344,7 +336,7 @@ function SearchPage() {
   const handlePriceRangeChange = (nextRange) => {
     setPriceRange([
       Math.max(priceBounds.min, Math.min(nextRange[0], nextRange[1])),
-      Math.min(priceBounds.max, Math.max(nextRange[0], nextRange[1])),
+      Math.min(priceBounds.max, Math.max(nextRange[1], nextRange[0])),
     ]);
   };
 
@@ -362,7 +354,6 @@ function SearchPage() {
     setViewMode('grid');
   };
 
-<<<<<<< HEAD
   const isLoading = isLoadingCatalog || isLoadingResults;
   const sliderPercentage =
     ((priceRange[1] - priceBounds.min) / Math.max(priceBounds.max - priceBounds.min, 1)) * 100;
@@ -401,114 +392,10 @@ function SearchPage() {
                       checked={selectedRating === option.value}
                       onChange={() =>
                         setSelectedRating((current) => (current === option.value ? null : option.value))
-=======
-  const extraSections = (
-    <>
-      <div className="filter-section">
-        <SectionToggle
-          label="Rate"
-          isOpen={openSections.rating}
-          onToggle={() => toggleSection('rating')}
-        />
-        {openSections.rating && (
-          <div className="filter-section__body">
-            {RATING_OPTIONS.map((option) => (
-              <label key={option.value} className="filter-choice">
-                <input
-                  type="checkbox"
-                  checked={selectedRating === option.value}
-                  onChange={() =>
-                    setSelectedRating((current) => (current === option.value ? null : option.value))
-                  }
-                  className="filter-choice__input"
-                />
-                <span className="filter-choice__custom filter-choice__custom--radio" />
-                <span className="filter-choice__label">{option.label}</span>
-              </label>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="filter-section">
-        <SectionToggle
-          label="Availability"
-          isOpen={openSections.availability}
-          onToggle={() => toggleSection('availability')}
-        />
-        {openSections.availability && (
-          <div className="filter-section__body">
-            {AVAILABILITY_OPTIONS.map((option) => (
-              <label key={option.value} className="brand-checkbox">
-                <input
-                  type="checkbox"
-                  checked={selectedAvailability.includes(option.value)}
-                  onChange={() => handleAvailabilityToggle(option.value)}
-                  className="brand-checkbox__input"
-                />
-                <span className="brand-checkbox__custom" />
-                <span className="brand-checkbox__label">{option.label}</span>
-              </label>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="filter-section">
-        <SectionToggle
-          label="Category"
-          isOpen={openSections.category}
-          onToggle={() => toggleSection('category')}
-        />
-        {openSections.category && (
-          <div className="filter-section__body">
-            {categories.map((category) => (
-              <label key={category} className="filter-choice">
-                <input
-                  type="checkbox"
-                  checked={selectedCategory === category}
-                  onChange={() => {
-                    setSelectedCategory((current) => {
-                      const nextCategory = current === category ? '' : category;
-                      setSelectedSubcategory('');
-                      return nextCategory;
-                    });
-                  }}
-                  className="filter-choice__input"
-                />
-                <span className="filter-choice__custom filter-choice__custom--radio" />
-                <span className="filter-choice__label">{getCategoryLabel(category)}</span>
-              </label>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="filter-section">
-        <SectionToggle
-          label="Subcategory"
-          isOpen={openSections.subcategory}
-          onToggle={() => toggleSection('subcategory')}
-        />
-        {openSections.subcategory && (
-          <div className="filter-section__body">
-            {selectedCategory ? (
-              availableSubcategories.length > 0 ? (
-                availableSubcategories.map((subcategory) => (
-                  <label key={subcategory} className="filter-choice">
-                    <input
-                      type="checkbox"
-                      checked={selectedSubcategory === subcategory}
-                      onChange={() =>
-                        setSelectedSubcategory((current) =>
-                          current === subcategory ? '' : subcategory
-                        )
->>>>>>> 1e2b0e0 (Search page frontend)
                       }
                       className="filter-choice__input"
                     />
                     <span className="filter-choice__custom filter-choice__custom--radio" />
-<<<<<<< HEAD
                     <span className="filter-choice__label">{option.label}</span>
                   </label>
                 ))}
@@ -720,61 +607,6 @@ function SearchPage() {
               </div>
             </div>
           </div>
-=======
-                    <span className="filter-choice__label">{formatLabel(subcategory)}</span>
-                  </label>
-                ))
-              ) : (
-                <p className="search-page__helper-text">No subcategories available.</p>
-              )
-            ) : (
-              <p className="search-page__helper-text">
-                Select a category to see its subcategories.
-              </p>
-            )}
-          </div>
-        )}
-      </div>
-    </>
-  );
-
-  const isLoading = isLoadingCatalog || isLoadingResults;
-
-  return (
-    <div className="products-page search-page">
-      <ProductsHero categoryInfo={heroInfo} />
-
-      <div className="products-page__body container">
-        <ProductsFiltersSidebar
-          brands={brandOptions}
-          priceRange={priceRange}
-          selectedBrands={selectedBrands}
-          priceOpen={openSections.price}
-          brandOpen={openSections.brand}
-          onPriceRangeChange={handlePriceRangeChange}
-          onBrandToggle={handleBrandToggle}
-          onTogglePriceOpen={() => toggleSection('price')}
-          onToggleBrandOpen={() => toggleSection('brand')}
-          headerAction={
-            <button className="search-page__clear-btn" onClick={clearFilters}>
-              Clear all
-            </button>
-          }
-          beforeSections={extraSections}
-          brandLabel="Brand Name"
-          priceMin={priceBounds.min}
-          priceMax={priceBounds.max}
-        />
-
-        <div className="products-main">
-          <ProductsToolbar
-            productCount={isLoading ? 'Loading' : products.length}
-            viewMode={viewMode}
-            sortBy={sortBy}
-            onViewModeChange={setViewMode}
-            onSortChange={setSortBy}
-          />
->>>>>>> 1e2b0e0 (Search page frontend)
 
           {!isLoading && (
             <div className="search-page__summary">
@@ -794,15 +626,11 @@ function SearchPage() {
           {loadError && <p className="products-toolbar__count">{loadError}</p>}
 
           {!isLoading && hasActiveSearch && products.length > 0 ? (
-<<<<<<< HEAD
             <div className={`products-grid ${viewMode === 'list' ? 'products-grid--list' : ''}`}>
               {products.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
-=======
-            <ProductsGrid products={products} viewMode={viewMode} />
->>>>>>> 1e2b0e0 (Search page frontend)
           ) : !isLoading && !hasActiveSearch ? (
             <div className="products-empty search-page__empty-state">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-gray-300)" strokeWidth="1.5">
@@ -813,7 +641,6 @@ function SearchPage() {
               <p>Use the navbar search, or choose filters to request matching products.</p>
             </div>
           ) : (
-<<<<<<< HEAD
             !isLoading && (
               <div className="products-empty">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-gray-300)" strokeWidth="1.5">
@@ -824,9 +651,6 @@ function SearchPage() {
                 <p>Try adjusting your filters to find what you're looking for.</p>
               </div>
             )
-=======
-            !isLoading && <ProductsEmptyState />
->>>>>>> 1e2b0e0 (Search page frontend)
           )}
         </div>
       </div>

@@ -29,11 +29,7 @@ const Navbar = () => {
   useEffect(() => {
     const currentQuery = new URLSearchParams(location.search).get('q') || '';
     setSearchQuery(currentQuery);
-<<<<<<< HEAD
     setSearchOpen(location.pathname === '/search');
-=======
-    setSearchOpen(location.pathname === '/search' && Boolean(currentQuery));
->>>>>>> 1e2b0e0 (Search page frontend)
   }, [location.pathname, location.search]);
 
   const handleSearchSubmit = (event) => {
@@ -76,21 +72,18 @@ const Navbar = () => {
   return (
     <nav className="navbar">
       <div className="navbar__inner container">
-        {/* Logo */}
         <Link to="/" className="navbar__logo">
           <span className="navbar__logo-icon">L</span>
           <span className="navbar__logo-text">Lumière</span>
           <span className="navbar__logo-dot">.</span>
         </Link>
 
-        {/* Nav Links */}
         <ul className="navbar__links">
           {navLinks.map((link) => (
             <li key={link.name} className="navbar__link-wrapper">
               <Link
                 to={link.path}
-                className={`navbar__link ${location.pathname === link.path ? 'navbar__link--active' : ''
-                  }`}
+                className={`navbar__link ${location.pathname === link.path ? 'navbar__link--active' : ''}`}
               >
                 {link.name}
               </Link>
@@ -116,7 +109,6 @@ const Navbar = () => {
           ))}
         </ul>
 
-        {/* Right Icons */}
         <div className="navbar__actions">
           <form
             className={`navbar__search ${searchOpen ? 'navbar__search--open' : ''}`}
@@ -127,20 +119,9 @@ const Navbar = () => {
               className="navbar__icon-btn"
               aria-label="Search"
               onClick={() => {
-<<<<<<< HEAD
                 if (location.pathname !== '/search') {
                   navigate('/search');
                 }
-=======
-                if (searchOpen && !searchQuery.trim()) {
-                  setSearchOpen(false);
-                  if (location.pathname === '/search') {
-                    navigate('/search');
-                  }
-                  return;
-                }
-
->>>>>>> 1e2b0e0 (Search page frontend)
                 setSearchOpen(true);
               }}
             >
@@ -181,7 +162,6 @@ const Navbar = () => {
             )}
           </Link>
 
-          {/* User Menu */}
           <div className="navbar__user-wrapper">
             <button
               className={`navbar__user-btn ${isAuthenticated ? 'navbar__user-btn--logged-in' : ''}`}
