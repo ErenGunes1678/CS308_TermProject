@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import { useCart } from '../../../hooks/useCart';
@@ -6,6 +6,8 @@ import './Navbar.css';
 
 const Navbar = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
@@ -22,6 +24,26 @@ const Navbar = () => {
     logout();
     setUserMenuOpen(false);
     navigate('/login');
+  };
+
+  useEffect(() => {
+    const currentQuery = new URLSearchParams(location.search).get('q') || '';
+    setSearchQuery(currentQuery);
+    setSearchOpen(location.pathname === '/search' && Boolean(currentQuery));
+  }, [location.pathname, location.search]);
+
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+    const trimmedQuery = searchQuery.trim();
+
+    if (trimmedQuery) {
+      navigate(`/search?q=${encodeURIComponent(trimmedQuery)}`);
+      setSearchOpen(true);
+      return;
+    }
+
+    navigate('/search');
+    setSearchOpen(false);
   };
 
   const navLinks = [
@@ -92,12 +114,42 @@ const Navbar = () => {
 
         {/* Right Icons */}
         <div className="navbar__actions">
-          <Link to="/search" className="navbar__icon-btn" aria-label="Search">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
-          </Link>
+          <form
+            className={`navbar__search ${searchOpen ? 'navbar__search--open' : ''}`}
+            onSubmit={handleSearchSubmit}
+          >
+            <button
+              type="button"
+              className="navbar__icon-btn"
+              aria-label="Search"
+              onClick={() => {
+                if (searchOpen && !searchQuery.trim()) {
+                  setSearchOpen(false);
+                  if (location.pathname === '/search') {
+                    navigate('/search');
+                  }
+                  return;
+                }
+
+                setSearchOpen(true);
+              }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+            </button>
+
+            {searchOpen && (
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search products"
+                className="navbar__search-input"
+              />
+            )}
+          </form>
 
           <Link to="/wishlist" className="navbar__icon-btn" aria-label="Wishlist">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

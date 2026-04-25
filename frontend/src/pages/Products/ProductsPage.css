@@ -79,6 +79,17 @@
     margin-bottom: 1.5rem;
 }
 
+.products-sidebar__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.products-sidebar__header .products-sidebar__title {
+    margin-bottom: 0;
+}
+
 /* Filter sections */
 .filter-section {
     border-top: 1px solid var(--color-gray-200);

@@ -8,10 +8,24 @@ function ProductsFiltersSidebar({
   onBrandToggle,
   onTogglePriceOpen,
   onToggleBrandOpen,
+  headerAction,
+  beforeSections,
+  priceContentFooter,
+  afterPriceSections,
+  brandLabel = 'Brand',
+  priceMin = 0,
+  priceMax = 200,
 }) {
+  const sliderPercentage = ((priceRange[1] - priceMin) / Math.max(priceMax - priceMin, 1)) * 100;
+
   return (
     <aside className="products-sidebar">
-      <h3 className="products-sidebar__title">Filters</h3>
+      <div className="products-sidebar__header">
+        <h3 className="products-sidebar__title">Filters</h3>
+        {headerAction}
+      </div>
+
+      {beforeSections}
 
       <div className="filter-section">
         <button className="filter-section__header" onClick={onTogglePriceOpen}>
@@ -33,28 +47,31 @@ function ProductsFiltersSidebar({
           <div className="filter-section__body">
             <input
               type="range"
-              min="0"
-              max="200"
+              min={priceMin}
+              max={priceMax}
               value={priceRange[1]}
               onChange={(event) =>
                 onPriceRangeChange([priceRange[0], Number(event.target.value)])
               }
               className="price-slider"
               style={{
-                background: `linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) ${(priceRange[1] / 200) * 100}%, var(--color-gray-200) ${(priceRange[1] / 200) * 100}%, var(--color-gray-200) 100%)`,
+                background: `linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) ${sliderPercentage}%, var(--color-gray-200) ${sliderPercentage}%, var(--color-gray-200) 100%)`,
               }}
             />
             <div className="price-slider__labels">
               <span>${priceRange[0]}</span>
               <span>${priceRange[1]}</span>
             </div>
+            {priceContentFooter}
           </div>
         )}
       </div>
 
+      {afterPriceSections}
+
       <div className="filter-section">
         <button className="filter-section__header" onClick={onToggleBrandOpen}>
-          <span className="filter-section__label">Brand</span>
+          <span className="filter-section__label">{brandLabel}</span>
           <svg
             className={`filter-section__chevron ${brandOpen ? '' : 'filter-section__chevron--closed'}`}
             width="16"
