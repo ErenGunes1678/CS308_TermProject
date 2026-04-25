@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>frontend_new | Cart</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <section class="hero">
+          <h1>Cart Page</h1>
+          <p>
+            This page tests `GET /cart`, `DELETE /cart/item/:item_id`, and
+            `DELETE /cart`. It works for both guests and logged-in users
+            because your backend supports both flows.
+          </p>
+        </section>
+
+        <section class="nav-card">
+          <nav class="nav-links">
+            <a class="nav-link" data-nav-link="home" href="/">Main Page</a>
+            <a class="nav-link" data-nav-link="login" href="/login.html">Login</a>
+            <a class="nav-link" data-nav-link="cart" href="/cart.html">
+              Cart <span class="badge" data-cart-count>0</span>
+            </a>
+          </nav>
+
+          <div class="nav-actions">
+            <input data-api-base-input type="text" value="http://localhost:3000" />
+            <button class="small-button" type="button" data-save-api-base>Save API Base</button>
+            <button class="danger-button hidden" type="button" data-logout>Logout</button>
+          </div>
+
+          <div class="status-row">
+            <strong>Session:</strong>
+            <span data-user-status>Checking session...</span>
+          </div>
+        </section>
+      </header>
+
+      <section class="message-panel hidden" data-page-message></section>
+
+      <main class="cart-panel">
+        <h3>Your Cart</h3>
+        <p class="muted">
+          Add products from the main page, then come here to decrease quantity
+          one by one or empty the whole cart.
+        </p>
+        <div data-cart-root></div>
+      </main>
+    </div>
+
+    <script type="module" src="./cart.js"></script>
+  </body>
+</html>
