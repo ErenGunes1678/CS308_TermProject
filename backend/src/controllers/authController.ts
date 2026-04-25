@@ -1,9 +1,13 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import db from "../entities";
-
-const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret";
+import {
+    clearAuthCookie,
+    clearGuestSessionCookie,
+    getGuestSessionId,
+    setAuthCookie,
+    signAuthToken,
+} from "../utils/auth";
 
 export const register = async (req: Request, res: Response) => {
     try {
@@ -27,11 +31,8 @@ export const register = async (req: Request, res: Response) => {
 
         const user = await db.users.create({ name, email, password_hash });
 
-        const token = jwt.sign(
-            { id: user.id, email: user.email },
-            JWT_SECRET,
-            { expiresIn: "1d" }
-        );
+        const token = signAuthToken({ id: user.id, email: user.email });
+        setAuthCookie(res, token);
 
         return res.status(201).json({
             message: "User registered successfully",
@@ -46,7 +47,8 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
     try {
-        const { email, password, session_id } = req.body; // session_id added
+        const { email, password } = req.body;
+        const sessionId = getGuestSessionId(req);
 
         if (!email || !password) {
             return res.status(400).json({
@@ -67,15 +69,13 @@ export const login = async (req: Request, res: Response) => {
         }
 
         // Merge guest cart into user cart on login
-        if (session_id) {
-            await mergeGuestCart(session_id, user.id);
+        if (sessionId) {
+            await mergeGuestCart(sessionId, user.id);
+            clearGuestSessionCookie(res);
         }
 
-        const token = jwt.sign(
-            { id: user.id, email: user.email },
-            JWT_SECRET,
-            { expiresIn: "1d" }
-        );
+        const token = signAuthToken({ id: user.id, email: user.email });
+        setAuthCookie(res, token);
 
         return res.status(200).json({
             message: "Login successful",
@@ -86,6 +86,14 @@ export const login = async (req: Request, res: Response) => {
         console.error("Login error:", error);
         return res.status(500).json({ message: "Server error during login" });
     }
+};
+
+export const logout = async (_req: Request, res: Response) => {
+    clearAuthCookie(res);
+
+    return res.status(200).json({
+        message: "Logout successful",
+    });
 };
 
 async function mergeGuestCart(sessionId: string, userId: number): Promise<void> {

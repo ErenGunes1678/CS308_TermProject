@@ -1,14 +1,12 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-
-const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret";
+import { getTokenFromRequest, verifyAuthToken } from "../utils/auth";
 
 export interface AuthRequest extends Request {
     userId?: number;
 }
 
 export const requireAuth = (req: AuthRequest, res: Response, next: NextFunction): void => {
-    const token = req.headers.authorization?.split(" ")[1];
+    const token = getTokenFromRequest(req);
 
     if (!token) {
         res.status(401).json({ message: "Login required to proceed." });
@@ -16,7 +14,7 @@ export const requireAuth = (req: AuthRequest, res: Response, next: NextFunction)
     }
 
     try {
-        const decoded = jwt.verify(token, JWT_SECRET) as { id: number; email: string };
+        const decoded = verifyAuthToken(token);
         req.userId = decoded.id;
         next();
     } catch {
@@ -24,13 +22,12 @@ export const requireAuth = (req: AuthRequest, res: Response, next: NextFunction)
     }
 };
 
-// only new addition
 export const optionalAuth = (req: AuthRequest, res: Response, next: NextFunction): void => {
-    const token = req.headers.authorization?.split(" ")[1];
+    const token = getTokenFromRequest(req);
 
     if (token) {
         try {
-            const decoded = jwt.verify(token, JWT_SECRET) as { id: number; email: string };
+            const decoded = verifyAuthToken(token);
             req.userId = decoded.id;
         } catch {
             // invalid token — treat as guest

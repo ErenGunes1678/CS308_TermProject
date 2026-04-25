@@ -1,6 +1,7 @@
 import { Response } from "express";
 import { AuthRequest } from "../middleware/authMiddleware";
 import db from "../entities";
+import { getOrCreateGuestSessionId } from "../utils/auth";
 
 async function getOrCreateCart(userId?: number, sessionId?: string): Promise<any> {
     if (userId) {
@@ -22,8 +23,8 @@ async function getOrCreateCart(userId?: number, sessionId?: string): Promise<any
 
 export const getCart = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        const { session_id } = req.query as { session_id?: string };
-        const cart = await getOrCreateCart(req.userId, session_id);
+        const sessionId = req.userId ? undefined : getOrCreateGuestSessionId(req, res);
+        const cart = await getOrCreateCart(req.userId, sessionId);
 
         const items = await db.cart_items.findAll({
             where: { cart_id: cart.id },
@@ -38,14 +39,15 @@ export const getCart = async (req: AuthRequest, res: Response): Promise<void> =>
 
 export const addToCart = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        const { product_id, quantity = 1, session_id } = req.body;
+        const { product_id, quantity = 1 } = req.body;
 
         if (!product_id) {
             res.status(400).json({ message: "product_id is required." });
             return;
         }
 
-        const cart = await getOrCreateCart(req.userId, session_id);
+        const sessionId = req.userId ? undefined : getOrCreateGuestSessionId(req, res);
+        const cart = await getOrCreateCart(req.userId, sessionId);
 
         const product = await db.products.findByPk(product_id);
         if (!product) {
@@ -76,9 +78,8 @@ export const addToCart = async (req: AuthRequest, res: Response): Promise<void> 
 export const removeFromCart = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const { item_id } = req.params;
-        const { session_id } = req.body;
-
-        const cart = await getOrCreateCart(req.userId, session_id);
+        const sessionId = req.userId ? undefined : getOrCreateGuestSessionId(req, res);
+        const cart = await getOrCreateCart(req.userId, sessionId);
 
         const deleted = await db.cart_items.destroy({
             where: { id: item_id, cart_id: cart.id },
