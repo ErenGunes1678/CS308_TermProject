@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
-import db from "../entities";
+import db, { sequelize } from "../entities";
 import {
     clearAuthCookie,
     clearGuestSessionCookie,
@@ -12,6 +12,7 @@ import {
 export const register = async (req: Request, res: Response) => {
     try {
         const { name, email, password } = req.body;
+        const sessionId = getGuestSessionId(req);
 
         if (!name || !email || !password) {
             return res.status(400).json({
@@ -30,6 +31,12 @@ export const register = async (req: Request, res: Response) => {
         const password_hash = await bcrypt.hash(password, 10);
 
         const user = await db.users.create({ name, email, password_hash });
+
+        // Merge guest cart into user cart on login
+        if (sessionId) {
+            await mergeGuestCart(sessionId, user.id);
+            clearGuestSessionCookie(res);
+        }        
 
         const token = signAuthToken({ id: user.id, email: user.email });
         setAuthCookie(res, token);
@@ -97,32 +104,38 @@ export const logout = async (_req: Request, res: Response) => {
 };
 
 async function mergeGuestCart(sessionId: string, userId: number): Promise<void> {
-    const guestCart = await db.carts.findOne({
-        where: { session_id: sessionId, user_id: null },
-        include: [{ model: db.cart_items, as: "items" }],
-    });
-    if (!guestCart) return;
+    await sequelize.transaction(async (t) => {
+        const guestCart = await db.carts.findOne({
+            where: { session_id: sessionId, user_id: null },
+            include: [{ model: db.cart_items, as: "items" }],
+            transaction: t,
+        });
+        if (!guestCart) return;
 
-    const [userCart] = await db.carts.findOrCreate({
-        where: { user_id: userId },
-        defaults: { user_id: userId },
-    });
-
-    for (const item of guestCart.items) {
-        const existing = await db.cart_items.findOne({
-            where: { cart_id: userCart.id, product_id: item.product_id },
+        const [userCart] = await db.carts.findOrCreate({
+            where: { user_id: userId },
+            defaults: { user_id: userId },
+            transaction: t,
         });
 
-        if (existing) {
-            await existing.update({ quantity: existing.quantity + item.quantity });
-        } else {
-            await db.cart_items.create({
-                cart_id: userCart.id,
-                product_id: item.product_id,
-                quantity: item.quantity,
+        for (const item of guestCart.items) {
+            const existing = await db.cart_items.findOne({
+                where: { cart_id: userCart.id, product_id: item.product_id },
+                transaction: t,
             });
+            if (existing) {
+                await existing.update(
+                    { quantity: existing.quantity + item.quantity },
+                    { transaction: t }
+                );
+            } else {
+                await db.cart_items.create({
+                    cart_id: userCart.id,
+                    product_id: item.product_id,
+                    quantity: item.quantity,
+                }, { transaction: t });
+            }
         }
-    }
-
-    await guestCart.destroy();
+        await guestCart.destroy({ transaction: t });
+    });
 }

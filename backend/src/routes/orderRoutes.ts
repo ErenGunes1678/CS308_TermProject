@@ -4,7 +4,6 @@ import { requireAuth } from "../middleware/authMiddleware";
 
 const router = Router();
 
-// requireAuth blocks unless logged in
 router.post("/", requireAuth, placeOrder);
 router.get("/", requireAuth, getUserOrders);
 
