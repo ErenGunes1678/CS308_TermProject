@@ -1,32 +1,18 @@
-import { useMemo } from "react";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
 import "./ProfilePage.css";
 
-const DEFAULT_USER = {
-  name: "User",
-  email: "user@example.com",
-};
-
-const getStoredUser = () => {
-  const storedUser = localStorage.getItem("user");
-
-  if (!storedUser) {
-    return DEFAULT_USER;
-  }
-
-  try {
-    const parsedUser = JSON.parse(storedUser);
-
-    return {
-      name: parsedUser?.name || DEFAULT_USER.name,
-      email: parsedUser?.email || DEFAULT_USER.email,
-    };
-  } catch {
-    return DEFAULT_USER;
-  }
-};
-
 function ProfilePage() {
-  const user = useMemo(() => getStoredUser(), []);
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
   const userInitial = user.name.trim().charAt(0).toUpperCase() || "U";
 
   return (

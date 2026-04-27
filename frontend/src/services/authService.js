@@ -27,3 +27,8 @@ export const registerUser = async ({ name, email, password }) => {
 export const logoutUser = async () => {
   await api.post("/auth/logout");
 };
+
+export const getCurrentUser = async () => {
+  const { data } = await api.get("/auth/me");
+  return data;
+};

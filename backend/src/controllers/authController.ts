@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import db, { sequelize } from "../entities";
+import { AuthRequest } from "../middleware/authMiddleware";
 import {
     clearAuthCookie,
     clearGuestSessionCookie,
@@ -8,6 +9,12 @@ import {
     setAuthCookie,
     signAuthToken,
 } from "../utils/auth";
+
+const toSafeUser = (user: any) => ({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+});
 
 export const register = async (req: Request, res: Response) => {
     try {
@@ -44,7 +51,7 @@ export const register = async (req: Request, res: Response) => {
         return res.status(201).json({
             message: "User registered successfully",
             token,
-            user: { id: user.id, name: user.name, email: user.email }
+            user: toSafeUser(user)
         });
     } catch (error) {
         console.error("Register error:", error);
@@ -87,7 +94,7 @@ export const login = async (req: Request, res: Response) => {
         return res.status(200).json({
             message: "Login successful",
             token,
-            user: { id: user.id, name: user.name, email: user.email }
+            user: toSafeUser(user)
         });
     } catch (error) {
         console.error("Login error:", error);
@@ -101,6 +108,25 @@ export const logout = async (_req: Request, res: Response) => {
     return res.status(200).json({
         message: "Logout successful",
     });
+};
+
+export const getCurrentUser = async (req: AuthRequest, res: Response) => {
+    try {
+        const user = await db.users.findByPk(req.userId);
+
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found",
+            });
+        }
+
+        return res.status(200).json({
+            user: toSafeUser(user),
+        });
+    } catch (error) {
+        console.error("Get current user error:", error);
+        return res.status(500).json({ message: "Server error while fetching current user" });
+    }
 };
 
 async function mergeGuestCart(sessionId: string, userId: number): Promise<void> {
