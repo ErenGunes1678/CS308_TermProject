@@ -5,11 +5,7 @@ import Footer from "../../components/layout/Footer/Footer";
 import AuthHeroPanel from "./AuthHeroPanel";
 import AuthFormPanel from "./AuthFormPanel";
 import "./LoginPage.css";
-import {
-  getAuthErrorMessage,
-  loginUser,
-  registerUser,
-} from "../../services/authService";
+import { getAuthErrorMessage } from "../../services/authService";
 import { useAuth } from "../../hooks/useAuth";
 
 const getModeFromQuery = (value) =>
@@ -44,7 +40,7 @@ const FALLBACK_TESTIMONIALS = [
 
 function LoginPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, register, isAuthenticated, isLoading } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryMode = getModeFromQuery(searchParams.get("mode"));
   const mode = queryMode;
@@ -74,8 +70,7 @@ function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      const authData = await loginUser(loginForm);
-      login(authData);
+      await login(loginForm);
       navigate("/account");
     } catch (error) {
       setErrorMessage(getAuthErrorMessage(error, "Unable to sign in."));
@@ -97,22 +92,8 @@ function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      await registerUser(registerForm);
-
-      setRegisterForm({
-        name: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-      });
-      setLoginForm({
-        email: registerForm.email,
-        password: "",
-      });
-      setSearchParams({});
-      setSuccessMessage(
-        "Account created successfully. Please sign in with your email and password."
-      );
+      await register(registerForm);
+      navigate("/account");
     } catch (error) {
       setErrorMessage(getAuthErrorMessage(error, "Unable to create account."));
     } finally {
@@ -138,6 +119,12 @@ function LoginPage() {
     setSuccessMessage("");
     setSearchParams(nextMode === "register" ? { mode: "register" } : {});
   }
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      navigate("/account", { replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate]);
 
   useEffect(() => {
     if (testimonials.length <= 1) {

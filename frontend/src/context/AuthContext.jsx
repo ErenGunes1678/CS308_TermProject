@@ -1,23 +1,70 @@
-import { createContext, useMemo, useState } from "react";
-import { logoutUser } from "../services/authService";
+import { createContext, useEffect, useMemo, useState } from "react";
+import {
+  getCurrentUser,
+  loginUser,
+  logoutUser,
+  registerUser,
+} from "../services/authService";
 
 export const AuthContext = createContext(null);
-
-const readStoredUser = () => {
-  try {
-    const storedUser = localStorage.getItem("user");
-    return storedUser ? JSON.parse(storedUser) : null;
-  } catch {
-    return null;
-  }
-};
+const LEGACY_STORAGE_KEYS = [
+  "token",
+  "user",
+  "cartItems",
+  "lastOrder",
+  "orders",
+];
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(readStoredUser);
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = ({ user: nextUser }) => {
-    localStorage.setItem("user", JSON.stringify(nextUser));
-    setUser(nextUser);
+  useEffect(() => {
+    LEGACY_STORAGE_KEYS.forEach((key) => {
+      window.localStorage.removeItem(key);
+    });
+
+    let isMounted = true;
+
+    const restoreUser = async () => {
+      try {
+        const { user: currentUser } = await getCurrentUser();
+
+        if (isMounted) {
+          setUser(currentUser || null);
+        }
+      } catch (error) {
+        if (isMounted) {
+          if (error?.response?.status === 401) {
+            setUser(null);
+          } else {
+            setUser(null);
+          }
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    restoreUser();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const login = async (credentials) => {
+    const data = await loginUser(credentials);
+    setUser(data.user || null);
+    return data;
+  };
+
+  const register = async (payload) => {
+    const data = await registerUser(payload);
+    setUser(data.user || null);
+    return data;
   };
 
   const logout = async () => {
@@ -27,18 +74,22 @@ export function AuthProvider({ children }) {
       // Clear local user state even if the backend logout request fails.
     }
 
-    localStorage.removeItem("user");
+    LEGACY_STORAGE_KEYS.forEach((key) => {
+      window.localStorage.removeItem(key);
+    });
     setUser(null);
   };
 
   const value = useMemo(
     () => ({
       user,
+      isLoading,
       isAuthenticated: Boolean(user),
       login,
+      register,
       logout,
     }),
-    [user]
+    [user, isLoading]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
