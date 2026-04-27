@@ -1,4 +1,5 @@
 import { createContext, useMemo, useState } from "react";
+import { logoutUser } from "../services/authService";
 
 export const AuthContext = createContext(null);
 
@@ -11,35 +12,33 @@ const readStoredUser = () => {
   }
 };
 
-const readStoredToken = () => localStorage.getItem("token");
-
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(readStoredToken);
   const [user, setUser] = useState(readStoredUser);
 
-  const login = ({ token: nextToken, user: nextUser }) => {
-    localStorage.setItem("token", nextToken);
+  const login = ({ user: nextUser }) => {
     localStorage.setItem("user", JSON.stringify(nextUser));
-    setToken(nextToken);
     setUser(nextUser);
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
+  const logout = async () => {
+    try {
+      await logoutUser();
+    } catch {
+      // Clear local user state even if the backend logout request fails.
+    }
+
     localStorage.removeItem("user");
-    setToken(null);
     setUser(null);
   };
 
   const value = useMemo(
     () => ({
       user,
-      token,
-      isAuthenticated: Boolean(token && user),
+      isAuthenticated: Boolean(user),
       login,
       logout,
     }),
-    [user, token]
+    [user]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

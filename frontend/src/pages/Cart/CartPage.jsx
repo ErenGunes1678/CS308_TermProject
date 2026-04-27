@@ -55,7 +55,7 @@ export default function CartPage() {
                 <h3 className="product-name">{item.name}</h3>
 
                 <div className="quantity">
-                  <button onClick={() => decreaseCartItem(item.id)}>-</button>
+                  <button onClick={() => decreaseCartItem(item.cartItemId)}>-</button>
                   <span>{item.quantity}</span>
                   <button onClick={() => increaseCartItem(item.id)}>+</button>
                 </div>

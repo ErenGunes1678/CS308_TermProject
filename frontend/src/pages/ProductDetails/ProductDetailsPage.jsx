@@ -216,7 +216,7 @@ const ProductDetailsPage = () => {
     const isWishlisted = isInWishlist(product.id);
     const approvedReviews = product.reviews.filter((review) => review.approved);
 
-    const handleAddToCart = () => {
+    const handleAddToCart = async () => {
         if (isOutOfStock) return;
 
         const selectedProduct = {
@@ -224,7 +224,7 @@ const ProductDetailsPage = () => {
             image: product.images[selectedImage],
         };
 
-        addToCart(selectedProduct, quantity);
+        await addToCart(selectedProduct, quantity);
 
         setCartToast({
             productName: product.name,
