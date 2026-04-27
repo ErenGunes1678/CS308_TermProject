@@ -1,105 +1,88 @@
-import { createContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { AuthContext } from "./AuthContext";
+import {
+  addCartItem,
+  clearCartItems,
+  decreaseCartItemById,
+  getCart,
+} from "../services/cartService";
 
 export const CartContext = createContext(null);
 
-const CART_STORAGE_KEY = "cartItems";
 const SHIPPING_COST = 5.99;
 const FREE_SHIPPING_MINIMUM = 50;
 
-const readStoredCart = () => {
-  try {
-    const storedCart = localStorage.getItem(CART_STORAGE_KEY);
-    const parsedCart = storedCart ? JSON.parse(storedCart) : [];
-    return Array.isArray(parsedCart) ? parsedCart : [];
-  } catch {
-    return [];
-  }
-};
-
-const saveStoredCart = (cartItems) => {
-  localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
-};
-
-const getProductImage = (product) =>
-  product.image || product.images?.[0] || "";
-
-const toCartItem = (product, quantity) => ({
-  id: product.id,
-  name: product.name,
-  brand: product.brand,
-  image: getProductImage(product),
-  price: product.price,
-  quantity,
+const mapCartItem = (item) => ({
+  id: item.product?.id,
+  cartItemId: item.id,
+  name: item.product?.name || "",
+  brand: item.product?.brand || "",
+  image: item.product?.image || "",
+  price: Number(item.product?.price || 0),
+  quantity: Number(item.quantity || 0),
 });
 
 export function CartProvider({ children }) {
-  const [cartItems, setCartItems] = useState(readStoredCart);
+  const { user } = useContext(AuthContext);
+  const [cartItems, setCartItems] = useState([]);
+
+  const refreshCart = async () => {
+    const data = await getCart();
+    const items = Array.isArray(data?.items) ? data.items.map(mapCartItem) : [];
+    setCartItems(items.filter((item) => item.id));
+  };
 
   useEffect(() => {
-    saveStoredCart(cartItems);
-  }, [cartItems]);
+    refreshCart().catch(() => {
+      setCartItems([]);
+    });
+  }, [user]);
 
-  const addToCart = (product, quantity = 1) => {
+  const addToCart = async (product, quantity = 1) => {
     const quantityToAdd = Math.max(1, Number(quantity) || 1);
-
-    setCartItems((currentItems) => {
-      const existingItem = currentItems.find((item) => item.id === product.id);
-
-      if (existingItem) {
-        return currentItems.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + quantityToAdd }
-            : item
-        );
-      }
-
-      return [...currentItems, toCartItem(product, quantityToAdd)];
-    });
+    await addCartItem(product.id, quantityToAdd);
+    await refreshCart();
   };
 
-  const removeCartItem = (productId) => {
-    setCartItems((currentItems) =>
-      currentItems.filter((item) => item.id !== productId)
-    );
+  const removeCartItem = async (cartItemId, quantity = 1) => {
+    const removeCount = Math.max(1, Number(quantity) || 1);
+
+    for (let index = 0; index < removeCount; index += 1) {
+      await decreaseCartItemById(cartItemId);
+    }
+
+    await refreshCart();
   };
 
-  const updateCartItemQuantity = (productId, quantity) => {
-    const nextQuantity = Number(quantity) || 0;
+  const updateCartItemQuantity = async (item, quantity) => {
+    const nextQuantity = Math.max(0, Number(quantity) || 0);
+    const currentQuantity = Number(item.quantity || 0);
 
-    setCartItems((currentItems) => {
-      if (nextQuantity <= 0) {
-        return currentItems.filter((item) => item.id !== productId);
-      }
+    if (nextQuantity === currentQuantity) {
+      return;
+    }
 
-      return currentItems.map((item) =>
-        item.id === productId ? { ...item, quantity: nextQuantity } : item
-      );
-    });
+    if (nextQuantity > currentQuantity) {
+      await addCartItem(item.id, nextQuantity - currentQuantity);
+      await refreshCart();
+      return;
+    }
+
+    await removeCartItem(item.cartItemId, currentQuantity - nextQuantity);
   };
 
-  const increaseCartItem = (productId) => {
-    setCartItems((currentItems) =>
-      currentItems.map((item) =>
-        item.id === productId
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      )
-    );
+  const increaseCartItem = async (productId) => {
+    await addCartItem(productId, 1);
+    await refreshCart();
   };
 
-  const decreaseCartItem = (productId) => {
-    setCartItems((currentItems) =>
-      currentItems
-        .map((item) =>
-          item.id === productId
-            ? { ...item, quantity: item.quantity - 1 }
-            : item
-        )
-        .filter((item) => item.quantity > 0)
-    );
+  const decreaseCartItem = async (cartItemId) => {
+    await decreaseCartItemById(cartItemId);
+    await refreshCart();
   };
 
-  const clearCart = () => {
+  const clearCart = async () => {
+    await clearCartItems();
     setCartItems([]);
   };
 
@@ -124,6 +107,7 @@ export function CartProvider({ children }) {
       shipping,
       total,
       amountUntilFreeShipping,
+      refreshCart,
       addToCart,
       removeCartItem,
       updateCartItemQuantity,
