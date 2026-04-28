@@ -11,6 +11,7 @@ import CheckoutPage from '../pages/Checkout/CheckoutPage';
 import OrderSuccessPage from '../pages/Checkout/OrderSuccessPage';
 import OrdersPage from '../pages/Orders/OrdersPage';
 import SearchPage from '../pages/Search/SearchPage';
+import CommentModerationPage from '../pages/Admin/CommentModerationPage';
 
 // Placeholder pages - replace with real ones later
 const PlaceholderPage = ({ title }) => (
@@ -45,7 +46,7 @@ const AppRouter = () => {
 
           <Route path="/wishlist" element={<PlaceholderPage title="Wishlist" />} />
           <Route path="/search" element={<SearchPage />} />
-          <Route path="/admin" element={<PlaceholderPage title="Admin Panel" />} />
+          <Route path="/admin" element={<CommentModerationPage />} />
           <Route path="*" element={<PlaceholderPage title="404 - Page Not Found" />} />
         </Route>
       </Routes>

@@ -1,9 +1,14 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import './ProductDetailsPage.css';
 import { useCart } from '../../hooks/useCart';
 import { useWishlist } from '../../hooks/useWishlist';
+import { useAuth } from '../../hooks/useAuth';
 import { getProductById } from '../../services/productService';
+import {
+    createComment,
+    getApprovedComments,
+} from '../../services/commentService';
 
 const CATEGORY_LABELS = {
     makeup: 'Makeup',
@@ -35,7 +40,6 @@ const mapApiProductToDetails = (apiProduct) => {
             Warranty: apiProduct.warranty_status ? 'Active' : 'Not active',
             Distributor: apiProduct.distributor_info || 'N/A',
         },
-        reviews: [],
     };
 };
 
@@ -92,6 +96,8 @@ const renderClickableStars = (reviewRating, onReviewRatingChange) =>
 
 const ProductDetailsPage = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
+    const { user } = useAuth();
     const [apiProduct, setApiProduct] = useState(null);
     const [isLoadingProduct, setIsLoadingProduct] = useState(true);
     const product = apiProduct;
@@ -107,6 +113,9 @@ const ProductDetailsPage = () => {
     const [reviewRating, setReviewRating] = useState(0);
     const [reviewText, setReviewText] = useState('');
     const [reviewSubmitted, setReviewSubmitted] = useState(false);
+    const [approvedReviews, setApprovedReviews] = useState([]);
+    const [isLoadingReviews, setIsLoadingReviews] = useState(true);
+    const [reviewError, setReviewError] = useState('');
 
     useLayoutEffect(() => {
         window.scrollTo(0, 0);
@@ -139,6 +148,51 @@ const ProductDetailsPage = () => {
         };
 
         loadProduct();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [id]);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadApprovedComments = async () => {
+            setIsLoadingReviews(true);
+            setReviewError('');
+
+            try {
+                const data = await getApprovedComments(id);
+                const comments = Array.isArray(data?.comments) ? data.comments : [];
+
+                if (isMounted) {
+                    setApprovedReviews(
+                        comments.map((comment) => ({
+                            id: comment.id,
+                            author: comment.user?.name || 'Anonymous',
+                            date: new Date(comment.createdAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                            }),
+                            rating: Number(comment.rating || 0),
+                            text: comment.comment_text || '',
+                        }))
+                    );
+                }
+            } catch {
+                if (isMounted) {
+                    setApprovedReviews([]);
+                    setReviewError('Reviews could not be loaded right now.');
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoadingReviews(false);
+                }
+            }
+        };
+
+        loadApprovedComments();
 
         return () => {
             isMounted = false;
@@ -214,7 +268,14 @@ const ProductDetailsPage = () => {
     const isOutOfStock = product.stock === 0;
     const isLowStock = product.stock > 0 && product.stock <= 10;
     const isWishlisted = isInWishlist(product.id);
-    const approvedReviews = product.reviews.filter((review) => review.approved);
+    const writtenReviewCount = approvedReviews.length;
+    const averageReviewRating =
+        writtenReviewCount > 0
+            ? (
+                approvedReviews.reduce((total, review) => total + review.rating, 0) /
+                writtenReviewCount
+            ).toFixed(1)
+            : null;
 
     const handleAddToCart = async () => {
         if (isOutOfStock) return;
@@ -248,13 +309,35 @@ const ProductDetailsPage = () => {
         setQuantity((currentQuantity) => Math.min(product.stock, currentQuantity + 1));
     };
 
-    const handleSubmitReview = (event) => {
+    const handleSubmitReview = async (event) => {
         event.preventDefault();
         if (reviewRating === 0 || reviewText.trim() === '') return;
-        setReviewSubmitted(true);
-        setShowReviewForm(false);
-        setReviewRating(0);
-        setReviewText('');
+
+        try {
+            await createComment(id, {
+                rating: reviewRating,
+                comment_text: reviewText.trim(),
+            });
+            setReviewSubmitted(true);
+            setReviewError('');
+            setShowReviewForm(false);
+            setReviewRating(0);
+            setReviewText('');
+        } catch (error) {
+            setReviewSubmitted(false);
+            setReviewError(
+                error?.response?.data?.message || 'Unable to submit your review right now.'
+            );
+        }
+    };
+
+    const handleReviewButtonClick = () => {
+        if (!user) {
+            navigate('/login', { replace: true });
+            return;
+        }
+
+        setShowReviewForm(!showReviewForm);
     };
 
     return (
@@ -307,7 +390,11 @@ const ProductDetailsPage = () => {
 
                     <div className="pdp-info__rating">
                         <div className="pdp-info__stars">{renderStars(product.rating)}</div>
-                        <span className="pdp-info__review-count">({product.reviewCount} reviews)</span>
+                        <span className="pdp-info__review-count">
+                            {writtenReviewCount > 0
+                                ? `(${product.reviewCount} reviews)`
+                                : `(${product.reviewCount} ratings)`}
+                        </span>
                     </div>
 
                     <div className="pdp-info__price-block">
@@ -435,7 +522,7 @@ const ProductDetailsPage = () => {
                             className={`pdp-tabs__btn ${activeTab === 'reviews' ? 'pdp-tabs__btn--active' : ''}`}
                             onClick={() => setActiveTab('reviews')}
                         >
-                            Reviews ({product.reviews.length})
+                            Reviews ({writtenReviewCount})
                         </button>
                     </div>
 
@@ -465,13 +552,26 @@ const ProductDetailsPage = () => {
                             <div className="pdp-tab-reviews">
                                 <div className="pdp-reviews-summary">
                                     <div className="pdp-reviews-summary__score">
-                                        <span className="pdp-reviews-summary__number">{product.rating}</span>
-                                        <div className="pdp-reviews-summary__stars">{renderStars(product.rating, 20)}</div>
-                                        <span className="pdp-reviews-summary__count">Based on {product.reviewCount} reviews</span>
+                                        {writtenReviewCount > 0 ? (
+                                            <>
+                                                <span className="pdp-reviews-summary__number">{averageReviewRating}</span>
+                                                <div className="pdp-reviews-summary__stars">{renderStars(Number(averageReviewRating), 20)}</div>
+                                                <span className="pdp-reviews-summary__count">
+                                                    Based on {writtenReviewCount} written reviews
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="pdp-reviews-summary__stars">{renderStars(0, 20)}</div>
+                                                <span className="pdp-reviews-summary__count">
+                                                    Be the first to write a review.
+                                                </span>
+                                            </>
+                                        )}
                                     </div>
                                     <button
                                         className="pdp-reviews-summary__write-btn"
-                                        onClick={() => setShowReviewForm(!showReviewForm)}
+                                        onClick={handleReviewButtonClick}
                                     >
                                         Write a Review
                                     </button>
@@ -484,6 +584,12 @@ const ProductDetailsPage = () => {
                                             <polyline points="22 4 12 14.01 9 11.01" />
                                         </svg>
                                         Thank you! Your review has been submitted and is pending approval.
+                                    </div>
+                                )}
+
+                                {reviewError && !showReviewForm && (
+                                    <div className="pdp-reviews-empty">
+                                        <p>{reviewError}</p>
                                     </div>
                                 )}
 
@@ -522,7 +628,11 @@ const ProductDetailsPage = () => {
                                 )}
 
                                 <div className="pdp-reviews-list">
-                                    {approvedReviews.length > 0 ? (
+                                    {isLoadingReviews ? (
+                                        <div className="pdp-reviews-empty">
+                                            <p>Loading reviews...</p>
+                                        </div>
+                                    ) : writtenReviewCount > 0 ? (
                                         approvedReviews.map((review) => (
                                             <div key={review.id} className="pdp-review-card">
                                                 <div className="pdp-review-card__header">
@@ -542,7 +652,7 @@ const ProductDetailsPage = () => {
                                         ))
                                     ) : (
                                         <div className="pdp-reviews-empty">
-                                            <p>No reviews yet. Be the first to share your thoughts!</p>
+                                            <p>No written reviews yet. Be the first to write a review.</p>
                                         </div>
                                     )}
                                 </div>

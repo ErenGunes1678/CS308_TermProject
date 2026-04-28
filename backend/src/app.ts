@@ -8,6 +8,7 @@ import authRoutes from "./routes/authRoutes";
 import productRoutes from "./routes/productRoutes";
 import cartRoutes from "./routes/cartRoutes";
 import orderRoutes from "./routes/orderRoutes";
+import commentRoutes from "./routes/commentRoutes";
 import { seedMockProducts } from "./seeders/mock_db_data"; // Mock data seeding function
 
 const app = express();
@@ -25,6 +26,7 @@ app.use("/auth", authRoutes);
 app.use("/product", productRoutes);
 app.use("/cart", cartRoutes);
 app.use("/order", orderRoutes);
+app.use("/", commentRoutes);
 
 // Sync Sequelize models then start server
 sequelize.authenticate()
