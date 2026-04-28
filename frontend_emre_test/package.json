@@ -1,9 +1,0 @@
-{
-  "name": "frontend_new",
-  "private": true,
-  "version": "1.0.0",
-  "description": "Simple test frontend for the CS308 backend APIs",
-  "scripts": {
-    "start": "node server.js"
-  }
-}
