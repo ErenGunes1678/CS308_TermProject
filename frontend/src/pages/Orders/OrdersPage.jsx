@@ -1,157 +1,23 @@
-import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, Navigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+import { getOrders } from '../../services/orderService';
 import './OrdersPage.css';
 
-// ────────────────────────────────────────────────────────────
-// TODO: Replace with an API call — e.g.
-//   useEffect(() => { api.get('/orders').then(r => setOrders(r.data)) }, [])
-// ────────────────────────────────────────────────────────────
-const MOCK_ORDERS = [
-    {
-        id: 'LUM-2026-00412',
-        date: '2026-04-20',
-        status: 'processing',
-        total: 184.5,
-        address: 'Maslak Mah. Büyükdere Cad. No:237, Sarıyer / İstanbul',
-        items: [
-            {
-                id: 1,
-                name: 'Velvet Matte Lipstick',
-                brand: 'LumaBelle',
-                variant: 'Shade: Rouge Noir',
-                qty: 2,
-                price: 28,
-                image: 'https://placehold.co/120x120/f0e4d8/c4956a?text=Lipstick',
-            },
-            {
-                id: 2,
-                name: 'Rose Hydrating Serum',
-                brand: 'LumaBelle',
-                variant: '30ml',
-                qty: 1,
-                price: 128.5,
-                image: 'https://placehold.co/120x120/f0e4d8/c4956a?text=Serum',
-            },
-        ],
-    },
-    {
-        id: 'LUM-2026-00387',
-        date: '2026-04-14',
-        status: 'in-transit',
-        trackingNo: 'TR8947213052',
-        total: 96,
-        address: 'Maslak Mah. Büyükdere Cad. No:237, Sarıyer / İstanbul',
-        items: [
-            {
-                id: 3,
-                name: 'Silk Touch Foundation',
-                brand: 'Aurélie',
-                variant: 'Ivory 02',
-                qty: 1,
-                price: 96,
-                image: 'https://placehold.co/120x120/f0e4d8/c4956a?text=Foundation',
-            },
-        ],
-    },
-    {
-        id: 'LUM-2026-00301',
-        date: '2026-04-02',
-        status: 'delivered',
-        deliveredOn: '2026-04-06',
-        total: 215.75,
-        address: 'Maslak Mah. Büyükdere Cad. No:237, Sarıyer / İstanbul',
-        items: [
-            {
-                id: 4,
-                name: 'Nourishing Hair Mask',
-                brand: 'Botanique',
-                variant: '200ml',
-                qty: 1,
-                price: 78,
-                image: 'https://placehold.co/120x120/f0e4d8/c4956a?text=Mask',
-            },
-            {
-                id: 5,
-                name: 'Pearl Glow Highlighter',
-                brand: 'LumaBelle',
-                variant: 'Champagne',
-                qty: 1,
-                price: 54,
-                image: 'https://placehold.co/120x120/f0e4d8/c4956a?text=Highlight',
-            },
-            {
-                id: 6,
-                name: 'Rose Hydrating Serum',
-                brand: 'LumaBelle',
-                variant: '30ml',
-                qty: 1,
-                price: 83.75,
-                image: 'https://placehold.co/120x120/f0e4d8/c4956a?text=Serum',
-            },
-        ],
-    },
-    {
-        id: 'LUM-2026-00244',
-        date: '2026-03-15',
-        status: 'delivered',
-        deliveredOn: '2026-03-19',
-        total: 145,
-        address: 'Maslak Mah. Büyükdere Cad. No:237, Sarıyer / İstanbul',
-        items: [
-            {
-                id: 7,
-                name: 'Rejuvenating Eye Cream',
-                brand: 'Aurélie',
-                variant: '15ml',
-                qty: 1,
-                price: 145,
-                image: 'https://placehold.co/120x120/f0e4d8/c4956a?text=Eye+Cream',
-            },
-        ],
-    },
-    {
-        id: 'LUM-2026-00189',
-        date: '2026-02-28',
-        status: 'cancelled',
-        total: 62,
-        address: 'Maslak Mah. Büyükdere Cad. No:237, Sarıyer / İstanbul',
-        items: [
-            {
-                id: 8,
-                name: 'Bronzing Powder',
-                brand: 'LumaBelle',
-                variant: 'Sun Kissed',
-                qty: 1,
-                price: 62,
-                image: 'https://placehold.co/120x120/f0e4d8/c4956a?text=Bronzer',
-            },
-        ],
-    },
-];
-
 const STATUS_LABELS = {
-    processing: 'Processing',
-    'in-transit': 'In Transit',
-    delivered: 'Delivered',
+    pending: 'Pending',
+    paid: 'Paid',
+    shipped: 'Shipped',
     cancelled: 'Cancelled',
 };
 
 const TABS = [
     { key: 'all', label: 'All Orders' },
-    { key: 'processing', label: 'Processing' },
-    { key: 'in-transit', label: 'In Transit' },
-    { key: 'delivered', label: 'Delivered' },
+    { key: 'pending', label: 'Pending' },
+    { key: 'paid', label: 'Paid' },
+    { key: 'shipped', label: 'Shipped' },
     { key: 'cancelled', label: 'Cancelled' },
 ];
-
-// Returns true if a delivered order is still within the 30-day return window
-const isReturnEligible = (order) => {
-    if (order.status !== 'delivered' || !order.deliveredOn) return false;
-    const delivered = new Date(order.deliveredOn);
-    const now = new Date();
-    const daysSince = Math.floor((now - delivered) / (1000 * 60 * 60 * 24));
-    return daysSince <= 30;
-};
 
 const formatDate = (iso) =>
     new Date(iso).toLocaleDateString('en-US', {
@@ -166,7 +32,7 @@ const formatDate = (iso) =>
 const OrderProgress = ({ status }) => {
     if (status === 'cancelled') return null;
 
-    const steps = ['processing', 'in-transit', 'delivered'];
+    const steps = ['pending', 'paid', 'shipped'];
     const activeIndex = steps.indexOf(status);
 
     return (
@@ -212,7 +78,7 @@ const OrderCard = ({ order, onCancel, onReturn }) => {
                 <div className="order-card__header-left">
                     <span className="order-card__label">Order</span>
                     <h3 className="order-card__id">{order.id}</h3>
-                    <span className="order-card__date">Placed on {formatDate(order.date)}</span>
+                    <span className="order-card__date">Placed on {formatDate(order.createdAt)}</span>
                 </div>
                 <div className={`order-status order-status--${order.status}`}>
                     <span className="order-status__dot" />
@@ -228,18 +94,18 @@ const OrderCard = ({ order, onCancel, onReturn }) => {
                 {visibleItems.map((item) => (
                     <div key={item.id} className="order-item">
                         <div className="order-item__image">
-                            <img src={item.image} alt={item.name} />
+                            <img src={item.product?.image} alt={item.product?.name} />
                         </div>
                         <div className="order-item__info">
-                            <span className="order-item__brand">{item.brand}</span>
-                            <Link to={`/product/${item.id}`} className="order-item__name">
-                                {item.name}
+                            <span className="order-item__brand">{item.product?.brand}</span>
+                            <Link to={`/product/${item.product_id}`} className="order-item__name">
+                                {item.product?.name}
                             </Link>
-                            <span className="order-item__variant">{item.variant}</span>
-                            <span className="order-item__qty">Qty: {item.qty}</span>
+                            <span className="order-item__variant">{item.product?.subcategory}</span>
+                            <span className="order-item__qty">Qty: {item.quantity}</span>
                         </div>
                         <div className="order-item__price">
-                            ${(item.price * item.qty).toFixed(2)}
+                            ${(Number(item.unit_price || 0) * Number(item.quantity || 0)).toFixed(2)}
                         </div>
                     </div>
                 ))}
@@ -265,56 +131,29 @@ const OrderCard = ({ order, onCancel, onReturn }) => {
             {/* Footer */}
             <footer className="order-card__footer">
                 <div className="order-card__summary">
-                    <div className="order-card__delivery">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                            <circle cx="12" cy="10" r="3" />
-                        </svg>
-                        <span>{order.address}</span>
-                    </div>
                     <div className="order-card__total">
                         <span className="order-card__total-label">Total</span>
-                        <span className="order-card__total-value">${order.total.toFixed(2)}</span>
+                        <span className="order-card__total-value">${Number(order.total_amount || 0).toFixed(2)}</span>
                     </div>
                 </div>
 
                 <div className="order-card__actions">
-                    <Link to={`/orders/${order.id}`} className="order-btn order-btn--ghost">
-                        View Details
-                    </Link>
-
-                    {order.status === 'processing' && (
-                        <button
-                            className="order-btn order-btn--danger"
-                            onClick={() => onCancel(order.id)}
-                        >
-                            Cancel Order
-                        </button>
-                    )}
-
-                    {order.status === 'in-transit' && (
+                    {order.status === 'shipped' && (
                         <button className="order-btn order-btn--primary">
                             Track Package
                         </button>
                     )}
 
-                    {order.status === 'delivered' && (
-                        <>
-                            <button className="order-btn order-btn--ghost">Reorder</button>
-                            {isReturnEligible(order) && (
-                                <button
-                                    className="order-btn order-btn--primary"
-                                    onClick={() => onReturn(order.id)}
-                                >
-                                    Request Return
-                                </button>
-                            )}
-                        </>
+                    {order.status === 'paid' && (
+                        <button
+                            className="order-btn order-btn--primary"
+                            onClick={() => onReturn(order.id)}
+                        >
+                            Request Return
+                        </button>
                     )}
 
-                    {order.status === 'cancelled' && (
-                        <button className="order-btn order-btn--primary">Reorder</button>
-                    )}
+                    {order.status === 'cancelled' && null}
                 </div>
             </footer>
         </article>
@@ -325,9 +164,49 @@ const OrderCard = ({ order, onCancel, onReturn }) => {
 // Main page
 // ────────────────────────────────────────────────────────────
 const OrdersPage = () => {
-    const [orders, setOrders] = useState(MOCK_ORDERS);
+    const { user, isLoading } = useAuth();
+    const [orders, setOrders] = useState([]);
     const [activeTab, setActiveTab] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
+    const [isPageLoading, setIsPageLoading] = useState(true);
+    const [errorMessage, setErrorMessage] = useState('');
+
+    useEffect(() => {
+        if (isLoading || !user) {
+            return;
+        }
+
+        let isMounted = true;
+
+        const loadOrders = async () => {
+            try {
+                setIsPageLoading(true);
+                setErrorMessage('');
+                const data = await getOrders();
+
+                if (isMounted) {
+                    setOrders(Array.isArray(data?.orders) ? data.orders : []);
+                }
+            } catch (error) {
+                if (isMounted) {
+                    setOrders([]);
+                    setErrorMessage(
+                        error?.response?.data?.message || 'Failed to fetch orders.'
+                    );
+                }
+            } finally {
+                if (isMounted) {
+                    setIsPageLoading(false);
+                }
+            }
+        };
+
+        loadOrders();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [isLoading, user]);
 
     const filteredOrders = useMemo(() => {
         let list = orders;
@@ -340,8 +219,10 @@ const OrdersPage = () => {
             const q = searchQuery.toLowerCase();
             list = list.filter(
                 (o) =>
-                    o.id.toLowerCase().includes(q) ||
-                    o.items.some((it) => it.name.toLowerCase().includes(q))
+                    String(o.id).toLowerCase().includes(q) ||
+                    o.items.some((it) =>
+                        it.product?.name?.toLowerCase().includes(q)
+                    )
             );
         }
 
@@ -355,6 +236,22 @@ const OrdersPage = () => {
         });
         return map;
     }, [orders]);
+
+    if (isLoading) {
+        return (
+            <div className="orders-page">
+                <div className="container">
+                    <div className="orders-empty">
+                        <h3>Loading orders...</h3>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (!user) {
+        return <Navigate to="/login" replace />;
+    }
 
     const handleCancel = (id) => {
         if (!window.confirm('Are you sure you want to cancel this order?')) return;
@@ -434,7 +331,16 @@ const OrdersPage = () => {
 
                 {/* Orders list */}
                 <div className="orders-list">
-                    {filteredOrders.length > 0 ? (
+                    {isPageLoading ? (
+                        <div className="orders-empty">
+                            <h3>Loading orders...</h3>
+                        </div>
+                    ) : errorMessage ? (
+                        <div className="orders-empty">
+                            <h3>Unable to load orders</h3>
+                            <p>{errorMessage}</p>
+                        </div>
+                    ) : filteredOrders.length > 0 ? (
                         filteredOrders.map((order) => (
                             <OrderCard
                                 key={order.id}
@@ -458,9 +364,6 @@ const OrdersPage = () => {
                                     ? "You haven't placed any orders yet."
                                     : `You have no ${STATUS_LABELS[activeTab]?.toLowerCase()} orders.`}
                             </p>
-                            <Link to="/products" className="order-btn order-btn--primary">
-                                Start Shopping
-                            </Link>
                         </div>
                     )}
                 </div>
