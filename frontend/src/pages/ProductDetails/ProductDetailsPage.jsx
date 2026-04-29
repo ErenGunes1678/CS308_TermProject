@@ -1,14 +1,19 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import './ProductDetailsPage.css';
 import { useCart } from '../../hooks/useCart';
 import { useWishlist } from '../../hooks/useWishlist';
+import { useAuth } from '../../hooks/useAuth';
 import CartToast from '../../components/product/product-details/CartToast';
 import ProductBreadcrumb from '../../components/product/product-details/ProductBreadcrumb';
 import ProductGallery from '../../components/product/product-details/ProductGallery';
 import ProductInfo from '../../components/product/product-details/ProductInfo';
 import ProductTabs from '../../components/product/product-details/ProductTabs';
 import { getProductById } from '../../services/productService';
+import {
+    createComment,
+    getApprovedComments,
+} from '../../services/commentService';
 
 const CATEGORY_LABELS = {
     makeup: 'Makeup',
@@ -26,11 +31,11 @@ const mapApiProductToDetails = (apiProduct) => {
         categorySlug: apiProduct.category || 'products',
         price: Number(apiProduct.price ?? 0),
         originalPrice:
-            apiProduct.originalPrice === null || apiProduct.originalPrice === undefined
+            apiProduct.original_price === null || apiProduct.original_price === undefined
                 ? null
-                : Number(apiProduct.originalPrice),
+                : Number(apiProduct.original_price),
         rating: Number(apiProduct.rating ?? 0),
-        reviewCount: Number(apiProduct.reviewCount ?? 0),
+        reviewCount: Number(apiProduct.reviewCount ?? apiProduct.review_count ?? 0),
         stock,
         images: [apiProduct.image],
         details: {
@@ -40,12 +45,13 @@ const mapApiProductToDetails = (apiProduct) => {
             Warranty: apiProduct.warranty_status ? 'Active' : 'Not active',
             Distributor: apiProduct.distributor_info || 'N/A',
         },
-        reviews: [],
     };
 };
 
 const ProductDetailsPage = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
+    const { user } = useAuth();
     const [apiProduct, setApiProduct] = useState(null);
     const [isLoadingProduct, setIsLoadingProduct] = useState(true);
     const product = apiProduct;
@@ -56,12 +62,13 @@ const ProductDetailsPage = () => {
     const [quantity, setQuantity] = useState(1);
     const [activeTab, setActiveTab] = useState('description');
     const [cartToast, setCartToast] = useState(null);
-
-    // Review form
     const [showReviewForm, setShowReviewForm] = useState(false);
     const [reviewRating, setReviewRating] = useState(0);
     const [reviewText, setReviewText] = useState('');
     const [reviewSubmitted, setReviewSubmitted] = useState(false);
+    const [approvedReviews, setApprovedReviews] = useState([]);
+    const [isLoadingReviews, setIsLoadingReviews] = useState(true);
+    const [reviewError, setReviewError] = useState('');
 
     useLayoutEffect(() => {
         window.scrollTo(0, 0);
@@ -94,6 +101,51 @@ const ProductDetailsPage = () => {
         };
 
         loadProduct();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [id]);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadApprovedComments = async () => {
+            setIsLoadingReviews(true);
+            setReviewError('');
+
+            try {
+                const data = await getApprovedComments(id);
+                const comments = Array.isArray(data?.comments) ? data.comments : [];
+
+                if (isMounted) {
+                    setApprovedReviews(
+                        comments.map((comment) => ({
+                            id: comment.id,
+                            author: comment.user?.name || 'Anonymous',
+                            date: new Date(comment.createdAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                            }),
+                            rating: Number(comment.rating || 0),
+                            text: comment.comment_text || '',
+                        }))
+                    );
+                }
+            } catch {
+                if (isMounted) {
+                    setApprovedReviews([]);
+                    setReviewError('Reviews could not be loaded right now.');
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoadingReviews(false);
+                }
+            }
+        };
+
+        loadApprovedComments();
 
         return () => {
             isMounted = false;
@@ -169,7 +221,14 @@ const ProductDetailsPage = () => {
     const isOutOfStock = product.stock === 0;
     const isLowStock = product.stock > 0 && product.stock <= 10;
     const isWishlisted = isInWishlist(product.id);
-    const approvedReviews = product.reviews.filter((review) => review.approved);
+    const writtenReviewCount = approvedReviews.length;
+    const averageReviewRating =
+        writtenReviewCount > 0
+            ? (
+                approvedReviews.reduce((total, review) => total + review.rating, 0) /
+                writtenReviewCount
+            ).toFixed(1)
+            : null;
 
     const handleAddToCart = async () => {
         if (isOutOfStock) return;
@@ -203,14 +262,35 @@ const ProductDetailsPage = () => {
         setQuantity((currentQuantity) => Math.min(product.stock, currentQuantity + 1));
     };
 
-    const handleSubmitReview = (e) => {
-        e.preventDefault();
+    const handleSubmitReview = async (event) => {
+        event.preventDefault();
         if (reviewRating === 0 || reviewText.trim() === '') return;
-        // TODO: Send to API — comment needs approval by product manager
-        setReviewSubmitted(true);
-        setShowReviewForm(false);
-        setReviewRating(0);
-        setReviewText('');
+
+        try {
+            await createComment(id, {
+                rating: reviewRating,
+                comment_text: reviewText.trim(),
+            });
+            setReviewSubmitted(true);
+            setReviewError('');
+            setShowReviewForm(false);
+            setReviewRating(0);
+            setReviewText('');
+        } catch (error) {
+            setReviewSubmitted(false);
+            setReviewError(
+                error?.response?.data?.message || 'Unable to submit your review right now.'
+            );
+        }
+    };
+
+    const handleReviewButtonClick = () => {
+        if (!user) {
+            navigate('/login', { replace: true });
+            return;
+        }
+
+        setShowReviewForm(!showReviewForm);
     };
 
     return (
@@ -226,6 +306,7 @@ const ProductDetailsPage = () => {
 
                 <ProductInfo
                     product={product}
+                    writtenReviewCount={writtenReviewCount}
                     quantity={quantity}
                     isOutOfStock={isOutOfStock}
                     isLowStock={isLowStock}
@@ -242,16 +323,21 @@ const ProductDetailsPage = () => {
             <ProductTabs
                 product={product}
                 approvedReviews={approvedReviews}
+                writtenReviewCount={writtenReviewCount}
+                averageReviewRating={averageReviewRating}
                 activeTab={activeTab}
                 showReviewForm={showReviewForm}
                 reviewRating={reviewRating}
                 reviewText={reviewText}
                 reviewSubmitted={reviewSubmitted}
+                isLoadingReviews={isLoadingReviews}
+                reviewError={reviewError}
                 onActiveTabChange={setActiveTab}
                 onShowReviewFormChange={setShowReviewForm}
                 onReviewRatingChange={setReviewRating}
                 onReviewTextChange={setReviewText}
                 onSubmitReview={handleSubmitReview}
+                onReviewButtonClick={handleReviewButtonClick}
             />
         </div>
     );
