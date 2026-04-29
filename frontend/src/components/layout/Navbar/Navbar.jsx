@@ -46,6 +46,13 @@ const Navbar = () => {
     setSearchOpen(false);
   };
 
+  const openSearchPage = () => {
+    if (location.pathname !== '/search') {
+      navigate(searchQuery.trim() ? `/search?q=${encodeURIComponent(searchQuery.trim())}` : '/search');
+    }
+    setSearchOpen(true);
+  };
+
   const navLinks = [
     {
       name: 'Makeup',
@@ -131,7 +138,7 @@ const Navbar = () => {
                   return;
                 }
 
-                setSearchOpen(true);
+                openSearchPage();
               }}
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -145,6 +152,7 @@ const Navbar = () => {
                 type="search"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
+                onFocus={openSearchPage}
                 placeholder="Search products"
                 className="navbar__search-input"
               />

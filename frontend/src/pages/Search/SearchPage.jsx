@@ -72,6 +72,15 @@ function SearchPage() {
   const [selectedBrands, setSelectedBrands] = useState([]);
   const [sortBy, setSortBy] = useState("featured");
   const [viewMode, setViewMode] = useState("grid");
+  const [appliedFilters, setAppliedFilters] = useState({
+    selectedRating: null,
+    selectedAvailability: [],
+    selectedCategory: "",
+    selectedSubcategory: "",
+    selectedBrands: [],
+    minPrice: null,
+    maxPrice: null,
+  });
   const [openSections, setOpenSections] = useState({
     rating: true,
     price: true,
@@ -141,6 +150,21 @@ function SearchPage() {
     });
   }, [priceBounds]);
 
+  useEffect(() => {
+    setAppliedFilters((current) => {
+      const nextMin =
+        current.minPrice === null ? priceBounds.min : Math.max(priceBounds.min, current.minPrice);
+      const nextMax =
+        current.maxPrice === null ? priceBounds.max : Math.min(priceBounds.max, current.maxPrice);
+
+      return {
+        ...current,
+        minPrice: nextMin,
+        maxPrice: nextMax,
+      };
+    });
+  }, [priceBounds]);
+
   const categories = useMemo(
     () =>
       Array.from(new Set(catalogProducts.map((product) => product.category).filter(Boolean))).sort(
@@ -204,39 +228,38 @@ function SearchPage() {
 
   const hasActiveSearch = Boolean(
     query.trim() ||
-      selectedRating !== null ||
-      selectedAvailability.length > 0 ||
-      selectedCategory ||
-      selectedSubcategory ||
-      selectedBrands.length > 0 ||
-      priceRange[0] !== priceBounds.min ||
-      priceRange[1] !== priceBounds.max
+      appliedFilters.selectedRating !== null ||
+      appliedFilters.selectedAvailability.length > 0 ||
+      appliedFilters.selectedCategory ||
+      appliedFilters.selectedSubcategory ||
+      appliedFilters.selectedBrands.length > 0 ||
+      appliedFilters.minPrice !== priceBounds.min ||
+      appliedFilters.maxPrice !== priceBounds.max
   );
 
   const requestParams = useMemo(() => {
     const params = {};
 
     if (query.trim()) params.q = query.trim();
-    if (selectedRating !== null) params.minRating = selectedRating;
-    if (selectedAvailability.length > 0) params.availability = selectedAvailability.join(",");
-    if (selectedCategory) params.category = selectedCategory;
-    if (selectedSubcategory) params.subcategory = selectedSubcategory;
-    if (selectedBrands.length > 0) params.brands = selectedBrands.join(",");
-    if (priceRange[0] !== priceBounds.min) params.minPrice = priceRange[0];
-    if (priceRange[1] !== priceBounds.max) params.maxPrice = priceRange[1];
+    if (appliedFilters.selectedRating !== null) params.minRating = appliedFilters.selectedRating;
+    if (appliedFilters.selectedAvailability.length > 0) {
+      params.availability = appliedFilters.selectedAvailability.join(",");
+    }
+    if (appliedFilters.selectedCategory) params.category = appliedFilters.selectedCategory;
+    if (appliedFilters.selectedSubcategory) params.subcategory = appliedFilters.selectedSubcategory;
+    if (appliedFilters.selectedBrands.length > 0) {
+      params.brands = appliedFilters.selectedBrands.join(",");
+    }
+    if (appliedFilters.minPrice !== priceBounds.min) params.minPrice = appliedFilters.minPrice;
+    if (appliedFilters.maxPrice !== priceBounds.max) params.maxPrice = appliedFilters.maxPrice;
     if (sortBy && sortBy !== "featured") params.sortBy = sortBy;
 
     return params;
   }, [
+    appliedFilters,
     priceBounds.max,
     priceBounds.min,
-    priceRange,
     query,
-    selectedAvailability,
-    selectedBrands,
-    selectedCategory,
-    selectedRating,
-    selectedSubcategory,
     sortBy,
   ]);
 
@@ -304,6 +327,18 @@ function SearchPage() {
     );
   };
 
+  const applyFilters = () => {
+    setAppliedFilters({
+      selectedRating,
+      selectedAvailability: [...selectedAvailability],
+      selectedCategory,
+      selectedSubcategory,
+      selectedBrands: [...selectedBrands],
+      minPrice: priceRange[0],
+      maxPrice: priceRange[1],
+    });
+  };
+
   const clearFilters = () => {
     setSearchParams({});
     setPriceRange([priceBounds.min, priceBounds.max]);
@@ -314,6 +349,15 @@ function SearchPage() {
     setSelectedBrands([]);
     setSortBy("featured");
     setViewMode("grid");
+    setAppliedFilters({
+      selectedRating: null,
+      selectedAvailability: [],
+      selectedCategory: "",
+      selectedSubcategory: "",
+      selectedBrands: [],
+      minPrice: priceBounds.min,
+      maxPrice: priceBounds.max,
+    });
   };
 
   const isLoading = isLoadingCatalog || isLoadingResults;
@@ -326,9 +370,14 @@ function SearchPage() {
         <aside className="products-sidebar">
           <div className="products-sidebar__header">
             <h3 className="products-sidebar__title">Filters</h3>
-            <button type="button" className="search-page__clear-btn" onClick={clearFilters}>
-              Clear all
-            </button>
+            <div className="search-page__actions">
+              <button type="button" className="search-page__apply-btn" onClick={applyFilters}>
+                Apply
+              </button>
+              <button type="button" className="search-page__clear-btn" onClick={clearFilters}>
+                Clear all
+              </button>
+            </div>
           </div>
 
           <FilterSection
