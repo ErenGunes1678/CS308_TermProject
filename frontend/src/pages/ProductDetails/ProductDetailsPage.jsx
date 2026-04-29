@@ -116,7 +116,9 @@ function ProductGallery({ product, selectedImage, onSelectImage }) {
     );
 }
 
-function ProductInfo({ product, writtenReviewCount, quantity, isOutOfStock, isLowStock, isWishlisted, onDecreaseQuantity, onIncreaseQuantity, onAddToCart, onToggleWishlist }) {
+function ProductInfo({ product, writtenReviewCount, quantity, isOutOfStock, isLowStock, isWishlisted, isCartDisabled, onDecreaseQuantity, onIncreaseQuantity, onAddToCart, onToggleWishlist }) {
+    const isPurchaseDisabled = isOutOfStock || isCartDisabled;
+
     return (
         <div className="pdp-info">
             <Link to={`/category/${product.categorySlug}`} className="pdp-info__brand">{product.brand}</Link>
@@ -140,14 +142,17 @@ function ProductInfo({ product, writtenReviewCount, quantity, isOutOfStock, isLo
                     <span className="pdp-info__stock-badge pdp-info__stock-badge--in">In Stock ({product.stock} available)</span>
                 )}
             </div>
+            {isCartDisabled && (
+                <p className="pdp-info__admin-note">Cart actions are unavailable for product manager accounts.</p>
+            )}
             <div className="pdp-info__actions">
                 <div className="pdp-info__quantity">
-                    <button className="pdp-info__qty-btn" onClick={onDecreaseQuantity} disabled={isOutOfStock}>−</button>
+                    <button className="pdp-info__qty-btn" onClick={onDecreaseQuantity} disabled={isPurchaseDisabled}>−</button>
                     <span className="pdp-info__qty-value">{quantity}</span>
-                    <button className="pdp-info__qty-btn" onClick={onIncreaseQuantity} disabled={isOutOfStock}>+</button>
+                    <button className="pdp-info__qty-btn" onClick={onIncreaseQuantity} disabled={isPurchaseDisabled}>+</button>
                 </div>
-                <button className={`pdp-info__add-btn ${isOutOfStock ? 'pdp-info__add-btn--disabled' : ''}`} onClick={onAddToCart} disabled={isOutOfStock}>
-                    {isOutOfStock ? 'Out of Stock' : 'Add to Cart'} {!isOutOfStock && <span>&rarr;</span>}
+                <button className={`pdp-info__add-btn ${isPurchaseDisabled ? 'pdp-info__add-btn--disabled' : ''}`} onClick={onAddToCart} disabled={isPurchaseDisabled}>
+                    {isOutOfStock ? 'Out of Stock' : isCartDisabled ? 'Unavailable for Admin' : 'Add to Cart'} {!isPurchaseDisabled && <span>&rarr;</span>}
                 </button>
                 <button className={`pdp-info__wishlist-btn ${isWishlisted ? 'pdp-info__wishlist-btn--active' : ''}`} onClick={onToggleWishlist} aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill={isWishlisted ? 'var(--color-primary)' : 'none'} stroke={isWishlisted ? 'var(--color-primary)' : 'currentColor'} strokeWidth="2">
@@ -434,6 +439,7 @@ const ProductDetailsPage = () => {
     const isOutOfStock = product.stock === 0;
     const isLowStock = product.stock > 0 && product.stock <= 10;
     const isWishlisted = isInWishlist(product.id);
+    const isCartDisabled = user?.role === 'product_manager';
     const writtenReviewCount = approvedReviews.length;
     const averageReviewRating =
         writtenReviewCount > 0
@@ -444,7 +450,7 @@ const ProductDetailsPage = () => {
             : null;
 
     const handleAddToCart = async () => {
-        if (isOutOfStock) return;
+        if (isOutOfStock || isCartDisabled) return;
 
         const selectedProduct = {
             ...product,
@@ -524,6 +530,7 @@ const ProductDetailsPage = () => {
                     isOutOfStock={isOutOfStock}
                     isLowStock={isLowStock}
                     isWishlisted={isWishlisted}
+                    isCartDisabled={isCartDisabled}
                     onDecreaseQuantity={decreaseQuantity}
                     onIncreaseQuantity={increaseQuantity}
                     onAddToCart={handleAddToCart}

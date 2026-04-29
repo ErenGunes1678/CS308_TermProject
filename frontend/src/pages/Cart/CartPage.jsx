@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { useCart } from "../../hooks/useCart";
 import { placeOrder } from "../../services/orderService";
@@ -20,6 +20,10 @@ export default function CartPage() {
     clearCart,
   } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!isLoading && user?.role === "product_manager") {
+    return <Navigate to="/admin" replace />;
+  }
 
   const handleClearCart = async () => {
     if (isSubmitting) {
