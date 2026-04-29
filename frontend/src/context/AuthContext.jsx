@@ -8,41 +8,20 @@ import {
 
 export const AuthContext = createContext(null);
 
+const readStoredUser = () => {
+  try {
+    const storedUser = localStorage.getItem("user");
+    return storedUser ? JSON.parse(storedUser) : null;
+  } catch {
+    return null;
+  }
+};
+
+const readStoredToken = () => localStorage.getItem("token");
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const restoreUser = async () => {
-      try {
-        const { user: currentUser } = await getCurrentUser();
-
-        if (isMounted) {
-          setUser(currentUser || null);
-        }
-      } catch (error) {
-        if (isMounted) {
-          if (error?.response?.status === 401) {
-            setUser(null);
-          } else {
-            setUser(null);
-          }
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    restoreUser();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const [token, setToken] = useState(readStoredToken);
+  const [user, setUser] = useState(readStoredUser);
 
   const login = async (credentials) => {
     const data = await loginUser(credentials);
@@ -56,13 +35,10 @@ export function AuthProvider({ children }) {
     return data;
   };
 
-  const logout = async () => {
-    try {
-      await logoutUser();
-    } catch {
-      // Clear local user state even if the backend logout request fails.
-    }
-
+  const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setToken(null);
     setUser(null);
   };
 
