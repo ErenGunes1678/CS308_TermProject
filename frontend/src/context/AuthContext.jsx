@@ -7,23 +7,12 @@ import {
 } from "../services/authService";
 
 export const AuthContext = createContext(null);
-const LEGACY_STORAGE_KEYS = [
-  "token",
-  "user",
-  "cartItems",
-  "lastOrder",
-  "orders",
-];
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    LEGACY_STORAGE_KEYS.forEach((key) => {
-      window.localStorage.removeItem(key);
-    });
-
     let isMounted = true;
 
     const restoreUser = async () => {
@@ -74,9 +63,6 @@ export function AuthProvider({ children }) {
       // Clear local user state even if the backend logout request fails.
     }
 
-    LEGACY_STORAGE_KEYS.forEach((key) => {
-      window.localStorage.removeItem(key);
-    });
     setUser(null);
   };
 
