@@ -188,6 +188,271 @@
           }
         }
       ]
+    },
+    {
+      "name": "Search",
+      "item": [
+        {
+          "name": "All Products (no filters)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search",
+              "host": ["{{base_url}}"],
+              "path": ["search"]
+            },
+            "description": "Returns all products with no filters applied. Sorted by ID ascending."
+          }
+        },
+        {
+          "name": "Text Search",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search?q=glow",
+              "host": ["{{base_url}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "q", "value": "glow", "description": "Case-insensitive text match across name, brand, and description" }
+              ]
+            },
+            "description": "Full-text search across product name, brand, and description fields.\n\n**Query param:** q — search term"
+          }
+        },
+        {
+          "name": "Filter by Category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search?category=skincare",
+              "host": ["{{base_url}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "category", "value": "skincare", "description": "One of: makeup, skincare, haircare, men-care" }
+              ]
+            },
+            "description": "Filter products by category.\n\n**Allowed values:** makeup, skincare, haircare, men-care"
+          }
+        },
+        {
+          "name": "Filter by Subcategory",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search?subcategory=moisturizer",
+              "host": ["{{base_url}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "subcategory", "value": "moisturizer" }
+              ]
+            },
+            "description": "Filter products by subcategory (exact match)."
+          }
+        },
+        {
+          "name": "Filter by Single Brand",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search?brands=LumaBelle",
+              "host": ["{{base_url}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "brands", "value": "LumaBelle" }
+              ]
+            },
+            "description": "Filter by a single brand name."
+          }
+        },
+        {
+          "name": "Filter by Multiple Brands (checklist)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search?brands=LumaBelle,GlowLab",
+              "host": ["{{base_url}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "brands", "value": "LumaBelle,GlowLab", "description": "Comma-separated list of brands" }
+              ]
+            },
+            "description": "Filter by multiple brands using a comma-separated list (mirrors the brand checklist on the frontend)."
+          }
+        },
+        {
+          "name": "Filter by Price Range",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search?minPrice=20&maxPrice=50",
+              "host": ["{{base_url}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "minPrice", "value": "20", "description": "Minimum price (inclusive)" },
+                { "key": "maxPrice", "value": "50", "description": "Maximum price (inclusive)" }
+              ]
+            },
+            "description": "Filter products within a price range. Both params are optional — you can supply just minPrice or just maxPrice."
+          }
+        },
+        {
+          "name": "In Stock Only",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search?inStock=true",
+              "host": ["{{base_url}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "inStock", "value": "true", "description": "Pass 'true' to exclude out-of-stock products" }
+              ]
+            },
+            "description": "Return only products with quantity_in_stock > 0."
+          }
+        },
+        {
+          "name": "Rating 3 Stars and Above",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search?minRating=3",
+              "host": ["{{base_url}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "minRating", "value": "3" }
+              ]
+            },
+            "description": "Filter products rated 3.0 or higher."
+          }
+        },
+        {
+          "name": "Rating 4 Stars and Above",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search?minRating=4",
+              "host": ["{{base_url}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "minRating", "value": "4" }
+              ]
+            },
+            "description": "Filter products rated 4.0 or higher."
+          }
+        },
+        {
+          "name": "Sort: Price Ascending",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search?sortBy=price_asc",
+              "host": ["{{base_url}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "sortBy", "value": "price_asc" }
+              ]
+            },
+            "description": "Return all products sorted cheapest first."
+          }
+        },
+        {
+          "name": "Sort: Price Descending",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search?sortBy=price_desc",
+              "host": ["{{base_url}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "sortBy", "value": "price_desc" }
+              ]
+            },
+            "description": "Return all products sorted most expensive first."
+          }
+        },
+        {
+          "name": "Sort: Rating Highest to Lowest",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search?sortBy=rating_desc",
+              "host": ["{{base_url}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "sortBy", "value": "rating_desc" }
+              ]
+            },
+            "description": "Return all products sorted by rating, highest first."
+          }
+        },
+        {
+          "name": "Sort: Newest",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search?sortBy=newest",
+              "host": ["{{base_url}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "sortBy", "value": "newest" }
+              ]
+            },
+            "description": "Return products sorted by ID descending (most recently added first). The products table has no createdAt timestamp, so ID order is used as a proxy."
+          }
+        },
+        {
+          "name": "Combined Filters",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search?category=skincare&inStock=true&minRating=4&sortBy=price_asc",
+              "host": ["{{base_url}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "category",  "value": "skincare" },
+                { "key": "inStock",   "value": "true" },
+                { "key": "minRating", "value": "4" },
+                { "key": "sortBy",    "value": "price_asc" }
+              ]
+            },
+            "description": "Example combining multiple filters: skincare products, in stock, 4 stars+, cheapest first."
+          }
+        },
+        {
+          "name": "Combined: Brand + Price Range + Sort",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search?brands=LumaBelle,GlowLab&minPrice=20&maxPrice=80&sortBy=price_desc",
+              "host": ["{{base_url}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "brands",   "value": "LumaBelle,GlowLab" },
+                { "key": "minPrice", "value": "20" },
+                { "key": "maxPrice", "value": "80" },
+                { "key": "sortBy",   "value": "price_desc" }
+              ]
+            },
+            "description": "Multiple brands with a price range, sorted most expensive first."
+          }
+        }
+      ]
     }
   ]
 }

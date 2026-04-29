@@ -9,6 +9,7 @@ import productRoutes from "./routes/productRoutes";
 import cartRoutes from "./routes/cartRoutes";
 import orderRoutes from "./routes/orderRoutes";
 import commentRoutes from "./routes/commentRoutes";
+import searchRoutes from "./routes/searchRoutes";
 import { seedMockProducts, seedMockUsers } from "./seeders/mock_db_data"; // Mock data seeding function
 
 const app = express();
@@ -26,6 +27,7 @@ app.use("/auth", authRoutes);
 app.use("/product", productRoutes);
 app.use("/cart", cartRoutes);
 app.use("/order", orderRoutes);
+app.use("/search", searchRoutes);
 app.use("/", commentRoutes);
 
 // Sync Sequelize models then start server
@@ -33,7 +35,7 @@ sequelize.authenticate()
   .then(() => {
     console.log("Database connected!");
 
-    return sequelize.sync();
+    return sequelize.sync({force: true});
   })
   .then(() => {
     seedMockProducts();
