@@ -1,3 +1,8 @@
+
+// Task 9: A product should have the following properties at the very least: 
+// ID, name, model, serial number, description, quantity in stocks, price, 
+// warranty status, and distributor information.
+
 import { DataTypes, Sequelize } from "sequelize";
 
 module.exports = (sequelize: Sequelize) => {
