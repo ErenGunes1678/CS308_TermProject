@@ -31,7 +31,6 @@ export default function CheckoutPage() {
     expiry: "",
     cvc: "",
   });
-
   const paymentLabel =
     paymentMethod === "card"
       ? `💳 •••• •••• •••• ${paymentData.cardNumber.replace(/\s/g, "").slice(-4) || "1234"}`
