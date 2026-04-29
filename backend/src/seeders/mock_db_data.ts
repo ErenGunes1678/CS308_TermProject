@@ -6,6 +6,7 @@
 
 import { Op } from "sequelize";
 import db from "../entities";
+import bcrypt from "bcrypt";
 
 const mockProducts = [
   {
@@ -418,4 +419,69 @@ export async function seedMockProducts() {
   }
 
   console.log(`Seeded ${toCreate.length} and updated ${toUpdate.length} mock products.`);
+}
+
+const rawUsers = [
+  {
+    name: "Elif Product",
+    email: "elif.product@gmail.com",
+    password: "123456",
+    role: "product_manager",
+  },
+  {
+    name: "Elif Sales",
+    email: "elif.sales@gmail.com",
+    password: "123456",
+    role: "sales_manager",
+  },
+];
+
+export async function seedMockUsers() {
+  const hashedPassword = await bcrypt.hash("123456", 10);
+
+  const mockUsers = rawUsers.map((user) => ({
+    name: user.name,
+    email: user.email,
+    password_hash: hashedPassword,
+    role: user.role,
+  }));
+
+  const emails = mockUsers.map((u) => u.email);
+
+  const existing = await db.users.findAll({
+    where: { email: { [Op.in]: emails } },
+  });
+
+  const existingByEmail = new Map(
+    existing.map((user: any) => [user.email, user])
+  );
+
+  const existingEmails = new Set(existingByEmail.keys());
+
+  const toCreate = mockUsers.filter(
+    (user) => !existingEmails.has(user.email)
+  );
+
+  const toUpdate = mockUsers.filter(
+    (user) => existingEmails.has(user.email)
+  );
+
+  if (toUpdate.length > 0) {
+    await Promise.all(
+      toUpdate
+        .map((user) => existingByEmail.get(user.email))
+        .filter(Boolean)
+        .map((existingUser: any, index) =>
+          existingUser.update(toUpdate[index])
+        )
+    );
+  }
+
+  if (toCreate.length > 0) {
+    await db.users.bulkCreate(toCreate);
+  }
+
+  console.log(
+    `Seeded ${toCreate.length} and updated ${toUpdate.length} mock users.`
+  );
 }

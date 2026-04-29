@@ -9,7 +9,7 @@ import productRoutes from "./routes/productRoutes";
 import cartRoutes from "./routes/cartRoutes";
 import orderRoutes from "./routes/orderRoutes";
 import commentRoutes from "./routes/commentRoutes";
-import { seedMockProducts } from "./seeders/mock_db_data"; // Mock data seeding function
+import { seedMockProducts, seedMockUsers } from "./seeders/mock_db_data"; // Mock data seeding function
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -37,6 +37,7 @@ sequelize.authenticate()
   })
   .then(() => {
     seedMockProducts();
+    seedMockUsers();
     console.log("Database synced successfully");
 
     app.listen(PORT, () => {
