@@ -2,26 +2,30 @@ import "./env";
 
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import { sequelize } from "./entities";
 import authRoutes from "./routes/authRoutes";
 import productRoutes from "./routes/productRoutes";
-import { seedMockProducts } from "./seeders/mock_db_data"; // Mock data seeding function
+import cartRoutes from "./routes/cartRoutes";
+import orderRoutes from "./routes/orderRoutes";
 import commentRoutes from "./routes/commentRoutes";
+import { seedMockProducts, seedMockUsers } from "./seeders/mock_db_data"; // Mock data seeding function
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
-app.use(cors());
-
-// Routes
-app.get("/", (req, res) => {
-    res.send("Backend is working");
-});
+app.use(cookieParser());
+app.use(cors({
+    origin: true,
+    credentials: true, // required so browser sends cookies
+}));
 
 app.use("/auth", authRoutes);
-app.use("/products", productRoutes);
+app.use("/product", productRoutes);
+app.use("/cart", cartRoutes);
+app.use("/order", orderRoutes);
 app.use("/", commentRoutes);
 
 // Sync Sequelize models then start server
@@ -29,10 +33,11 @@ sequelize.authenticate()
   .then(() => {
     console.log("Database connected!");
 
-    return sequelize.sync({ alter: true });
+    return sequelize.sync();
   })
   .then(() => {
     seedMockProducts();
+    seedMockUsers();
     console.log("Database synced successfully");
 
     app.listen(PORT, () => {

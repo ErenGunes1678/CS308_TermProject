@@ -5,13 +5,15 @@ import CheckoutSteps from "../../components/checkout/CheckoutSteps";
 import CheckoutSummary from "../../components/checkout/CheckoutSummary";
 import PaymentStep from "../../components/checkout/PaymentStep";
 import ReviewStep from "../../components/checkout/ReviewStep";
+import { useAuth } from "../../hooks/useAuth";
+import { useCart } from "../../hooks/useCart";
+import { placeOrder } from "../../services/orderService";
 import "./CheckoutPage.css";
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
-
-  const user = JSON.parse(localStorage.getItem("user"));
-  const cartItems = JSON.parse(localStorage.getItem("cartItems")) || [];
+  const { user } = useAuth();
+  const { cartItems, subtotal, shipping, total, clearCart } = useCart();
 
   const [step, setStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState("card");
@@ -34,17 +36,6 @@ export default function CheckoutPage() {
     expiry: "",
     cvc: "",
   });
-
-  const shipping = cartItems.length > 0 ? 5.99 : 0;
-
-  const subtotal = useMemo(() => {
-    return cartItems.reduce(
-      (sum, item) => sum + Number(item.price) * Number(item.quantity),
-      0
-    );
-  }, [cartItems]);
-
-  const total = subtotal + shipping;
   const paymentLabel =
     paymentMethod === "card"
       ? `💳 •••• •••• •••• ${paymentData.cardNumber.replace(/\s/g, "").slice(-4) || "1234"}`
@@ -126,33 +117,32 @@ export default function CheckoutPage() {
     setStep((prev) => prev - 1);
   };
 
-  const handlePlaceOrder = () => {
-    const order = {
-      id: Date.now(),
-      user,
-      address: addressData,
-      payment: {
-        method: paymentMethod,
-        cardLast4:
-          paymentMethod === "card"
-            ? paymentData.cardNumber.replace(/\s/g, "").slice(-4)
-            : null,
+  const handlePlaceOrder = async () => {
+    const { order } = await placeOrder();
+
+    await clearCart();
+
+    navigate("/order-success", {
+      replace: true,
+      state: {
+        order: {
+          ...order,
+          address: addressData,
+          payment: {
+            method: paymentMethod,
+            cardLast4:
+              paymentMethod === "card"
+                ? paymentData.cardNumber.replace(/\s/g, "").slice(-4)
+                : null,
+          },
+          items: cartItems,
+          subtotal,
+          shipping,
+          total,
+          email: addressData.email,
+        },
       },
-      items: cartItems,
-      subtotal,
-      shipping,
-      total,
-      createdAt: new Date().toISOString(),
-    };
-
-    localStorage.setItem("lastOrder", JSON.stringify(order));
-
-    const existingOrders = JSON.parse(localStorage.getItem("orders")) || [];
-    localStorage.setItem("orders", JSON.stringify([...existingOrders, order]));
-
-    localStorage.removeItem("cartItems");
-
-    navigate("/order-success");
+    });
   };
 
   return (

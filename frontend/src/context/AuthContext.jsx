@@ -1,45 +1,81 @@
-import { createContext, useMemo, useState } from "react";
+import { createContext, useEffect, useMemo, useState } from "react";
+import {
+  getCurrentUser,
+  loginUser,
+  logoutUser,
+  registerUser,
+} from "../services/authService";
 
 export const AuthContext = createContext(null);
 
-const readStoredUser = () => {
-  try {
-    const storedUser = localStorage.getItem("user");
-    return storedUser ? JSON.parse(storedUser) : null;
-  } catch {
-    return null;
-  }
-};
-
-const readStoredToken = () => localStorage.getItem("token");
-
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(readStoredToken);
-  const [user, setUser] = useState(readStoredUser);
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = ({ token: nextToken, user: nextUser }) => {
-    localStorage.setItem("token", nextToken);
-    localStorage.setItem("user", JSON.stringify(nextUser));
-    setToken(nextToken);
-    setUser(nextUser);
+  useEffect(() => {
+    let isMounted = true;
+
+    const restoreUser = async () => {
+      try {
+        const { user: currentUser } = await getCurrentUser();
+
+        if (isMounted) {
+          setUser(currentUser || null);
+        }
+      } catch (error) {
+        if (isMounted) {
+          if (error?.response?.status === 401) {
+            setUser(null);
+          } else {
+            setUser(null);
+          }
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    restoreUser();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const login = async (credentials) => {
+    const data = await loginUser(credentials);
+    setUser(data.user || null);
+    return data;
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setToken(null);
+  const register = async (payload) => {
+    const data = await registerUser(payload);
+    setUser(data.user || null);
+    return data;
+  };
+
+  const logout = async () => {
+    try {
+      await logoutUser();
+    } catch {
+      // Clear local user state even if the backend logout request fails.
+    }
+
     setUser(null);
   };
 
   const value = useMemo(
     () => ({
       user,
-      token,
-      isAuthenticated: Boolean(token && user),
+      isLoading,
+      isAuthenticated: Boolean(user),
       login,
+      register,
       logout,
     }),
-    [user, token]
+    [user, isLoading]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

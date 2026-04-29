@@ -3,6 +3,7 @@ import StarRating from './StarRating';
 
 function ProductInfo({
   product,
+  writtenReviewCount,
   quantity,
   isOutOfStock,
   isLowStock,
@@ -21,7 +22,9 @@ function ProductInfo({
 
       <div className="pdp-info__rating">
         <div className="pdp-info__stars"><StarRating rating={product.rating} /></div>
-        <span className="pdp-info__review-count">({product.reviewCount} reviews)</span>
+        <span className="pdp-info__review-count">
+          ({product.reviewCount} {writtenReviewCount > 0 ? 'reviews' : 'ratings'})
+        </span>
       </div>
 
       <div className="pdp-info__price-block">

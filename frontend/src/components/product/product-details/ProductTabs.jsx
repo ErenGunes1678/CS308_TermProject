@@ -22,16 +22,21 @@ function ClickableStars({ reviewRating, onRatingChange }) {
 function ProductTabs({
   product,
   approvedReviews,
+  writtenReviewCount,
+  averageReviewRating,
   activeTab,
   showReviewForm,
   reviewRating,
   reviewText,
   reviewSubmitted,
+  isLoadingReviews,
+  reviewError,
   onActiveTabChange,
   onShowReviewFormChange,
   onReviewRatingChange,
   onReviewTextChange,
   onSubmitReview,
+  onReviewButtonClick,
 }) {
   return (
     <section className="pdp-tabs-section">
@@ -53,7 +58,7 @@ function ProductTabs({
             className={`pdp-tabs__btn ${activeTab === 'reviews' ? 'pdp-tabs__btn--active' : ''}`}
             onClick={() => onActiveTabChange('reviews')}
           >
-            Reviews ({product.reviews.length})
+            Reviews ({writtenReviewCount})
           </button>
         </div>
 
@@ -83,15 +88,30 @@ function ProductTabs({
             <div className="pdp-tab-reviews">
               <div className="pdp-reviews-summary">
                 <div className="pdp-reviews-summary__score">
-                  <span className="pdp-reviews-summary__number">{product.rating}</span>
-                  <div className="pdp-reviews-summary__stars">
-                    <StarRating rating={product.rating} size={20} />
-                  </div>
-                  <span className="pdp-reviews-summary__count">Based on {product.reviewCount} reviews</span>
+                  {writtenReviewCount > 0 ? (
+                    <>
+                      <span className="pdp-reviews-summary__number">{averageReviewRating}</span>
+                      <div className="pdp-reviews-summary__stars">
+                        <StarRating rating={Number(averageReviewRating)} size={20} />
+                      </div>
+                      <span className="pdp-reviews-summary__count">
+                        Based on {writtenReviewCount} written reviews
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="pdp-reviews-summary__stars">
+                        <StarRating rating={0} size={20} />
+                      </div>
+                      <span className="pdp-reviews-summary__count">
+                        Be the first to write a review.
+                      </span>
+                    </>
+                  )}
                 </div>
                 <button
                   className="pdp-reviews-summary__write-btn"
-                  onClick={() => onShowReviewFormChange(!showReviewForm)}
+                  onClick={onReviewButtonClick}
                 >
                   Write a Review
                 </button>
@@ -104,6 +124,12 @@ function ProductTabs({
                     <polyline points="22 4 12 14.01 9 11.01" />
                   </svg>
                   Thank you! Your review has been submitted and is pending approval.
+                </div>
+              )}
+
+              {reviewError && !showReviewForm && (
+                <div className="pdp-reviews-empty">
+                  <p>{reviewError}</p>
                 </div>
               )}
 
@@ -145,7 +171,11 @@ function ProductTabs({
               )}
 
               <div className="pdp-reviews-list">
-                {approvedReviews.length > 0 ? (
+                {isLoadingReviews ? (
+                  <div className="pdp-reviews-empty">
+                    <p>Loading reviews...</p>
+                  </div>
+                ) : approvedReviews.length > 0 ? (
                   approvedReviews.map((review) => (
                     <div key={review.id} className="pdp-review-card">
                       <div className="pdp-review-card__header">
@@ -165,7 +195,7 @@ function ProductTabs({
                   ))
                 ) : (
                   <div className="pdp-reviews-empty">
-                    <p>No reviews yet. Be the first to share your thoughts!</p>
+                    <p>No written reviews yet. Be the first to write a review.</p>
                   </div>
                 )}
               </div>

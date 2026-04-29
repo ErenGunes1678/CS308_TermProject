@@ -1,8 +1,9 @@
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import "./OrderSuccessPage.css";
 
 export default function OrderSuccessPage() {
-  const order = JSON.parse(localStorage.getItem("lastOrder"));
+  const { state } = useLocation();
+  const order = state?.order;
 
   if (!order) {
     return <Navigate to="/" replace />;
@@ -18,7 +19,7 @@ export default function OrderSuccessPage() {
         <div className="success-details">
           <p><strong>Order ID:</strong> {order.id}</p>
           <p><strong>Total:</strong> ${order.total.toFixed(2)}</p>
-          <p><strong>Email:</strong> {order.address.email}</p>
+          <p><strong>Email:</strong> {order.email}</p>
         </div>
 
         <div className="success-actions">

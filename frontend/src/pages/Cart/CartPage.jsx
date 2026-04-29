@@ -1,8 +1,13 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
 import { useCart } from "../../hooks/useCart";
+import { placeOrder } from "../../services/orderService";
 import "./CartPage.css";
 
 export default function CartPage() {
+  const navigate = useNavigate();
+  const { user, isLoading } = useAuth();
   const {
     cartItems,
     itemCount,
@@ -12,7 +17,63 @@ export default function CartPage() {
     amountUntilFreeShipping,
     increaseCartItem,
     decreaseCartItem,
+    clearCart,
   } = useCart();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleClearCart = async () => {
+    if (isSubmitting) {
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await clearCart();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleBuy = async () => {
+    if (isSubmitting) {
+      return;
+    }
+
+    if (isLoading) {
+      return;
+    }
+
+    if (!user) {
+      navigate("/login", { replace: true });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const { order } = await placeOrder();
+
+      await clearCart();
+
+      navigate("/order-success", {
+        replace: true,
+        state: {
+          order: {
+            ...order,
+            total,
+            email: user.email,
+          },
+        },
+      });
+    } catch (error) {
+      alert(
+        error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          "Unable to place the order right now."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (cartItems.length === 0) {
     return (
@@ -55,7 +116,7 @@ export default function CartPage() {
                 <h3 className="product-name">{item.name}</h3>
 
                 <div className="quantity">
-                  <button onClick={() => decreaseCartItem(item.id)}>-</button>
+                  <button onClick={() => decreaseCartItem(item.cartItemId)}>-</button>
                   <span>{item.quantity}</span>
                   <button onClick={() => increaseCartItem(item.id)}>+</button>
                 </div>
@@ -67,9 +128,20 @@ export default function CartPage() {
             </div>
           ))}
 
-          <Link className="continue-shopping" to="/products">
-            ← Continue Shopping
-          </Link>
+          <div className="cart-actions">
+            <Link className="continue-shopping" to="/products">
+              ← Continue Shopping
+            </Link>
+
+            <button
+              type="button"
+              className="empty-cart-btn"
+              onClick={handleClearCart}
+              disabled={isSubmitting}
+            >
+              Empty Cart
+            </button>
+          </div>
         </div>
 
         <div className="order-summary">
@@ -98,9 +170,14 @@ export default function CartPage() {
             <span>${total.toFixed(2)}</span>
           </div>
 
-          <Link to="/checkout" className="checkout-btn">
-            Proceed to Checkout →
-          </Link>
+          <button
+            type="button"
+            className="checkout-btn"
+            onClick={handleBuy}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Processing..." : "Buy"}
+          </button>
         </div>
       </div>
     </div>

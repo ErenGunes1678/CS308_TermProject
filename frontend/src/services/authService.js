@@ -5,18 +5,11 @@ export const getAuthErrorMessage = (error, fallbackMessage) =>
   error?.response?.data?.error ||
   fallbackMessage;
 
-export const saveAuthSession = ({ token, user }) => {
-  localStorage.setItem("token", token);
-  localStorage.setItem("user", JSON.stringify(user));
-};
-
 export const loginUser = async ({ email, password }) => {
   const { data } = await api.post("/auth/login", {
     email,
     password,
   });
-
-  saveAuthSession(data);
 
   return data;
 };
@@ -28,5 +21,14 @@ export const registerUser = async ({ name, email, password }) => {
     password,
   });
 
+  return data;
+};
+
+export const logoutUser = async () => {
+  await api.post("/auth/logout");
+};
+
+export const getCurrentUser = async () => {
+  const { data } = await api.get("/auth/me");
   return data;
 };
