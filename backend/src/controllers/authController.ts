@@ -139,6 +139,12 @@ async function mergeGuestCart(sessionId: string, userId: number): Promise<void> 
         });
         if (!guestCart) return;
 
+        const user = await db.users.findByPk(userId, { transaction: t });
+        if (!user || user.role !== "customer") {
+            await guestCart.destroy({ transaction: t });
+            return;
+        }
+
         const [userCart] = await db.carts.findOrCreate({
             where: { user_id: userId },
             defaults: { user_id: userId },
