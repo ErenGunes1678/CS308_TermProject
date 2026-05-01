@@ -14,6 +14,7 @@ const toSafeUser = (user: any) => ({
     id: user.id,
     name: user.name,
     email: user.email,
+    role: user.role,
 });
 
 export const register = async (req: Request, res: Response) => {
@@ -137,6 +138,12 @@ async function mergeGuestCart(sessionId: string, userId: number): Promise<void> 
             transaction: t,
         });
         if (!guestCart) return;
+
+        const user = await db.users.findByPk(userId, { transaction: t });
+        if (!user || user.role !== "customer") {
+            await guestCart.destroy({ transaction: t });
+            return;
+        }
 
         const [userCart] = await db.carts.findOrCreate({
             where: { user_id: userId },

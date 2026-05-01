@@ -108,10 +108,9 @@ function CommentModerationPage() {
         <div className="comment-moderation-hero__overlay" />
         <div className="container comment-moderation-hero__content">
           <p className="comment-moderation-hero__eyebrow">Product Manager Console</p>
-          <h1 className="comment-moderation-hero__title">Comment moderation queue</h1>
+          <h1 className="comment-moderation-hero__title">Comment Moderation</h1>
           <p className="comment-moderation-hero__tagline">
-            Review new product feedback, keep approved reviews high quality, and
-            clear the queue quickly.
+            Review and manage pending comments.
           </p>
         </div>
       </section>

@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import ProductsEmptyState from "../../components/product/product-listing/ProductsEmptyState";
-import ProductsGrid from "../../components/product/product-listing/ProductsGrid";
-import ProductsHero from "../../components/product/product-listing/ProductsHero";
-import ProductsToolbar from "../../components/product/product-listing/ProductsToolbar";
+import { Link, useSearchParams } from "react-router-dom";
 import { getProducts } from "../../services/productService";
+import "../../styles/product-card.css";
 import "../Products/ProductsPage.css";
 import "./SearchPage.css";
 
@@ -57,6 +54,113 @@ function FilterSection({ label, isOpen, onToggle, children }) {
   );
 }
 
+function ProductCard({ product }) {
+  const [isWishlisted, setIsWishlisted] = useState(product.wishlisted || false);
+  const { id, name, brand, price, originalPrice, rating, reviewCount, image, badge, discount, outOfStock, lowStock } = product;
+  const badgeColors = { BEST: '#10B981', NEW: '#3B82F6', LIMITED: '#8B5CF6', SALE: '#EF4444' };
+  const stars = [];
+  const full = Math.floor(rating || 0);
+  const hasHalf = (rating || 0) % 1 >= 0.5;
+  for (let i = 0; i < 5; i += 1) {
+    if (i < full) {
+      stars.push(<svg key={i} width="14" height="14" viewBox="0 0 24 24" fill="var(--color-star)" stroke="var(--color-star)" strokeWidth="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>);
+    } else if (i === full && hasHalf) {
+      stars.push(<svg key={i} width="14" height="14" viewBox="0 0 24 24" fill="var(--color-star)" stroke="var(--color-star)" strokeWidth="1" opacity="0.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>);
+    } else {
+      stars.push(<svg key={i} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-gray-300)" strokeWidth="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>);
+    }
+  }
+  return (
+    <div className={`product-card ${outOfStock ? 'product-card--out-of-stock' : ''}`}>
+      <Link to={`/product/${id}`} className="product-card__image-wrapper">
+        <img src={image} alt={name} className="product-card__image" />
+        <div className="product-card__badges">
+          {badge && <span className="product-card__badge" style={{ background: badgeColors[badge] || '#6B7280' }}>{badge}</span>}
+          {discount && <span className="product-card__badge product-card__badge--discount">-{discount}%</span>}
+          {outOfStock && <span className="product-card__badge product-card__badge--oos">OUT OF STOCK</span>}
+        </div>
+        <button className={`product-card__wishlist ${isWishlisted ? 'product-card__wishlist--active' : ''}`} onClick={(event) => { event.preventDefault(); setIsWishlisted(!isWishlisted); }} aria-label="Add to wishlist">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill={isWishlisted ? 'var(--color-primary)' : 'none'} stroke={isWishlisted ? 'var(--color-primary)' : 'currentColor'} strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
+        </button>
+        {outOfStock && <div className="product-card__oos-overlay" />}
+      </Link>
+      <div className="product-card__info">
+        <span className="product-card__brand">{brand}</span>
+        <Link to={`/product/${id}`} className="product-card__name">{name}</Link>
+        <div className="product-card__rating">
+          <div className="product-card__stars">{stars}</div>
+          <span className="product-card__review-count">({reviewCount})</span>
+        </div>
+        <div className="product-card__price-row">
+          <span className="product-card__price">${price}</span>
+          {originalPrice && <span className="product-card__original-price">${originalPrice}</span>}
+          {lowStock && <span className="product-card__low-stock">Only {lowStock} left</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProductsHero({ categoryInfo }) {
+  return (
+    <section className="products-hero">
+      <div className="products-hero__overlay" />
+      <div className="products-hero__content container">
+        <h1 className="products-hero__title">{categoryInfo ? categoryInfo.name : 'All Products'}</h1>
+        <p className="products-hero__tagline">{categoryInfo ? categoryInfo.tagline : 'Browse our full collection'}</p>
+      </div>
+    </section>
+  );
+}
+
+function ProductsToolbar({ productCount, viewMode, sortBy, onViewModeChange, onSortChange }) {
+  return (
+    <div className="products-toolbar">
+      <p className="products-toolbar__count"><strong>{productCount}</strong> products</p>
+      <div className="products-toolbar__right">
+        <div className="view-toggle">
+          <button className={`view-toggle__btn ${viewMode === 'grid' ? 'view-toggle__btn--active' : ''}`} onClick={() => onViewModeChange('grid')} aria-label="Grid view">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
+          </button>
+          <button className={`view-toggle__btn ${viewMode === 'list' ? 'view-toggle__btn--active' : ''}`} onClick={() => onViewModeChange('list')} aria-label="List view">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="4" rx="1" /><rect x="3" y="10" width="18" height="4" rx="1" /><rect x="3" y="17" width="18" height="4" rx="1" /></svg>
+          </button>
+        </div>
+        <div className="sort-dropdown">
+          <select value={sortBy} onChange={(event) => onSortChange(event.target.value)} className="sort-dropdown__select">
+            <option value="featured">Featured</option>
+            <option value="newest">Newest</option>
+            <option value="price-low">Price: Low to High</option>
+            <option value="price-high">Price: High to Low</option>
+            <option value="rating">Top Rated</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProductsGrid({ products, viewMode }) {
+  return (
+    <div className={`products-grid ${viewMode === 'list' ? 'products-grid--list' : ''}`}>
+      {products.map((product) => <ProductCard key={product.id} product={product} />)}
+    </div>
+  );
+}
+
+function ProductsEmptyState() {
+  return (
+    <div className="products-empty">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-gray-300)" strokeWidth="1.5">
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.35-4.35" />
+      </svg>
+      <h3>No products found</h3>
+      <p>Try adjusting your filters to find what you're looking for.</p>
+    </div>
+  );
+}
+
 function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [catalogProducts, setCatalogProducts] = useState([]);
@@ -72,6 +176,15 @@ function SearchPage() {
   const [selectedBrands, setSelectedBrands] = useState([]);
   const [sortBy, setSortBy] = useState("featured");
   const [viewMode, setViewMode] = useState("grid");
+  const [appliedFilters, setAppliedFilters] = useState({
+    selectedRating: null,
+    selectedAvailability: [],
+    selectedCategory: "",
+    selectedSubcategory: "",
+    selectedBrands: [],
+    minPrice: null,
+    maxPrice: null,
+  });
   const [openSections, setOpenSections] = useState({
     rating: true,
     price: true,
@@ -141,6 +254,21 @@ function SearchPage() {
     });
   }, [priceBounds]);
 
+  useEffect(() => {
+    setAppliedFilters((current) => {
+      const nextMin =
+        current.minPrice === null ? priceBounds.min : Math.max(priceBounds.min, current.minPrice);
+      const nextMax =
+        current.maxPrice === null ? priceBounds.max : Math.min(priceBounds.max, current.maxPrice);
+
+      return {
+        ...current,
+        minPrice: nextMin,
+        maxPrice: nextMax,
+      };
+    });
+  }, [priceBounds]);
+
   const categories = useMemo(
     () =>
       Array.from(new Set(catalogProducts.map((product) => product.category).filter(Boolean))).sort(
@@ -204,39 +332,38 @@ function SearchPage() {
 
   const hasActiveSearch = Boolean(
     query.trim() ||
-      selectedRating !== null ||
-      selectedAvailability.length > 0 ||
-      selectedCategory ||
-      selectedSubcategory ||
-      selectedBrands.length > 0 ||
-      priceRange[0] !== priceBounds.min ||
-      priceRange[1] !== priceBounds.max
+      appliedFilters.selectedRating !== null ||
+      appliedFilters.selectedAvailability.length > 0 ||
+      appliedFilters.selectedCategory ||
+      appliedFilters.selectedSubcategory ||
+      appliedFilters.selectedBrands.length > 0 ||
+      appliedFilters.minPrice !== priceBounds.min ||
+      appliedFilters.maxPrice !== priceBounds.max
   );
 
   const requestParams = useMemo(() => {
     const params = {};
 
     if (query.trim()) params.q = query.trim();
-    if (selectedRating !== null) params.minRating = selectedRating;
-    if (selectedAvailability.length > 0) params.availability = selectedAvailability.join(",");
-    if (selectedCategory) params.category = selectedCategory;
-    if (selectedSubcategory) params.subcategory = selectedSubcategory;
-    if (selectedBrands.length > 0) params.brands = selectedBrands.join(",");
-    if (priceRange[0] !== priceBounds.min) params.minPrice = priceRange[0];
-    if (priceRange[1] !== priceBounds.max) params.maxPrice = priceRange[1];
+    if (appliedFilters.selectedRating !== null) params.minRating = appliedFilters.selectedRating;
+    if (appliedFilters.selectedAvailability.length > 0) {
+      params.availability = appliedFilters.selectedAvailability.join(",");
+    }
+    if (appliedFilters.selectedCategory) params.category = appliedFilters.selectedCategory;
+    if (appliedFilters.selectedSubcategory) params.subcategory = appliedFilters.selectedSubcategory;
+    if (appliedFilters.selectedBrands.length > 0) {
+      params.brands = appliedFilters.selectedBrands.join(",");
+    }
+    if (appliedFilters.minPrice !== priceBounds.min) params.minPrice = appliedFilters.minPrice;
+    if (appliedFilters.maxPrice !== priceBounds.max) params.maxPrice = appliedFilters.maxPrice;
     if (sortBy && sortBy !== "featured") params.sortBy = sortBy;
 
     return params;
   }, [
+    appliedFilters,
     priceBounds.max,
     priceBounds.min,
-    priceRange,
     query,
-    selectedAvailability,
-    selectedBrands,
-    selectedCategory,
-    selectedRating,
-    selectedSubcategory,
     sortBy,
   ]);
 
@@ -304,6 +431,18 @@ function SearchPage() {
     );
   };
 
+  const applyFilters = () => {
+    setAppliedFilters({
+      selectedRating,
+      selectedAvailability: [...selectedAvailability],
+      selectedCategory,
+      selectedSubcategory,
+      selectedBrands: [...selectedBrands],
+      minPrice: priceRange[0],
+      maxPrice: priceRange[1],
+    });
+  };
+
   const clearFilters = () => {
     setSearchParams({});
     setPriceRange([priceBounds.min, priceBounds.max]);
@@ -314,6 +453,15 @@ function SearchPage() {
     setSelectedBrands([]);
     setSortBy("featured");
     setViewMode("grid");
+    setAppliedFilters({
+      selectedRating: null,
+      selectedAvailability: [],
+      selectedCategory: "",
+      selectedSubcategory: "",
+      selectedBrands: [],
+      minPrice: priceBounds.min,
+      maxPrice: priceBounds.max,
+    });
   };
 
   const isLoading = isLoadingCatalog || isLoadingResults;
@@ -326,9 +474,14 @@ function SearchPage() {
         <aside className="products-sidebar">
           <div className="products-sidebar__header">
             <h3 className="products-sidebar__title">Filters</h3>
-            <button type="button" className="search-page__clear-btn" onClick={clearFilters}>
-              Clear all
-            </button>
+            <div className="search-page__actions">
+              <button type="button" className="search-page__apply-btn" onClick={applyFilters}>
+                Apply
+              </button>
+              <button type="button" className="search-page__clear-btn" onClick={clearFilters}>
+                Clear all
+              </button>
+            </div>
           </div>
 
           <FilterSection

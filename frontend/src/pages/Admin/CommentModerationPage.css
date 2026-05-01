@@ -1,36 +1,35 @@
 .comment-moderation-page {
   min-height: calc(100vh - var(--navbar-height, 72px));
-  background:
-    radial-gradient(circle at top left, rgba(233, 30, 99, 0.14), transparent 28%),
-    linear-gradient(180deg, #fff8fb 0%, #ffffff 24%);
-  padding-bottom: 5rem;
+  background: var(--color-white);
+  padding-bottom: 4rem;
 }
 
 .comment-moderation-hero {
   position: relative;
-  display: flex;
-  align-items: flex-end;
-  min-height: 260px;
   overflow: hidden;
   background:
-    linear-gradient(135deg, rgba(233, 30, 99, 0.84), rgba(45, 55, 72, 0.78)),
-    url("https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=1400&q=80")
-      center/cover no-repeat;
+    linear-gradient(135deg, rgba(233, 30, 99, 0.84), rgba(45, 55, 72, 0.72)),
+    url('https://placehold.co/1400x300/2D3748/2D3748') center/cover no-repeat;
+  min-height: 290px;
+  margin-bottom: 2.25rem;
 }
 
 .comment-moderation-hero__overlay {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(18, 26, 46, 0.08), rgba(18, 26, 46, 0.5)),
-    radial-gradient(circle at top right, rgba(255, 255, 255, 0.22), transparent 24%);
+    linear-gradient(to top, rgba(26, 26, 46, 0.34) 0%, rgba(26, 26, 46, 0.08) 100%);
 }
 
 .comment-moderation-hero__content {
   position: relative;
   z-index: 1;
-  padding-top: 4rem;
-  padding-bottom: 2.75rem;
+  min-height: 290px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .comment-moderation-hero__eyebrow {
@@ -45,28 +44,26 @@
   margin-top: 0.5rem;
   color: var(--color-white);
   font-family: var(--font-display);
-  font-size: clamp(2.3rem, 5vw, 3.8rem);
+  font-size: clamp(2.75rem, 5vw, 4rem);
   font-style: italic;
-  line-height: 0.96;
+  line-height: 1.05;
 }
 
 .comment-moderation-hero__tagline {
-  max-width: 640px;
-  margin-top: 0.9rem;
+  max-width: 520px;
+  margin-top: 0.75rem;
   color: rgba(255, 255, 255, 0.9);
   font-size: 1rem;
+  line-height: 1.5;
 }
 
 .comment-moderation-panel {
-  margin-top: -2.2rem;
-  position: relative;
-  z-index: 2;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  border-radius: 28px;
-  box-shadow: 0 22px 60px rgba(18, 26, 46, 0.1);
-  backdrop-filter: blur(16px);
-  padding: 1.5rem;
+  margin-top: 1.5rem;
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: 24px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+  padding: 1.5rem 1.5rem 1.25rem;
 }
 
 .comment-moderation-panel__header {
@@ -97,7 +94,7 @@
   align-items: center;
   justify-content: center;
   min-width: 92px;
-  padding: 0.8rem 1rem;
+  padding: 0.72rem 0.95rem;
   border-radius: 999px;
   background: var(--color-light-pink);
   color: var(--color-primary-dark);
@@ -106,21 +103,24 @@
 
 .comment-moderation-state {
   margin-top: 1.5rem;
-  padding: 2.25rem 1.5rem;
+  padding: 1.9rem 1.35rem;
   text-align: center;
   border: 1px dashed var(--color-gray-300);
-  border-radius: 22px;
-  background: linear-gradient(180deg, #ffffff, #fff9fb);
+  border-radius: 18px;
+  background: #fffdfd;
 }
 
 .comment-moderation-state h3 {
   color: var(--color-gray-800);
-  font-size: 1.25rem;
+  font-size: 1.15rem;
 }
 
 .comment-moderation-state p {
   margin-top: 0.55rem;
   color: var(--color-gray-600);
+  max-width: 540px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .comment-moderation-state--error {
@@ -144,9 +144,8 @@
 
 .comment-card {
   border: 1px solid rgba(226, 232, 240, 0.95);
-  border-radius: 24px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 246, 250, 0.9));
+  border-radius: 18px;
+  background: var(--color-white);
   padding: 1.4rem;
   transition:
     transform var(--transition-base),
@@ -155,9 +154,9 @@
 }
 
 .comment-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(233, 30, 99, 0.22);
-  box-shadow: 0 14px 32px rgba(233, 30, 99, 0.08);
+  transform: translateY(-1px);
+  border-color: rgba(233, 30, 99, 0.18);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
 }
 
 .comment-card__topline,
@@ -178,7 +177,7 @@
   align-items: center;
   padding: 0.45rem 0.8rem;
   border-radius: 999px;
-  background: rgba(255, 64, 129, 0.1);
+  background: rgba(255, 64, 129, 0.08);
   color: var(--color-primary-dark);
   font-size: 0.8rem;
   font-weight: 700;
@@ -213,9 +212,9 @@
   justify-content: center;
   min-width: 88px;
   padding: 0.8rem 0.9rem;
-  border-radius: 18px;
-  background: var(--color-gray-800);
-  color: var(--color-white);
+  border-radius: 14px;
+  background: var(--color-secondary);
+  color: var(--color-gray-800);
 }
 
 .comment-card__rating-value {
@@ -226,7 +225,7 @@
 
 .comment-card__rating-scale {
   margin-left: 0.25rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-gray-500);
   font-size: 0.8rem;
 }
 
@@ -269,7 +268,7 @@
 .comment-card__button--approve {
   background: var(--gradient-primary);
   color: var(--color-white);
-  box-shadow: 0 12px 24px rgba(233, 30, 99, 0.18);
+  box-shadow: 0 8px 18px rgba(233, 30, 99, 0.14);
 }
 
 .comment-card__button--reject {
@@ -323,12 +322,18 @@
 
 @media (max-width: 768px) {
   .comment-moderation-hero {
-    min-height: 220px;
+    min-height: 240px;
+    margin-bottom: 1.5rem;
+  }
+
+  .comment-moderation-hero__content {
+    min-height: 240px;
+    padding: 0 1rem;
   }
 
   .comment-moderation-panel {
-    margin-top: -1.4rem;
-    border-radius: 24px;
+    margin-top: 1rem;
+    border-radius: 20px;
     padding: 1.15rem;
   }
 

@@ -169,6 +169,12 @@
   box-shadow: 0 12px 22px rgba(17, 24, 39, 0.09);
 }
 
+.checkout-btn:disabled,
+.empty-cart-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .order-summary {
   border: 1px solid #ececf1;
   background: #ffffff;
@@ -421,6 +427,10 @@
 
   .promo button {
     width: 100%;
+  }
+
+  .cart-actions {
+    gap: 12px;
   }
 
   .empty-cart-wrapper {

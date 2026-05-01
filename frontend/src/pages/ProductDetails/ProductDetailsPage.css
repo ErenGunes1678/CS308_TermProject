@@ -312,6 +312,12 @@
     margin-bottom: 1.5rem;
 }
 
+.pdp-info__admin-note {
+    margin: -0.75rem 0 1.25rem;
+    color: var(--color-gray-500);
+    font-size: 0.88rem;
+}
+
 .pdp-info__stock-badge {
     display: inline-flex;
     align-items: center;

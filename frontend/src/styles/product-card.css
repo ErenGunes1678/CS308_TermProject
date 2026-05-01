@@ -29,7 +29,6 @@
     transform: scale(1.05);
 }
 
-/* Badges */
 .product-card__badges {
     position: absolute;
     top: 12px;
@@ -59,7 +58,6 @@
     background: var(--color-gray-800) !important;
 }
 
-/* Wishlist */
 .product-card__wishlist {
     position: absolute;
     top: 12px;
@@ -94,7 +92,6 @@
     transform: scale(1.1);
 }
 
-/* Out of stock overlay */
 .product-card__oos-overlay {
     position: absolute;
     inset: 0;
@@ -102,7 +99,6 @@
     z-index: 1;
 }
 
-/* Info */
 .product-card__info {
     padding: 1rem 1.25rem 1.25rem;
 }
@@ -170,7 +166,6 @@
     color: var(--color-primary);
 }
 
-/* Out of stock state */
 .product-card--out-of-stock .product-card__price {
     color: var(--color-text-muted);
 }
