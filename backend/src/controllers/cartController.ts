@@ -7,10 +7,10 @@ async function getOrCreateCart(userId?: number, sessionId?: string): Promise<any
 
     const userRole = await db.users.findByPk(userId, { attributes: ["role"] });
 
-    if (userRole?.role !== "customer") {
+    if (userRole && userRole.role !== "customer") {
         throw new Error("Only customers can have carts.");
     }
-
+    
     if (userId) {
         const [cart] = await db.carts.findOrCreate({
             where: { user_id: userId},
