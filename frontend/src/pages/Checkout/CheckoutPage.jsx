@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { useCart } from "../../hooks/useCart";
@@ -132,7 +132,7 @@ function PaymentStep({ paymentMethod, paymentData, onPaymentMethodChange, onPaym
   );
 }
 
-function ReviewStep({ addressData, paymentLabel, cartItems, onBack, onPlaceOrder }) {
+function ReviewStep({ addressData, paymentLabel, cartItems, onBack, onPlaceOrder, isSubmitting }) {
   return (
     <div className="checkout-card">
       <h2>Review Your Order</h2>
@@ -163,8 +163,10 @@ function ReviewStep({ addressData, paymentLabel, cartItems, onBack, onPlaceOrder
         ))}
       </div>
       <div className="checkout-actions">
-        <button className="secondary-btn" onClick={onBack}>Back</button>
-        <button className="primary-btn" onClick={onPlaceOrder}>Place Order →</button>
+        <button className="secondary-btn" onClick={onBack} disabled={isSubmitting}>Back</button>
+        <button className="primary-btn" onClick={onPlaceOrder} disabled={isSubmitting}>
+          {isSubmitting ? "Confirming Payment..." : "Place Order →"}
+        </button>
       </div>
     </div>
   );
@@ -228,6 +230,8 @@ export default function CheckoutPage() {
     expiry: "",
     cvc: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const paymentLabel =
     paymentMethod === "card"
       ? `💳 •••• •••• •••• ${paymentData.cardNumber.replace(/\s/g, "").slice(-4) || "1234"}`
@@ -310,31 +314,39 @@ export default function CheckoutPage() {
   };
 
   const handlePlaceOrder = async () => {
-    const { order } = await placeOrder();
+    setIsSubmitting(true);
+    setSubmitError("");
 
-    await clearCart();
-
-    navigate("/order-success", {
-      replace: true,
-      state: {
-        order: {
-          ...order,
-          address: addressData,
-          payment: {
-            method: paymentMethod,
-            cardLast4:
-              paymentMethod === "card"
-                ? paymentData.cardNumber.replace(/\s/g, "").slice(-4)
-                : null,
-          },
-          items: cartItems,
-          subtotal,
-          shipping,
-          total,
-          email: addressData.email,
+    try {
+      const checkoutPayload = {
+        shippingAddress: addressData,
+        payment: {
+          method: paymentMethod,
+          cardLast4:
+            paymentMethod === "card"
+              ? paymentData.cardNumber.replace(/\s/g, "").slice(-4)
+              : null,
         },
-      },
-    });
+      };
+
+      const response = await placeOrder(checkoutPayload);
+
+      await clearCart();
+
+      navigate("/order-success", {
+        replace: true,
+        state: {
+          invoice: response.invoice,
+          bankConfirmation: response.bankConfirmation,
+        },
+      });
+    } catch (error) {
+      setSubmitError(
+        error?.response?.data?.message || "Payment could not be completed. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -373,8 +385,11 @@ export default function CheckoutPage() {
               cartItems={cartItems}
               onBack={goToPrevStep}
               onPlaceOrder={handlePlaceOrder}
+              isSubmitting={isSubmitting}
             />
           )}
+
+          {submitError ? <p className="checkout-error">{submitError}</p> : null}
         </div>
 
         <CheckoutSummary

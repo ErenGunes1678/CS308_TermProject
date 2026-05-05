@@ -246,6 +246,18 @@
   color: #14213d;
 }
 
+.primary-btn:disabled,
+.secondary-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.checkout-error {
+  margin: 18px 4px 0;
+  color: #c62828;
+  font-weight: 600;
+}
+
 .summary-item {
   display: flex;
   justify-content: space-between;

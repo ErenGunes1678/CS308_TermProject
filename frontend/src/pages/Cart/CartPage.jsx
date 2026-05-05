@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { useCart } from "../../hooks/useCart";
-import { placeOrder } from "../../services/orderService";
 import "./CartPage.css";
 
 export default function CartPage() {
@@ -52,31 +51,7 @@ export default function CartPage() {
       return;
     }
 
-    try {
-      setIsSubmitting(true);
-      const { order } = await placeOrder();
-
-      await clearCart();
-
-      navigate("/order-success", {
-        replace: true,
-        state: {
-          order: {
-            ...order,
-            total,
-            email: user.email,
-          },
-        },
-      });
-    } catch (error) {
-      alert(
-        error?.response?.data?.message ||
-          error?.response?.data?.error ||
-          "Unable to place the order right now."
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+    navigate("/checkout");
   };
 
   if (cartItems.length === 0) {
@@ -180,7 +155,7 @@ export default function CartPage() {
             onClick={handleBuy}
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Processing..." : "Buy"}
+            {isSubmitting ? "Processing..." : "Proceed to Checkout"}
           </button>
         </div>
       </div>

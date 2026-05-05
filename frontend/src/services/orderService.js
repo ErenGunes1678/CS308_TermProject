@@ -1,7 +1,7 @@
 import api from "./api";
 
-export const placeOrder = async () => {
-  const { data } = await api.post("/order");
+export const placeOrder = async (payload) => {
+  const { data } = await api.post("/order", payload);
   return data;
 };
 
