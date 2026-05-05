@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { getProducts } from "../../services/productService";
+import { searchProducts } from "../../services/searchService";
 import "../../styles/product-card.css";
 import "../Products/ProductsPage.css";
 import "./SearchPage.css";
@@ -11,8 +12,7 @@ const RATING_OPTIONS = [
 ];
 
 const AVAILABILITY_OPTIONS = [
-  { value: "in-stock", label: "In stock" },
-  { value: "out-of-stock", label: "Out of stock" },
+  { value: "inStock", label: "In stock" },
 ];
 
 const CATEGORY_LABELS = {
@@ -346,8 +346,8 @@ function SearchPage() {
 
     if (query.trim()) params.q = query.trim();
     if (appliedFilters.selectedRating !== null) params.minRating = appliedFilters.selectedRating;
-    if (appliedFilters.selectedAvailability.length > 0) {
-      params.availability = appliedFilters.selectedAvailability.join(",");
+    if (appliedFilters.selectedAvailability.includes("inStock")) {
+      params.inStock = "true";
     }
     if (appliedFilters.selectedCategory) params.category = appliedFilters.selectedCategory;
     if (appliedFilters.selectedSubcategory) params.subcategory = appliedFilters.selectedSubcategory;
@@ -356,7 +356,10 @@ function SearchPage() {
     }
     if (appliedFilters.minPrice !== priceBounds.min) params.minPrice = appliedFilters.minPrice;
     if (appliedFilters.maxPrice !== priceBounds.max) params.maxPrice = appliedFilters.maxPrice;
-    if (sortBy && sortBy !== "featured") params.sortBy = sortBy;
+    if (sortBy === "newest") params.sortBy = "newest";
+    if (sortBy === "price-low") params.sortBy = "price_asc";
+    if (sortBy === "price-high") params.sortBy = "price_desc";
+    if (sortBy === "rating") params.sortBy = "rating_desc";
 
     return params;
   }, [
@@ -381,7 +384,7 @@ function SearchPage() {
       setLoadError("");
 
       try {
-        const apiProducts = await getProducts(requestParams);
+        const apiProducts = await searchProducts(requestParams);
 
         if (isMounted) {
           setProducts(apiProducts);
