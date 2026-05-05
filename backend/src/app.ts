@@ -50,3 +50,4 @@ sequelize.authenticate()
     console.error("Startup error:", error);
     process.exit(1);
   });
+export default app;
