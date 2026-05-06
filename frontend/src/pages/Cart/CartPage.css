@@ -112,6 +112,13 @@
   transform: scale(0.97);
 }
 
+.quantity button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: #f0f2f7;
+  color: #8b98ae;
+}
+
 .quantity span {
   min-width: 12px;
   text-align: center;

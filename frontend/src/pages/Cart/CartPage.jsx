@@ -97,7 +97,13 @@ export default function CartPage() {
                 <div className="quantity">
                   <button onClick={() => decreaseCartItem(item.cartItemId)}>-</button>
                   <span>{item.quantity}</span>
-                  <button onClick={() => increaseCartItem(item.id)}>+</button>
+                  <button
+                    onClick={() => increaseCartItem(item.id)}
+                    disabled={item.quantity >= item.stock}
+                    title={item.quantity >= item.stock ? "Cannot add more than available stock" : "Increase quantity"}
+                  >
+                    +
+                  </button>
                 </div>
               </div>
 

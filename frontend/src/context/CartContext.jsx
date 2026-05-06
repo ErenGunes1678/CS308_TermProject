@@ -20,6 +20,7 @@ const mapCartItem = (item) => ({
   image: item.product?.image || "",
   price: Number(item.product?.price || 0),
   quantity: Number(item.quantity || 0),
+  stock: Number(item.product?.quantity_in_stock || 0),
 });
 
 export function CartProvider({ children }) {
