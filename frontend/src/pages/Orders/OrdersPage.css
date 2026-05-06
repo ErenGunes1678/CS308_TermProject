@@ -529,6 +529,12 @@
     background: var(--color-light);
 }
 
+.orders-empty--error {
+    border-style: solid;
+    border-color: rgba(239, 68, 68, 0.18);
+    background: linear-gradient(180deg, rgba(239, 68, 68, 0.06) 0%, var(--color-white) 100%);
+}
+
 .orders-empty__icon {
     width: 80px;
     height: 80px;
@@ -555,6 +561,10 @@
     max-width: 380px;
     margin-left: auto;
     margin-right: auto;
+}
+
+.orders-empty--error p {
+    color: #b42318;
 }
 
 @media (max-width: 768px) {

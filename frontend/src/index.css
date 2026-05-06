@@ -147,3 +147,18 @@ input {
   color: var(--color-text-light);
   max-width: 600px;
 }
+
+.site-inline-message {
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.site-inline-message--error {
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.08), rgba(255, 245, 247, 0.9));
+  border-color: rgba(239, 68, 68, 0.18);
+  color: #b42318;
+}

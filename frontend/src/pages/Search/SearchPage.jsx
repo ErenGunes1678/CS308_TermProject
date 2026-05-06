@@ -657,7 +657,11 @@ function SearchPage() {
             </div>
           ) : null}
 
-          {loadError ? <p className="products-toolbar__count">{loadError}</p> : null}
+          {loadError ? (
+            <div className="site-inline-message site-inline-message--error" role="alert">
+              {loadError}
+            </div>
+          ) : null}
 
           {!isLoading && hasActiveSearch && products.length > 0 ? (
             <ProductsGrid products={products} viewMode={viewMode} />

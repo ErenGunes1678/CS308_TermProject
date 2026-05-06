@@ -309,7 +309,7 @@ const OrdersPage = () => {
                             <h3>Loading orders...</h3>
                         </div>
                     ) : errorMessage ? (
-                        <div className="orders-empty">
+                        <div className="orders-empty orders-empty--error" role="alert">
                             <h3>Unable to load orders</h3>
                             <p>{errorMessage}</p>
                         </div>

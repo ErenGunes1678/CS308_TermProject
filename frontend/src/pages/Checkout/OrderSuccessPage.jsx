@@ -85,13 +85,13 @@ export default function OrderSuccessPage() {
 
           <div className="invoice-panels">
             <div className="invoice-panel">
-              <p className="review-label">BILLED TO</p>
+              <p className="success-review-label">BILLED TO</p>
               <p>{invoice.customerName}</p>
               <p>{invoice.customerEmail}</p>
               <p>{invoice.customerPhone}</p>
             </div>
             <div className="invoice-panel">
-              <p className="review-label">SHIPPING ADDRESS</p>
+              <p className="success-review-label">SHIPPING ADDRESS</p>
               <p>{invoice.shippingAddress}</p>
             </div>
           </div>

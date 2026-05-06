@@ -331,7 +331,11 @@ const ProductsPage = () => {
                         onSortChange={setSortBy}
                     />
 
-                    {loadError && <p className="products-toolbar__count">{loadError}</p>}
+                    {loadError ? (
+                        <div className="site-inline-message site-inline-message--error" role="alert">
+                            {loadError}
+                        </div>
+                    ) : null}
 
                     {!isLoading && filteredProducts.length > 0 ? (
                         <ProductsGrid products={filteredProducts} viewMode={viewMode} />
