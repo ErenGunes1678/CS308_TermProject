@@ -1,6 +1,43 @@
 import { Link, Navigate, useLocation } from "react-router-dom";
 import "./OrderSuccessPage.css";
 
+const formatInvoiceDate = (value) =>
+  new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
+
+const formatInvoiceStatus = (status) =>
+  status ? status.charAt(0).toUpperCase() + status.slice(1) : "Unknown";
+
+const getShippingAddressLines = (invoice) => {
+  const rawParts = String(invoice.shippingAddress || "")
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (!rawParts.length) {
+    return [];
+  }
+
+  const normalizedCustomerName = String(invoice.customerName || "").trim().toLowerCase();
+  const parts =
+    rawParts[0]?.toLowerCase() === normalizedCustomerName ? rawParts.slice(1) : rawParts;
+
+  if (parts.length >= 4) {
+    return [parts[0], `${parts[1]}, ${parts[2]}`, parts.slice(3).join(", ")];
+  }
+
+  if (parts.length >= 3) {
+    return [parts[0], `${parts[1]}, ${parts[2]}`];
+  }
+
+  return parts;
+};
+
 const downloadPdf = (base64, filename) => {
   const binary = window.atob(base64);
   const bytes = new Uint8Array(binary.length);
@@ -27,6 +64,8 @@ export default function OrderSuccessPage() {
   if (!invoice || !bankConfirmation) {
     return <Navigate to="/" replace />;
   }
+
+  const shippingAddressLines = getShippingAddressLines(invoice);
 
   return (
     <div className="success-page">
@@ -78,8 +117,11 @@ export default function OrderSuccessPage() {
             </div>
             <div className="invoice-meta">
               <p><strong>Order ID:</strong> {invoice.orderId}</p>
-              <p><strong>Issued:</strong> {new Date(invoice.issuedAt).toLocaleString()}</p>
-              <p><strong>Status:</strong> {invoice.status}</p>
+              <p><strong>Issued:</strong> {formatInvoiceDate(invoice.issuedAt)}</p>
+              <p>
+                <strong>Status:</strong>{" "}
+                <span className="invoice-status-badge">{formatInvoiceStatus(invoice.status)}</span>
+              </p>
             </div>
           </div>
 
@@ -92,7 +134,11 @@ export default function OrderSuccessPage() {
             </div>
             <div className="invoice-panel">
               <p className="success-review-label">SHIPPING ADDRESS</p>
-              <p>{invoice.shippingAddress}</p>
+              <div className="invoice-address-lines">
+                {shippingAddressLines.map((line) => (
+                  <p key={line}>{line}</p>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -122,7 +168,7 @@ export default function OrderSuccessPage() {
 
           <div className="invoice-footer">
             <p>
-              Payment approved at {new Date(bankConfirmation.confirmedAt).toLocaleString()} by{" "}
+              Payment approved at {formatInvoiceDate(bankConfirmation.confirmedAt)} by{" "}
               {bankConfirmation.provider}.
             </p>
             <Link to="/" className="invoice-link">Return to home</Link>

@@ -43,7 +43,7 @@
 }
 
 .step-circle.active {
-  background: #ff2d7a;
+  background: var(--color-primary);
   color: white;
 }
 
@@ -63,7 +63,7 @@
 }
 
 .active-label {
-  color: #ff2d7a;
+  color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -124,7 +124,7 @@
 .form-group select:focus,
 .form-grid input:focus,
 .form-grid select:focus {
-  border-color: #ff4b9a;
+  border-color: var(--color-primary-light);
   box-shadow: 0 0 0 4px rgba(255, 75, 154, 0.12);
   outline: none;
 }
@@ -169,8 +169,8 @@
 }
 
 .payment-tabs .active-tab {
-  border: 1px solid #ff2d7a;
-  color: #ff2d7a;
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
 }
 
 .payment-placeholder,
@@ -260,9 +260,9 @@
 
 .checkout-primary-btn {
   flex: 1;
-  background: linear-gradient(90deg, #ff2d7a, #ff4b9a);
+  background: var(--gradient-primary-horizontal);
   color: white;
-  box-shadow: 0 8px 18px rgba(255, 45, 122, 0.22);
+  box-shadow: var(--shadow-primary);
 }
 
 .checkout-secondary-btn {
@@ -309,7 +309,7 @@
   position: absolute;
   left: 34px;
   top: -7px;
-  background: #ff2d7a;
+  background: var(--color-primary);
   color: white;
   border-radius: 999px;
   min-width: 18px;

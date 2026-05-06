@@ -23,7 +23,7 @@
   color: var(--color-white);
   font-size: 0.85rem;
   font-weight: 700;
-  box-shadow: 0 8px 18px rgba(233, 30, 99, 0.16);
+  box-shadow: var(--shadow-primary);
 }
 
 .search-page__clear-btn {

@@ -102,10 +102,33 @@ function ProductsHero({ categoryInfo }) {
     );
 }
 
-function ProductsFiltersSidebar({ brands, priceRange, selectedBrands, priceOpen, brandOpen, onPriceRangeChange, onBrandToggle, onTogglePriceOpen, onToggleBrandOpen }) {
+function ProductsFiltersSidebar({
+    brands,
+    priceRange,
+    priceBounds,
+    selectedBrands,
+    priceOpen,
+    brandOpen,
+    onPriceRangeChange,
+    onBrandToggle,
+    onTogglePriceOpen,
+    onToggleBrandOpen,
+    onApply,
+    onClear,
+}) {
     return (
         <aside className="products-sidebar">
-            <h3 className="products-sidebar__title">Filters</h3>
+            <div className="products-sidebar__header">
+                <h3 className="products-sidebar__title">Filters</h3>
+                <div className="search-page__actions">
+                    <button type="button" className="search-page__apply-btn" onClick={onApply}>
+                        Apply
+                    </button>
+                    <button type="button" className="search-page__clear-btn" onClick={onClear}>
+                        Clear all
+                    </button>
+                </div>
+            </div>
             <div className="filter-section">
                 <button className="filter-section__header" onClick={onTogglePriceOpen}>
                     <span className="filter-section__label">Price Range</span>
@@ -113,7 +136,17 @@ function ProductsFiltersSidebar({ brands, priceRange, selectedBrands, priceOpen,
                 </button>
                 {priceOpen && (
                     <div className="filter-section__body">
-                        <input type="range" min="0" max="200" value={priceRange[1]} onChange={(event) => onPriceRangeChange([priceRange[0], Number(event.target.value)])} className="price-slider" style={{ background: `linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) ${(priceRange[1] / 200) * 100}%, var(--color-gray-200) ${(priceRange[1] / 200) * 100}%, var(--color-gray-200) 100%)` }} />
+                        <input
+                            type="range"
+                            min={priceBounds.min}
+                            max={priceBounds.max}
+                            value={priceRange[1]}
+                            onChange={(event) => onPriceRangeChange([priceRange[0], Number(event.target.value)])}
+                            className="price-slider"
+                            style={{
+                                background: `linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) ${((priceRange[1] - priceBounds.min) / Math.max(priceBounds.max - priceBounds.min, 1)) * 100}%, var(--color-gray-200) ${((priceRange[1] - priceBounds.min) / Math.max(priceBounds.max - priceBounds.min, 1)) * 100}%, var(--color-gray-200) 100%)`
+                            }}
+                        />
                         <div className="price-slider__labels">
                             <span>${priceRange[0]}</span>
                             <span>${priceRange[1]}</span>
@@ -201,6 +234,8 @@ const ProductsPage = () => {
     // Filter state
     const [priceRange, setPriceRange] = useState([0, 200]);
     const [selectedBrands, setSelectedBrands] = useState([]);
+    const [appliedPriceRange, setAppliedPriceRange] = useState([0, 200]);
+    const [appliedBrands, setAppliedBrands] = useState([]);
     const [sortBy, setSortBy] = useState('featured');
     const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
 
@@ -218,6 +253,53 @@ const ProductsPage = () => {
         () => Array.from(new Set(products.map((product) => product.brand).filter(Boolean))).sort(),
         [products]
     );
+    const priceBounds = useMemo(() => {
+        if (!products.length) {
+            return { min: 0, max: 200 };
+        }
+
+        const prices = products.map((product) => Number(product.price) || 0);
+
+        return {
+            min: Math.floor(Math.min(...prices)),
+            max: Math.ceil(Math.max(...prices)),
+        };
+    }, [products]);
+
+    useEffect(() => {
+        setSelectedBrands((currentBrands) =>
+            currentBrands.filter((brand) => brands.includes(brand))
+        );
+        setAppliedBrands((currentBrands) =>
+            currentBrands.filter((brand) => brands.includes(brand))
+        );
+    }, [brands]);
+
+    useEffect(() => {
+        setPriceRange((currentRange) => {
+            if (currentRange[0] === 0 && currentRange[1] === 200) {
+                return [priceBounds.min, priceBounds.max];
+            }
+
+            return [
+                Math.max(priceBounds.min, Math.min(currentRange[0], currentRange[1])),
+                Math.min(priceBounds.max, Math.max(currentRange[1], currentRange[0])),
+            ];
+        });
+    }, [priceBounds]);
+
+    useEffect(() => {
+        setAppliedPriceRange((currentRange) => {
+            if (currentRange[0] === 0 && currentRange[1] === 200) {
+                return [priceBounds.min, priceBounds.max];
+            }
+
+            return [
+                Math.max(priceBounds.min, Math.min(currentRange[0], currentRange[1])),
+                Math.min(priceBounds.max, Math.max(currentRange[1], currentRange[0])),
+            ];
+        });
+    }, [priceBounds]);
 
     useEffect(() => {
         let isMounted = true;
@@ -269,12 +351,12 @@ const ProductsPage = () => {
 
         // Filter by price range
         visibleProducts = visibleProducts.filter(
-            (p) => p.price >= priceRange[0] && p.price <= priceRange[1]
+            (p) => p.price >= appliedPriceRange[0] && p.price <= appliedPriceRange[1]
         );
 
         // Filter by brand
-        if (selectedBrands.length > 0) {
-            visibleProducts = visibleProducts.filter((p) => selectedBrands.includes(p.brand));
+        if (appliedBrands.length > 0) {
+            visibleProducts = visibleProducts.filter((p) => appliedBrands.includes(p.brand));
         }
 
         // Sort
@@ -297,12 +379,24 @@ const ProductsPage = () => {
         }
 
         return visibleProducts;
-    }, [products, slug, selectedSubcategory, priceRange, selectedBrands, sortBy]);
+    }, [products, slug, selectedSubcategory, appliedPriceRange, appliedBrands, sortBy]);
 
     const handleBrandToggle = (brand) => {
         setSelectedBrands((prev) =>
             prev.includes(brand) ? prev.filter((b) => b !== brand) : [...prev, brand]
         );
+    };
+
+    const applyFilters = () => {
+        setAppliedPriceRange([...priceRange]);
+        setAppliedBrands([...selectedBrands]);
+    };
+
+    const clearFilters = () => {
+        setPriceRange([priceBounds.min, priceBounds.max]);
+        setSelectedBrands([]);
+        setAppliedPriceRange([priceBounds.min, priceBounds.max]);
+        setAppliedBrands([]);
     };
 
     return (
@@ -320,6 +414,9 @@ const ProductsPage = () => {
                     onBrandToggle={handleBrandToggle}
                     onTogglePriceOpen={() => setPriceOpen(!priceOpen)}
                     onToggleBrandOpen={() => setBrandOpen(!brandOpen)}
+                    onApply={applyFilters}
+                    onClear={clearFilters}
+                    priceBounds={priceBounds}
                 />
 
                 <div className="products-main">

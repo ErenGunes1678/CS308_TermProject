@@ -248,6 +248,12 @@ const OrdersPage = () => {
         <div className="orders-page">
             <section className="orders-hero">
                 <div className="orders-hero__overlay" />
+                <div className="orders-hero__bubbles" aria-hidden="true">
+                    <span className="orders-hero__bubble orders-hero__bubble--1" />
+                    <span className="orders-hero__bubble orders-hero__bubble--2" />
+                    <span className="orders-hero__bubble orders-hero__bubble--3" />
+                    <span className="orders-hero__bubble orders-hero__bubble--4" />
+                </div>
                 <div className="container">
                     <div className="orders-hero__content">
                         <span className="section-label">My Account</span>

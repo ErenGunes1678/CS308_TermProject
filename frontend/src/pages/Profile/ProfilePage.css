@@ -12,7 +12,7 @@
 .account-hero {
   position: relative;
   padding: 3rem 0;
-  background: linear-gradient(135deg, #E91E63 0%, #FF4081 50%, #FF6B9D 100%);
+  background: var(--gradient-account-hero);
   overflow: hidden;
 }
 

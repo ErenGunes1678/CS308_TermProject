@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import { useCart } from '../../../hooks/useCart';
@@ -8,6 +8,7 @@ const Navbar = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
@@ -32,6 +33,14 @@ const Navbar = () => {
     setSearchQuery(currentQuery);
     setSearchOpen(location.pathname === '/search' && Boolean(currentQuery));
   }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    if (searchOpen) {
+      requestAnimationFrame(() => {
+        searchInputRef.current?.focus();
+      });
+    }
+  }, [searchOpen]);
 
   const handleSearchSubmit = (event) => {
     event.preventDefault();
@@ -148,16 +157,17 @@ const Navbar = () => {
               </svg>
             </button>
 
-            {searchOpen && (
-              <input
-                type="search"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                onFocus={openSearchPage}
-                placeholder="Search products"
-                className="navbar__search-input"
-              />
-            )}
+            <input
+              ref={searchInputRef}
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              onFocus={openSearchPage}
+              placeholder="Search products"
+              className="navbar__search-input"
+              aria-hidden={!searchOpen}
+              tabIndex={searchOpen ? 0 : -1}
+            />
           </form>
 
           <Link to="/wishlist" className="navbar__icon-btn" aria-label="Wishlist">

@@ -106,6 +106,12 @@ function CommentModerationPage() {
     <div className="comment-moderation-page">
       <section className="comment-moderation-hero">
         <div className="comment-moderation-hero__overlay" />
+        <div className="comment-moderation-hero__bubbles" aria-hidden="true">
+          <span className="comment-moderation-hero__bubble comment-moderation-hero__bubble--1" />
+          <span className="comment-moderation-hero__bubble comment-moderation-hero__bubble--2" />
+          <span className="comment-moderation-hero__bubble comment-moderation-hero__bubble--3" />
+          <span className="comment-moderation-hero__bubble comment-moderation-hero__bubble--4" />
+        </div>
         <div className="container comment-moderation-hero__content">
           <p className="comment-moderation-hero__eyebrow">Product Manager Console</p>
           <h1 className="comment-moderation-hero__title">Comment Moderation</h1>
