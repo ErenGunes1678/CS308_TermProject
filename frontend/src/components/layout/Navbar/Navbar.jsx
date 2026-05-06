@@ -42,6 +42,29 @@ const Navbar = () => {
     }
   }, [searchOpen]);
 
+  useEffect(() => {
+    if (location.pathname !== '/search') {
+      return;
+    }
+
+    const currentQuery = new URLSearchParams(location.search).get('q') || '';
+    const trimmedQuery = searchQuery.trim();
+    if (trimmedQuery === currentQuery.trim()) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      const target = trimmedQuery
+        ? `/search?q=${encodeURIComponent(trimmedQuery)}`
+        : '/search';
+      navigate(target, { replace: true });
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [location.pathname, location.search, navigate, searchQuery]);
+
   const handleSearchSubmit = (event) => {
     event.preventDefault();
     const trimmedQuery = searchQuery.trim();
