@@ -12,6 +12,7 @@ const mockCartItemFindAll = jest.fn();
 const mockCartItemFindOne = jest.fn();
 const mockCartItemDestroy = jest.fn();
 const mockOrderCreate = jest.fn();
+const mockOrderFindByPk = jest.fn();
 const mockOrderItemCreate = jest.fn();
 const mockUserFindByPk = jest.fn();
 
@@ -35,6 +36,7 @@ jest.mock("../entities", () => {
         },
         orders: {
             create: (...args: any[]) => mockOrderCreate(...args),
+            findByPk: (...args: any[]) => mockOrderFindByPk(...args),
         },
         order_items: {
             create: (...args: any[]) => mockOrderItemCreate(...args),
@@ -57,6 +59,10 @@ jest.mock("../entities", () => {
 
 jest.mock("../utils/auth", () => ({
     getOrCreateGuestSessionId: jest.fn().mockReturnValue("guest-session-123"),
+}));
+
+jest.mock("../utils/invoicePdf", () => ({
+    createInvoicePdfBuffer: jest.fn().mockReturnValue(Buffer.from("fake-pdf")),
 }));
 
 /* ──────────────────────── imports (after mocks) ──────────────────────── */
@@ -197,8 +203,30 @@ describe("Test 2 – Stock quantity decreases after a successful purchase", () =
         mockOrderCreate.mockResolvedValue({ id: 100 });
         mockOrderItemCreate.mockResolvedValue({});
         mockCartItemDestroy.mockResolvedValue(1);
+        mockOrderFindByPk.mockResolvedValue({
+            id: 100,
+            status: "paid",
+            user: { id: 1, name: "Test User", email: "test@example.com" },
+            items: [{ product_id: 1, quantity: purchaseQty, unit_price: "29.99", product: { name: "Hydrating Face Cream" } }],
+        });
 
-        const req = mockRequest({ userId: 1 });
+        const req = mockRequest({
+            userId: 1,
+            body: {
+                shippingAddress: {
+                    firstName: "Test",
+                    lastName: "User",
+                    email: "test@example.com",
+                    phone: "1234567890",
+                    country: "Turkey",
+                    street: "123 Test St",
+                    city: "Istanbul",
+                    state: "IST",
+                    zip: "34000",
+                },
+                payment: { method: "credit_card" },
+            },
+        });
         const res = mockResponse();
 
         await placeOrder(req as any, res as any);
@@ -227,7 +255,23 @@ describe("Test 3 – Product cannot be purchased when stock is 0", () => {
         mockCartFindOne.mockResolvedValue(cart);
         mockProductFindByPk.mockResolvedValue(product);
 
-        const req = mockRequest({ userId: 1 });
+        const req = mockRequest({
+            userId: 1,
+            body: {
+                shippingAddress: {
+                    firstName: "Test",
+                    lastName: "User",
+                    email: "test@example.com",
+                    phone: "1234567890",
+                    country: "Turkey",
+                    street: "123 Test St",
+                    city: "Istanbul",
+                    state: "IST",
+                    zip: "34000",
+                },
+                payment: { method: "credit_card" },
+            },
+        });
         const res = mockResponse();
 
         await placeOrder(req as any, res as any);
