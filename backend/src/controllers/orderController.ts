@@ -180,6 +180,11 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
     }
 };
 
+const isAdminUser = async (userId: number) => {
+    const user = await db.users.findByPk(userId);
+    return user?.role === "product_manager";
+};
+
 export const getUserOrders = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const orders = await db.orders.findAll({
@@ -194,5 +199,77 @@ export const getUserOrders = async (req: AuthRequest, res: Response): Promise<vo
     } catch (error) {
         console.error("Get orders error:", error);
         res.status(500).json({ message: "Failed to fetch orders." });
+    }
+};
+
+export const getAllOrders = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        if (!req.userId || !(await isAdminUser(req.userId))) {
+            res.status(403).json({ message: "Admin access required." });
+            return;
+        }
+
+        const orders = await db.orders.findAll({
+            include: [
+                { model: db.users, as: "user", attributes: ["id", "name", "email"] },
+                { model: db.order_items, as: "items", include: [{ model: db.products, as: "product" }] },
+            ],
+            order: [["createdAt", "DESC"]],
+        });
+
+        res.json({ orders });
+    } catch (error) {
+        console.error("Get all orders error:", error);
+        res.status(500).json({ message: "Failed to fetch all orders." });
+    }
+};
+
+export const updateOrderStatus = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        if (!req.userId || !(await isAdminUser(req.userId))) {
+            res.status(403).json({ message: "Admin access required." });
+            return;
+        }
+
+        const orderId = Number(req.params.id);
+        const requestedStatus = String(req.body.status || '').trim().toLowerCase();
+        const allowedNextStatus: Record<string, string> = {
+            processing: 'in-transit',
+            'in-transit': 'delivered',
+        };
+
+        const order = await db.orders.findByPk(orderId, {
+            include: [
+                { model: db.users, as: 'user', attributes: ['id', 'name', 'email'] },
+                { model: db.order_items, as: 'items', include: [{ model: db.products, as: 'product' }] },
+            ],
+        });
+
+        if (!order) {
+            res.status(404).json({ message: 'Order not found.' });
+            return;
+        }
+
+        const currentStatus = order.status as string;
+        const expectedNextStatus = allowedNextStatus[currentStatus];
+
+        if (!requestedStatus || requestedStatus !== expectedNextStatus) {
+            res.status(400).json({ message: 'Invalid status transition.' });
+            return;
+        }
+
+        await order.update({ status: requestedStatus });
+
+        const message =
+            requestedStatus === 'in-transit'
+                ? 'Order forwarded to delivery department.'
+                : requestedStatus === 'delivered'
+                ? 'Order marked as delivered.'
+                : 'Order status updated.';
+
+        res.json({ message, order });
+    } catch (error) {
+        console.error('Update order status error:', error);
+        res.status(500).json({ message: 'Failed to update order status.' });
     }
 };

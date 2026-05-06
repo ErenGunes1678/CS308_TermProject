@@ -251,14 +251,16 @@ const Navbar = () => {
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                       My Account
                     </Link>
-                    <Link to="/orders" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="18" rx="2" /><path d="m9 12 2 2 4-4" /></svg>
-                      My Orders
-                    </Link>
+                    {user?.role !== 'product_manager' && (
+                      <Link to="/orders" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="18" rx="2" /><path d="m9 12 2 2 4-4" /></svg>
+                        My Orders
+                      </Link>
+                    )}
                     {user?.role === 'product_manager' && (
                       <Link to="/admin" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-                        Comment Moderation
+                        Admin Orders
                       </Link>
                     )}
                     <hr className="navbar__dropdown-divider" />
