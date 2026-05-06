@@ -116,8 +116,10 @@ function ProductGallery({ product, selectedImage, onSelectImage }) {
     );
 }
 
-function ProductInfo({ product, writtenReviewCount, quantity, isOutOfStock, isLowStock, isWishlisted, isCartDisabled, onDecreaseQuantity, onIncreaseQuantity, onAddToCart, onToggleWishlist }) {
-    const isPurchaseDisabled = isOutOfStock || isCartDisabled;
+function ProductInfo({ product, writtenReviewCount, quantity, isOutOfStock, isLowStock, isWishlisted, isCartDisabled, isQuantityExceeded, availableStock, canDecreaseQuantity, canIncreaseQuantity, onDecreaseQuantity, onIncreaseQuantity, onAddToCart, onToggleWishlist }) {
+    const isPurchaseDisabled = isOutOfStock || isCartDisabled || isQuantityExceeded;
+
+    const stock = Number(product.stock || 0);
 
     return (
         <div className="pdp-info">
@@ -125,7 +127,7 @@ function ProductInfo({ product, writtenReviewCount, quantity, isOutOfStock, isLo
             <h1 className="pdp-info__name">{product.name}</h1>
             <div className="pdp-info__rating">
                 <div className="pdp-info__stars"><StarRating rating={product.rating} /></div>
-                <span className="pdp-info__review-count">({product.reviewCount} {writtenReviewCount > 0 ? 'reviews' : 'ratings'})</span>
+                <span className="pdp-info__review-count">({product.reviewCount} {product.reviewCount === 1 ? 'review' : 'reviews'})</span>
             </div>
             <div className="pdp-info__price-block">
                 <span className="pdp-info__price">${product.price.toFixed(2)}</span>
@@ -137,9 +139,9 @@ function ProductInfo({ product, writtenReviewCount, quantity, isOutOfStock, isLo
                 {isOutOfStock ? (
                     <span className="pdp-info__stock-badge pdp-info__stock-badge--out">Out of Stock</span>
                 ) : isLowStock ? (
-                    <span className="pdp-info__stock-badge pdp-info__stock-badge--low">Only {product.stock} left in stock</span>
+                    <span className="pdp-info__stock-badge pdp-info__stock-badge--low">Only {stock} left in stock</span>
                 ) : (
-                    <span className="pdp-info__stock-badge pdp-info__stock-badge--in">In Stock ({product.stock} available)</span>
+                    <span className="pdp-info__stock-badge pdp-info__stock-badge--in">In Stock ({stock} available)</span>
                 )}
             </div>
             {isCartDisabled && (
@@ -147,12 +149,12 @@ function ProductInfo({ product, writtenReviewCount, quantity, isOutOfStock, isLo
             )}
             <div className="pdp-info__actions">
                 <div className="pdp-info__quantity">
-                    <button className="pdp-info__qty-btn" onClick={onDecreaseQuantity} disabled={isPurchaseDisabled}>−</button>
+                    <button className="pdp-info__qty-btn" onClick={onDecreaseQuantity} disabled={!canDecreaseQuantity || isPurchaseDisabled}>−</button>
                     <span className="pdp-info__qty-value">{quantity}</span>
-                    <button className="pdp-info__qty-btn" onClick={onIncreaseQuantity} disabled={isPurchaseDisabled}>+</button>
+                    <button className="pdp-info__qty-btn" onClick={onIncreaseQuantity} disabled={!canIncreaseQuantity || isPurchaseDisabled}>+</button>
                 </div>
                 <button className={`pdp-info__add-btn ${isPurchaseDisabled ? 'pdp-info__add-btn--disabled' : ''}`} onClick={onAddToCart} disabled={isPurchaseDisabled}>
-                    {isOutOfStock ? 'Out of Stock' : isCartDisabled ? 'Unavailable for Admin' : 'Add to Cart'} {!isPurchaseDisabled && <span>&rarr;</span>}
+                    {isOutOfStock ? 'Out of Stock' : isCartDisabled ? 'Unavailable for Admin' : isQuantityExceeded ? 'Quantity exceeds stock' : 'Add to Cart'} {!isPurchaseDisabled && <span>&rarr;</span>}
                 </button>
                 <button className={`pdp-info__wishlist-btn ${isWishlisted ? 'pdp-info__wishlist-btn--active' : ''}`} onClick={onToggleWishlist} aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill={isWishlisted ? 'var(--color-primary)' : 'none'} stroke={isWishlisted ? 'var(--color-primary)' : 'currentColor'} strokeWidth="2">
@@ -277,7 +279,7 @@ const ProductDetailsPage = () => {
     const [apiProduct, setApiProduct] = useState(null);
     const [isLoadingProduct, setIsLoadingProduct] = useState(true);
     const product = apiProduct;
-    const { addToCart } = useCart();
+    const { addToCart, cartItems } = useCart();
     const { isInWishlist, toggleWishlist } = useWishlist();
 
     const [selectedImage, setSelectedImage] = useState(0);
@@ -307,9 +309,10 @@ const ProductDetailsPage = () => {
                 const productFromApi = await getProductById(id);
 
                 if (isMounted && productFromApi) {
-                    setApiProduct(mapApiProductToDetails(productFromApi));
+                    const mappedProduct = mapApiProductToDetails(productFromApi);
+                    setApiProduct(mappedProduct);
                     setSelectedImage(0);
-                    setQuantity(1);
+                    setQuantity(mappedProduct.stock > 0 ? 1 : 0);
                 }
             } catch {
                 if (isMounted) {
@@ -440,10 +443,18 @@ const ProductDetailsPage = () => {
         );
     }
 
-    const isOutOfStock = product.stock === 0;
-    const isLowStock = product.stock > 0 && product.stock <= 10;
+    const cartItem = cartItems.find((item) => item.id === product.id);
+    const cartQuantity = Number(cartItem?.quantity || 0);
+    const totalStock = Number(product.stock || 0);
+    const availableStock = Math.max(0, totalStock - cartQuantity);
+    const isOutOfStock = availableStock === 0;
+    const isLowStock = availableStock > 0 && availableStock <= 10;
     const isWishlisted = isInWishlist(product.id);
     const isCartDisabled = user?.role === 'product_manager';
+    const isQuantityExceeded = quantity > availableStock;
+    const canDecreaseQuantity = quantity > 1;
+    const canIncreaseQuantity = availableStock > 0 && quantity < availableStock;
+    const isPurchaseDisabled = isOutOfStock || isCartDisabled || isQuantityExceeded;
     const writtenReviewCount = approvedReviews.length;
     const averageReviewRating =
         writtenReviewCount > 0
@@ -454,19 +465,24 @@ const ProductDetailsPage = () => {
             : null;
 
     const handleAddToCart = async () => {
-        if (isOutOfStock || isCartDisabled) return;
+        const quantityToAdd = Math.max(1, Number(quantity) || 0);
+        const effectiveQuantity = Math.min(quantityToAdd, availableStock);
+
+        if (isOutOfStock || isCartDisabled || effectiveQuantity <= 0) return;
 
         const selectedProduct = {
             ...product,
             image: product.images[selectedImage],
         };
 
-        await addToCart(selectedProduct, quantity);
+        await addToCart(selectedProduct, effectiveQuantity);
+        const remainingStockAfterAdd = Math.max(0, availableStock - effectiveQuantity);
+        setQuantity(remainingStockAfterAdd > 0 ? 1 : 0);
 
         setCartToast({
             productName: product.name,
-            quantity,
-            totalPrice: product.price * quantity,
+            quantity: effectiveQuantity,
+            totalPrice: product.price * effectiveQuantity,
         });
     };
 
@@ -482,7 +498,7 @@ const ProductDetailsPage = () => {
     };
 
     const increaseQuantity = () => {
-        setQuantity((currentQuantity) => Math.min(product.stock, currentQuantity + 1));
+        setQuantity((currentQuantity) => Math.min(availableStock, currentQuantity + 1));
     };
 
     const handleSubmitReview = async (event) => {
@@ -535,6 +551,10 @@ const ProductDetailsPage = () => {
                     isLowStock={isLowStock}
                     isWishlisted={isWishlisted}
                     isCartDisabled={isCartDisabled}
+                    isQuantityExceeded={isQuantityExceeded}
+                    availableStock={availableStock}
+                    canDecreaseQuantity={canDecreaseQuantity}
+                    canIncreaseQuantity={canIncreaseQuantity}
                     onDecreaseQuantity={decreaseQuantity}
                     onIncreaseQuantity={increaseQuantity}
                     onAddToCart={handleAddToCart}

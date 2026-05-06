@@ -205,7 +205,7 @@ describe("Test 2 – Stock quantity decreases after a successful purchase", () =
         mockCartItemDestroy.mockResolvedValue(1);
         mockOrderFindByPk.mockResolvedValue({
             id: 100,
-            status: "paid",
+            status: "processing",
             user: { id: 1, name: "Test User", email: "test@example.com" },
             items: [{ product_id: 1, quantity: purchaseQty, unit_price: "29.99", product: { name: "Hydrating Face Cream" } }],
         });

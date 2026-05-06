@@ -91,9 +91,9 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
         const totalAmount = formatMoney(subtotal + shipping);
         const bankConfirmation = confirmMockBankPayment(totalAmount, payment.method);
 
-        // Create order
+        // Create order using allowed status values only
         const order = await db.orders.create(
-            { user_id: userId, total_amount: totalAmount, status: bankConfirmation.approved ? "paid" : "pending" },
+            { user_id: userId, total_amount: totalAmount, status: bankConfirmation.approved ? "processing" : "cancelled" },
             { transaction: t }
         );
 

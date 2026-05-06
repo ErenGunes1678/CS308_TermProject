@@ -5,17 +5,17 @@ import { getOrders } from '../../services/orderService';
 import './OrdersPage.css';
 
 const STATUS_LABELS = {
-    pending: 'Pending',
-    paid: 'Paid',
-    shipped: 'Shipped',
+    processing: 'Processing',
+    'in-transit': 'In Transit',
+    delivered: 'Delivered',
     cancelled: 'Cancelled',
 };
 
 const TABS = [
     { key: 'all', label: 'All Orders' },
-    { key: 'pending', label: 'Pending' },
-    { key: 'paid', label: 'Paid' },
-    { key: 'shipped', label: 'Shipped' },
+    { key: 'processing', label: 'Processing' },
+    { key: 'in-transit', label: 'In Transit' },
+    { key: 'delivered', label: 'Delivered' },
     { key: 'cancelled', label: 'Cancelled' },
 ];
 
@@ -29,7 +29,7 @@ const formatDate = (iso) =>
 const OrderProgress = ({ status }) => {
     if (status === 'cancelled') return null;
 
-    const steps = ['pending', 'paid', 'shipped'];
+    const steps = ['processing', 'in-transit', 'delivered'];
     const activeIndex = steps.indexOf(status);
 
     return (
@@ -128,13 +128,13 @@ const OrderCard = ({ order, onReturn }) => {
                 </div>
 
                 <div className="order-card__actions">
-                    {order.status === 'shipped' && (
+                    {(order.status === 'processing' || order.status === 'in-transit') && (
                         <button className="order-btn order-btn--primary">
                             Track Package
                         </button>
                     )}
 
-                    {order.status === 'paid' && (
+                    {order.status === 'delivered' && (
                         <button
                             className="order-btn order-btn--primary"
                             onClick={() => onReturn(order.id)}
