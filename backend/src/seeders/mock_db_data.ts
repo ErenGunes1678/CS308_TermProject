@@ -390,7 +390,18 @@ const mockProducts = [
 ];
 
 export async function seedMockProducts() {
-  const serials = mockProducts.map((item) => item.serial_number);
+  const preparedMockProducts = mockProducts.map((product) => ({
+    ...product,
+
+    // Preserve the original mock rating separately.
+    // rating/review_count will be the displayed live values.
+    // base_rating/base_review_count will stay as the starting mock values.
+    base_rating: product.rating,
+    base_review_count: product.review_count,
+  }));
+
+  const serials = preparedMockProducts.map((item) => item.serial_number);
+
   const existing = await db.products.findAll({
     where: { serial_number: { [Op.in]: serials } },
   });
@@ -398,11 +409,14 @@ export async function seedMockProducts() {
   const existingBySerial = new Map<string, any>(
     existing.map((product: any) => [product.serial_number, product])
   );
+
   const existingSerials = new Set(existingBySerial.keys());
-  const toCreate = mockProducts.filter(
+
+  const toCreate = preparedMockProducts.filter(
     (product: any) => !existingSerials.has(product.serial_number)
   );
-  const toUpdate = mockProducts.filter(
+
+  const toUpdate = preparedMockProducts.filter(
     (product: any) => existingSerials.has(product.serial_number)
   );
 
