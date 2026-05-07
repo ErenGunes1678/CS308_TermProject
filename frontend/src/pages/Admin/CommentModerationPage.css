@@ -264,8 +264,9 @@
   min-width: 88px;
   padding: 0.8rem 0.9rem;
   border-radius: 14px;
-  background: var(--color-secondary);
-  color: var(--color-gray-800);
+  background: rgba(255, 64, 129, 0.08);
+  border: 1px solid rgba(255, 64, 129, 0.16);
+  color: var(--color-primary-dark);
 }
 
 .comment-card__rating-value {
@@ -276,7 +277,7 @@
 
 .comment-card__rating-scale {
   margin-left: 0.25rem;
-  color: var(--color-gray-500);
+  color: rgba(169, 58, 103, 0.7);
   font-size: 0.8rem;
 }
 

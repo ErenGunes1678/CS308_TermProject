@@ -26,11 +26,11 @@ const mapApiProductToDetails = (apiProduct) => {
         categorySlug: apiProduct.category || 'products',
         price: Number(apiProduct.price ?? 0),
         originalPrice:
-            apiProduct.original_price === null || apiProduct.original_price === undefined
+            apiProduct.originalPrice === null || apiProduct.originalPrice === undefined
                 ? null
-                : Number(apiProduct.original_price),
+                : Number(apiProduct.originalPrice),
         rating: Number(apiProduct.rating ?? 0),
-        reviewCount: Number(apiProduct.reviewCount ?? apiProduct.review_count ?? 0),
+        reviewCount: Number(apiProduct.reviewCount ?? 0),
         stock,
         images: [apiProduct.image],
         details: {
