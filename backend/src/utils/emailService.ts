@@ -19,7 +19,7 @@ export const sendInvoiceEmail = async (
     const from = process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@store.com";
 
     await transporter.sendMail({
-        from: `"CS308 Store" <${from}>`,
+        from: `"Lumière Store " <${from}>`,
         to: toEmail,
         subject: `Your Invoice – ${invoiceNumber}`,
         html: `
