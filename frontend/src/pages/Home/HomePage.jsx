@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getProducts } from '../../services/productService';
+import { PRODUCT_REVIEW_UPDATED_EVENT } from '../../utils/reviewUpdates';
 import '../../styles/product-card.css';
 import './HomePage.css';
 
@@ -159,8 +160,15 @@ const HomePage = () => {
 
         loadHomeProducts();
 
+        const handleProductReviewUpdated = () => {
+            loadHomeProducts();
+        };
+
+        window.addEventListener(PRODUCT_REVIEW_UPDATED_EVENT, handleProductReviewUpdated);
+
         return () => {
             isMounted = false;
+            window.removeEventListener(PRODUCT_REVIEW_UPDATED_EVENT, handleProductReviewUpdated);
         };
     }, []);
 

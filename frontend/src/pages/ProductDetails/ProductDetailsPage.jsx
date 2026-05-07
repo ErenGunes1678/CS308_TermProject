@@ -9,6 +9,7 @@ import {
     createComment,
     getApprovedComments,
 } from '../../services/commentService';
+import { emitProductReviewUpdated, PRODUCT_REVIEW_UPDATED_EVENT } from '../../utils/reviewUpdates';
 
 const CATEGORY_LABELS = {
     makeup: 'Makeup',
@@ -294,6 +295,14 @@ const ProductDetailsPage = () => {
     const [isLoadingReviews, setIsLoadingReviews] = useState(true);
     const [reviewError, setReviewError] = useState('');
 
+    const refreshProduct = async (productId) => {
+        const productFromApi = await getProductById(productId);
+        const mappedProduct = mapApiProductToDetails(productFromApi);
+        setApiProduct(mappedProduct);
+        setSelectedImage(0);
+        setQuantity(mappedProduct.stock > 0 ? 1 : 0);
+    };
+
     useLayoutEffect(() => {
         window.scrollTo(0, 0);
     }, [id]);
@@ -306,13 +315,8 @@ const ProductDetailsPage = () => {
             setApiProduct(null);
 
             try {
-                const productFromApi = await getProductById(id);
-
-                if (isMounted && productFromApi) {
-                    const mappedProduct = mapApiProductToDetails(productFromApi);
-                    setApiProduct(mappedProduct);
-                    setSelectedImage(0);
-                    setQuantity(mappedProduct.stock > 0 ? 1 : 0);
+                if (isMounted) {
+                    await refreshProduct(id);
                 }
             } catch {
                 if (isMounted) {
@@ -374,6 +378,26 @@ const ProductDetailsPage = () => {
 
         return () => {
             isMounted = false;
+        };
+    }, [id]);
+
+    useEffect(() => {
+        const handleProductReviewUpdated = async (event) => {
+            if (Number(event.detail?.productId) !== Number(id)) {
+                return;
+            }
+
+            try {
+                await refreshProduct(id);
+            } catch {
+                // Keep the current UI state if the refresh fails.
+            }
+        };
+
+        window.addEventListener(PRODUCT_REVIEW_UPDATED_EVENT, handleProductReviewUpdated);
+
+        return () => {
+            window.removeEventListener(PRODUCT_REVIEW_UPDATED_EVENT, handleProductReviewUpdated);
         };
     }, [id]);
 
@@ -511,6 +535,8 @@ const ProductDetailsPage = () => {
                 rating: reviewRating,
                 comment_text: reviewText.trim(),
             });
+            await refreshProduct(id);
+            emitProductReviewUpdated(id);
             setReviewSubmitted(true);
             setReviewError('');
             setShowReviewForm(false);
