@@ -446,14 +446,15 @@ const ProductDetailsPage = () => {
     const cartItem = cartItems.find((item) => item.id === product.id);
     const cartQuantity = Number(cartItem?.quantity || 0);
     const totalStock = Number(product.stock || 0);
-    const availableStock = Math.max(0, totalStock - cartQuantity);
-    const isOutOfStock = availableStock === 0;
-    const isLowStock = availableStock > 0 && availableStock <= 10;
+    const remainingStock = Math.max(0, totalStock - cartQuantity);
+    const availableStock = remainingStock;
+    const isOutOfStock = totalStock === 0;
+    const isLowStock = totalStock > 0 && totalStock <= 10;
     const isWishlisted = isInWishlist(product.id);
     const isCartDisabled = user?.role === 'product_manager';
-    const isQuantityExceeded = quantity > availableStock;
+    const isQuantityExceeded = quantity > remainingStock;
     const canDecreaseQuantity = quantity > 1;
-    const canIncreaseQuantity = availableStock > 0 && quantity < availableStock;
+    const canIncreaseQuantity = remainingStock > 0 && quantity < remainingStock;
     const isPurchaseDisabled = isOutOfStock || isCartDisabled || isQuantityExceeded;
     const writtenReviewCount = approvedReviews.length;
     const averageReviewRating =
@@ -466,7 +467,7 @@ const ProductDetailsPage = () => {
 
     const handleAddToCart = async () => {
         const quantityToAdd = Math.max(1, Number(quantity) || 0);
-        const effectiveQuantity = Math.min(quantityToAdd, availableStock);
+        const effectiveQuantity = Math.min(quantityToAdd, remainingStock);
 
         if (isOutOfStock || isCartDisabled || effectiveQuantity <= 0) return;
 
@@ -476,7 +477,7 @@ const ProductDetailsPage = () => {
         };
 
         await addToCart(selectedProduct, effectiveQuantity);
-        const remainingStockAfterAdd = Math.max(0, availableStock - effectiveQuantity);
+        const remainingStockAfterAdd = Math.max(0, remainingStock - effectiveQuantity);
         setQuantity(remainingStockAfterAdd > 0 ? 1 : 0);
 
         setCartToast({
