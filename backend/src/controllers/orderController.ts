@@ -2,6 +2,7 @@ import { Response } from "express";
 import { AuthRequest } from "../middleware/authMiddleware";
 import db, { sequelize } from "../entities";
 import { createInvoicePdfBuffer } from "../utils/invoicePdf";
+import { sendInvoiceEmail } from "../utils/emailService";
 
 const SHIPPING_COST = 5.99;
 const FREE_SHIPPING_MINIMUM = 50;
@@ -161,6 +162,15 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
         const pdfBuffer = createInvoicePdfBuffer(invoice);
         const pdfFilename = `invoice-${invoice.invoiceNumber}.pdf`;
         const pdfBase64 = pdfBuffer.toString("base64");
+
+        const accountEmail = populatedOrder.user?.email;
+        if (accountEmail) {
+            try {
+                await sendInvoiceEmail(accountEmail, invoice.customerName, invoice.invoiceNumber, pdfBuffer);
+            } catch (emailError) {
+                console.error("Invoice email failed (order still confirmed):", emailError);
+            }
+        }
 
         res.status(201).json({
             message: "Payment confirmed and invoice generated.",
