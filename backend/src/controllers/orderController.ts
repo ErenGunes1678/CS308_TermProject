@@ -163,13 +163,10 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
         const pdfFilename = `invoice-${invoice.invoiceNumber}.pdf`;
         const pdfBase64 = pdfBuffer.toString("base64");
 
-        const accountEmail = populatedOrder.user?.email;
-        if (accountEmail) {
-            try {
-                await sendInvoiceEmail(accountEmail, invoice.customerName, invoice.invoiceNumber, pdfBuffer);
-            } catch (emailError) {
-                console.error("Invoice email failed (order still confirmed):", emailError);
-            }
+        try {
+            await sendInvoiceEmail(invoice.customerEmail, invoice.customerName, invoice.invoiceNumber, pdfBuffer);
+        } catch (emailError) {
+            console.error("Invoice email failed (order still confirmed):", emailError);
         }
 
         res.status(201).json({

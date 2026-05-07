@@ -238,6 +238,10 @@ const OrdersPage = () => {
         return <Navigate to="/login" replace />;
     }
 
+    if (user.role === 'product_manager') {
+        return <Navigate to="/admin/orders" replace />;
+    }
+
     const handleReturn = (id) => {
         alert(
             `Return request submitted for order ${id}. A sales manager will review your request shortly.`

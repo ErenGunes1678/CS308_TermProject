@@ -416,16 +416,26 @@ function ProfilePage() {
         <div className="profile-summary-cards">
           <button
             className="summary-card"
-            onClick={() => navigate("/orders")}
+            onClick={() =>
+              navigate(user.role === "product_manager" ? "/admin/orders" : "/orders")
+            }
             id="profile-orders-card"
           >
             <div className="summary-card__icon summary-card__icon--orders">
               {icons.orders}
             </div>
             <div className="summary-card__body">
-              <span className="summary-card__label">Orders</span>
-              <span className="summary-card__value">View &amp; track</span>
-              <span className="summary-card__desc">View and track your orders</span>
+              <span className="summary-card__label">
+                {user.role === "product_manager" ? "Admin Orders" : "Orders"}
+              </span>
+              <span className="summary-card__value">
+                {user.role === "product_manager" ? "Manage queue" : "View & track"}
+              </span>
+              <span className="summary-card__desc">
+                {user.role === "product_manager"
+                  ? "Manage order status changes"
+                  : "View and track your orders"}
+              </span>
             </div>
             <span className="summary-card__arrow">{icons.chevron}</span>
           </button>

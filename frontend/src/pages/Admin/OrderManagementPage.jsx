@@ -210,40 +210,42 @@ const OrderManagementPage = () => {
         </div>
       </section>
 
-      <div className="container admin-orders-panel">
-        <div className="admin-orders-summary">
-          <div>
-            <p className="admin-orders-summary__label">Order Overview</p>
-            <h2 className="admin-orders-summary__title">{orders.length} active orders</h2>
+      <div className="container">
+        <section className="admin-orders-panel">
+          <div className="admin-orders-summary">
+            <div>
+              <p className="admin-orders-summary__label">Order Overview</p>
+              <h2 className="admin-orders-summary__title">{orders.length} active orders</h2>
+            </div>
+            <div className="admin-orders-summary__counts">
+              <span>Processing: {counts.processing}</span>
+              <span>In Transit: {counts['in-transit']}</span>
+              <span>Delivered: {counts.delivered}</span>
+              <span>Cancelled: {counts.cancelled}</span>
+            </div>
           </div>
-          <div className="admin-orders-summary__counts">
-            <span>Processing: {counts.processing}</span>
-            <span>In Transit: {counts['in-transit']}</span>
-            <span>Delivered: {counts.delivered}</span>
-            <span>Cancelled: {counts.cancelled}</span>
-          </div>
-        </div>
 
-        {errorMessage ? (
-          <div className="admin-orders-alert">{errorMessage}</div>
-        ) : null}
+          {errorMessage ? (
+            <div className="admin-orders-alert">{errorMessage}</div>
+          ) : null}
 
-        {isPageLoading ? (
-          <div className="admin-orders-loading">Loading orders...</div>
-        ) : orders.length === 0 ? (
-          <div className="admin-orders-empty">No orders available.</div>
-        ) : (
-          <div className="admin-orders-list">
-            {orders.map((order) => (
-              <OrderRow
-                key={order.id}
-                order={order}
-                onAction={handleStatusUpdate}
-                isUpdating={updatingOrderId === order.id}
-              />
-            ))}
-          </div>
-        )}
+          {isPageLoading ? (
+            <div className="admin-orders-loading">Loading orders...</div>
+          ) : orders.length === 0 ? (
+            <div className="admin-orders-empty">No orders available.</div>
+          ) : (
+            <div className="admin-orders-list">
+              {orders.map((order) => (
+                <OrderRow
+                  key={order.id}
+                  order={order}
+                  onAction={handleStatusUpdate}
+                  isUpdating={updatingOrderId === order.id}
+                />
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );
