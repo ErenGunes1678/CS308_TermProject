@@ -93,7 +93,7 @@ const ReviewStars = ({ value, onChange }) => (
 const DeliveredReviewPrompt = () => {
   const { user, isLoading } = useAuth();
   const [candidates, setCandidates] = useState([]);
-  const [activePrompt, setActivePrompt] = useState(null);
+  const [activeIndex, setActiveIndex] = useState(0);
   const [rating, setRating] = useState(0);
   const [commentText, setCommentText] = useState("");
   const [submitError, setSubmitError] = useState("");
@@ -123,11 +123,11 @@ const DeliveredReviewPrompt = () => {
         );
 
         setCandidates(deliveredProducts);
-        setActivePrompt(deliveredProducts[0] || null);
+        setActiveIndex(0);
       } catch {
         if (isMounted) {
           setCandidates([]);
-          setActivePrompt(null);
+          setActiveIndex(0);
         }
       }
     };
@@ -138,6 +138,18 @@ const DeliveredReviewPrompt = () => {
       isMounted = false;
     };
   }, [isCustomer, isLoading, user?.id]);
+
+  useEffect(() => {
+    setActiveIndex((currentIndex) => {
+      if (candidates.length === 0) {
+        return 0;
+      }
+
+      return Math.min(currentIndex, candidates.length - 1);
+    });
+  }, [candidates]);
+
+  const activePrompt = candidates[activeIndex] || null;
 
   useEffect(() => {
     setRating(0);
@@ -176,12 +188,38 @@ const DeliveredReviewPrompt = () => {
     writeHiddenProductIds(user?.id, hiddenProductIds);
 
     setCandidates((currentCandidates) => {
+      const currentIndex = currentCandidates.findIndex(
+        (candidate) => candidate.productId === Number(productId)
+      );
       const nextCandidates = currentCandidates.filter(
         (candidate) => candidate.productId !== Number(productId)
       );
-      setActivePrompt(nextCandidates[0] || null);
+
+      setActiveIndex(() => {
+        if (nextCandidates.length === 0) {
+          return 0;
+        }
+
+        if (currentIndex < 0) {
+          return 0;
+        }
+
+        return Math.min(currentIndex, nextCandidates.length - 1);
+      });
+
       return nextCandidates;
     });
+  };
+
+  const canGoPrev = activeIndex > 0;
+  const canGoNext = activeIndex < candidates.length - 1;
+
+  const handleShowPrevious = () => {
+    setActiveIndex((currentIndex) => Math.max(0, currentIndex - 1));
+  };
+
+  const handleShowNext = () => {
+    setActiveIndex((currentIndex) => Math.min(candidates.length - 1, currentIndex + 1));
   };
 
   const handleDismiss = () => {
@@ -253,6 +291,32 @@ const DeliveredReviewPrompt = () => {
           Your order was delivered. Rate the product now and leave a comment for moderation.
         </p>
 
+        {candidates.length > 1 ? (
+          <div className="review-prompt__pager">
+            <span className="review-prompt__pager-count">
+              Product {activeIndex + 1} of {candidates.length}
+            </span>
+            <div className="review-prompt__pager-actions">
+              <button
+                type="button"
+                className="review-prompt__pager-btn"
+                onClick={handleShowPrevious}
+                disabled={!canGoPrev}
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                className="review-prompt__pager-btn"
+                onClick={handleShowNext}
+                disabled={!canGoNext}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         <div className="review-prompt__product">
           <div className="review-prompt__thumb">
             {activePrompt.productImage ? (
@@ -320,7 +384,7 @@ const DeliveredReviewPrompt = () => {
 
         {remainingCount > 0 ? (
           <p className="review-prompt__remaining">
-            {remainingCount} more delivered product{remainingCount === 1 ? "" : "s"} can be reviewed later.
+            {remainingCount} other delivered product{remainingCount === 1 ? "" : "s"} in this queue.
           </p>
         ) : null}
       </section>
