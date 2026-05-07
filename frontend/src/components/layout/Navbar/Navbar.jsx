@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import { useCart } from '../../../hooks/useCart';
@@ -8,6 +8,7 @@ const Navbar = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
@@ -15,6 +16,7 @@ const Navbar = () => {
 
   const wishlistCount = 0;
   const cartBadgeCount = itemCount > 99 ? '99+' : itemCount;
+  const canAccessCart = user?.role !== 'product_manager';
   const userInitial =
     user?.name?.trim().charAt(0).toUpperCase() ||
     user?.email?.trim().charAt(0).toUpperCase() ||
@@ -32,6 +34,37 @@ const Navbar = () => {
     setSearchOpen(location.pathname === '/search' && Boolean(currentQuery));
   }, [location.pathname, location.search]);
 
+  useEffect(() => {
+    if (searchOpen) {
+      requestAnimationFrame(() => {
+        searchInputRef.current?.focus();
+      });
+    }
+  }, [searchOpen]);
+
+  useEffect(() => {
+    if (location.pathname !== '/search') {
+      return;
+    }
+
+    const currentQuery = new URLSearchParams(location.search).get('q') || '';
+    const trimmedQuery = searchQuery.trim();
+    if (trimmedQuery === currentQuery.trim()) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      const target = trimmedQuery
+        ? `/search?q=${encodeURIComponent(trimmedQuery)}`
+        : '/search';
+      navigate(target, { replace: true });
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [location.pathname, location.search, navigate, searchQuery]);
+
   const handleSearchSubmit = (event) => {
     event.preventDefault();
     const trimmedQuery = searchQuery.trim();
@@ -44,6 +77,13 @@ const Navbar = () => {
 
     navigate('/search');
     setSearchOpen(false);
+  };
+
+  const openSearchPage = () => {
+    if (location.pathname !== '/search') {
+      navigate(searchQuery.trim() ? `/search?q=${encodeURIComponent(searchQuery.trim())}` : '/search');
+    }
+    setSearchOpen(true);
   };
 
   const navLinks = [
@@ -131,7 +171,7 @@ const Navbar = () => {
                   return;
                 }
 
-                setSearchOpen(true);
+                openSearchPage();
               }}
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -140,15 +180,17 @@ const Navbar = () => {
               </svg>
             </button>
 
-            {searchOpen && (
-              <input
-                type="search"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search products"
-                className="navbar__search-input"
-              />
-            )}
+            <input
+              ref={searchInputRef}
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              onFocus={openSearchPage}
+              placeholder="Search products"
+              className="navbar__search-input"
+              aria-hidden={!searchOpen}
+              tabIndex={searchOpen ? 0 : -1}
+            />
           </form>
 
           <Link to="/wishlist" className="navbar__icon-btn" aria-label="Wishlist">
@@ -160,16 +202,18 @@ const Navbar = () => {
             )}
           </Link>
 
-          <Link to="/cart" className="navbar__icon-btn" aria-label="Cart">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <path d="M16 10a4 4 0 0 1-8 0" />
-            </svg>
-            {itemCount > 0 && (
-              <span className="navbar__badge">{cartBadgeCount}</span>
-            )}
-          </Link>
+          {canAccessCart && (
+            <Link to="/cart" className="navbar__icon-btn" aria-label="Cart">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <path d="M16 10a4 4 0 0 1-8 0" />
+              </svg>
+              {itemCount > 0 && (
+                <span className="navbar__badge">{cartBadgeCount}</span>
+              )}
+            </Link>
+          )}
 
           {/* User Menu */}
           <div className="navbar__user-wrapper">
@@ -207,14 +251,22 @@ const Navbar = () => {
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                       My Account
                     </Link>
-                    <Link to="/orders" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="18" rx="2" /><path d="m9 12 2 2 4-4" /></svg>
-                      My Orders
-                    </Link>
+                    {user?.role !== 'product_manager' && (
+                      <Link to="/orders" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="18" rx="2" /><path d="m9 12 2 2 4-4" /></svg>
+                        My Orders
+                      </Link>
+                    )}
                     {user?.role === 'product_manager' && (
-                      <Link to="/admin" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                      <Link to="/admin/orders" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-                        Comment Moderation
+                        Admin Orders
+                      </Link>
+                    )}
+                    {user?.role === 'product_manager' && (
+                      <Link to="/admin/comments" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /><path d="M8 9h8" /><path d="M8 13h5" /></svg>
+                        Comment Queue
                       </Link>
                     )}
                     <hr className="navbar__dropdown-divider" />

@@ -6,6 +6,46 @@ const Comment = db["comments"];
 const Product = db["products"];
 const User = db["users"];
 
+const updateProductRatingStats = async (productId: number) => {
+    const approvedComments = await Comment.findAll({
+        where: {
+            product_id: productId,
+            status: "approved"
+        },
+        attributes: ["rating"]
+    });
+
+    const reviewCount = approvedComments.length;
+
+    let averageRating = 0;
+
+    if (reviewCount > 0) {
+        const totalRating = approvedComments.reduce(
+            (sum: number, comment: any) => sum + Number(comment.rating),
+            0
+        );
+
+        averageRating = Number((totalRating / reviewCount).toFixed(1));
+    }
+
+    await Product.update(
+        {
+            rating: averageRating,
+            review_count: reviewCount
+        },
+        {
+            where: {
+                id: productId
+            }
+        }
+    );
+
+    return {
+        rating: averageRating,
+        review_count: reviewCount
+    };
+};
+
 const getCurrentUser = async (req: AuthRequest) => {
     if (!req.userId) {
         return null;
@@ -115,9 +155,13 @@ export const getApprovedCommentsByProduct = async (req: Request, res: Response) 
             order: [["createdAt", "DESC"]]
         });
 
+        const ratingStats = await updateProductRatingStats(Number(productId));
+
         return res.status(200).json({
             message: "Approved comments fetched successfully",
-            comments
+            comments,
+            rating: ratingStats.rating,
+            review_count: ratingStats.review_count
         });
     } catch (error) {
         console.error("Get approved comments error:", error);
@@ -215,10 +259,15 @@ export const approveComment = async (req: AuthRequest, res: Response) => {
             approved_at: new Date()
         });
 
+        const ratingStats = await updateProductRatingStats(Number(comment.product_id));
+
         return res.status(200).json({
             message: "Comment approved successfully",
-            comment
+            comment,
+            rating: ratingStats.rating,
+            review_count: ratingStats.review_count
         });
+        
     } catch (error) {
         console.error("Approve comment error:", error);
         return res.status(500).json({

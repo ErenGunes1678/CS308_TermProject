@@ -30,23 +30,26 @@ app.use("/order", orderRoutes);
 app.use("/search", searchRoutes);
 app.use("/", commentRoutes);
 
-// Sync Sequelize models then start server
-sequelize.authenticate()
-  .then(() => {
-    console.log("Database connected!");
+// Sync Sequelize models then start server (only when run directly, not imported by tests)
+if (require.main === module) {
+  sequelize.authenticate()
+    .then(() => {
+      console.log("Database connected!");
 
-    return sequelize.sync({force: true});
-  })
-  .then(() => {
-    seedMockProducts();
-    seedMockUsers();
-    console.log("Database synced successfully");
+      return sequelize.sync({alter: true});
+    })
+    .then(() => {
+      seedMockProducts();
+      seedMockUsers();
+      console.log("Database synced successfully");
 
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+      app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+      });
+    })
+    .catch((error) => {
+      console.error("Startup error:", error);
+      process.exit(1);
     });
-  })
-  .catch((error) => {
-    console.error("Startup error:", error);
-    process.exit(1);
-  });
+}
+export default app;

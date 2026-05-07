@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { useCart } from "../../hooks/useCart";
-import { placeOrder } from "../../services/orderService";
 import "./CartPage.css";
 
 export default function CartPage() {
@@ -20,6 +19,10 @@ export default function CartPage() {
     clearCart,
   } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!isLoading && user?.role === "product_manager") {
+    return <Navigate to="/admin/orders" replace />;
+  }
 
   const handleClearCart = async () => {
     if (isSubmitting) {
@@ -48,31 +51,7 @@ export default function CartPage() {
       return;
     }
 
-    try {
-      setIsSubmitting(true);
-      const { order } = await placeOrder();
-
-      await clearCart();
-
-      navigate("/order-success", {
-        replace: true,
-        state: {
-          order: {
-            ...order,
-            total,
-            email: user.email,
-          },
-        },
-      });
-    } catch (error) {
-      alert(
-        error?.response?.data?.message ||
-          error?.response?.data?.error ||
-          "Unable to place the order right now."
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+    navigate("/checkout");
   };
 
   if (cartItems.length === 0) {
@@ -118,7 +97,13 @@ export default function CartPage() {
                 <div className="quantity">
                   <button onClick={() => decreaseCartItem(item.cartItemId)}>-</button>
                   <span>{item.quantity}</span>
-                  <button onClick={() => increaseCartItem(item.id)}>+</button>
+                  <button
+                    onClick={() => increaseCartItem(item.id)}
+                    disabled={item.quantity >= item.stock}
+                    title={item.quantity >= item.stock ? "Cannot add more than available stock" : "Increase quantity"}
+                  >
+                    +
+                  </button>
                 </div>
               </div>
 
@@ -176,7 +161,7 @@ export default function CartPage() {
             onClick={handleBuy}
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Processing..." : "Buy"}
+            {isSubmitting ? "Processing..." : "Proceed to Checkout"}
           </button>
         </div>
       </div>
