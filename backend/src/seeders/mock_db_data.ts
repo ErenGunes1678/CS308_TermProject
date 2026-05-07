@@ -35,7 +35,7 @@ const mockProducts = [
     model: "Radiance Pro",
     serial_number: "GL-RBS-002",
     description: "A brightening serum with vitamin C, niacinamide, and hyaluronic acid.",
-    quantity_in_stock: 15,
+    quantity_in_stock: 0,
     price: 54,
     original_price: 68,
     rating: 4.7,
