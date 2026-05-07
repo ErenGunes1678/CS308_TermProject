@@ -233,7 +233,7 @@ const DeliveredReviewPrompt = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!activePrompt || rating === 0 || commentText.trim() === "") {
+    if (!activePrompt || rating === 0) {
       return;
     }
 
@@ -241,13 +241,13 @@ const DeliveredReviewPrompt = () => {
       setIsSubmitting(true);
       setSubmitError("");
 
-      await createComment(activePrompt.productId, {
+      const response = await createComment(activePrompt.productId, {
         rating,
         comment_text: commentText.trim(),
       });
 
       emitProductReviewUpdated(activePrompt.productId);
-      setSubmitSuccess("Your review was sent. The rating is recorded now and the comment is pending approval.");
+      setSubmitSuccess(response?.message || "Your rating is recorded immediately; your written review is pending approval.");
 
       window.setTimeout(() => {
         hidePromptForProduct(activePrompt.productId);
@@ -375,7 +375,7 @@ const DeliveredReviewPrompt = () => {
             <button
               type="submit"
               className="review-prompt__primary"
-              disabled={isSubmitting || rating === 0 || commentText.trim() === ""}
+              disabled={isSubmitting || rating === 0}
             >
               {isSubmitting ? "Sending..." : "Submit review"}
             </button>

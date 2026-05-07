@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { Op } from "sequelize";
 import db from "../entities";
 import { AuthRequest } from "../middleware/authMiddleware";
 
@@ -18,7 +19,10 @@ const updateProductRatingStats = async (productId: number) => {
 
     const ratedComments = await Comment.findAll({
         where: {
-            product_id: productId
+            product_id: productId,
+            status: {
+                [Op.ne]: "rejected"
+            }
         },
         attributes: ["rating"]
     });
@@ -96,9 +100,9 @@ export const createComment = async (req: AuthRequest, res: Response) => {
             });
         }
 
-        if (rating === undefined || !comment_text) {
+        if (rating === undefined) {
             return res.status(400).json({
-                message: "Rating and comment text are required"
+                message: "Rating is required"
             });
         }
 
@@ -115,18 +119,23 @@ export const createComment = async (req: AuthRequest, res: Response) => {
             });
         }
 
+        const trimmedComment = comment_text?.trim() || "";
+        const hasComment = trimmedComment.length > 0;
+
         const comment = await Comment.create({
             product_id: Number(productId),
             user_id: currentUser.id,
             rating,
-            comment_text,
-            status: "pending"
+            comment_text: trimmedComment,
+            status: hasComment ? "pending" : "approved"
         });
 
         const ratingStats = await updateProductRatingStats(Number(productId));
 
         return res.status(201).json({
-            message: "Comment submitted successfully and is waiting for approval",
+            message: hasComment
+                ? "Review is pending approval"
+                : "Rating submitted successfully",
             comment,
             rating: ratingStats.rating,
             review_count: ratingStats.review_count
@@ -213,7 +222,10 @@ export const getPendingComments = async (req: AuthRequest, res: Response) => {
 
         const comments = await Comment.findAll({
             where: {
-                status: "pending"
+                status: "pending",
+                comment_text: {
+                    [Op.ne]: ""
+                }
             },
             include: [
                 {
