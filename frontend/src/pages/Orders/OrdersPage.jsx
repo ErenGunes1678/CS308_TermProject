@@ -1,8 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { getOrders } from '../../services/orderService';
+import { cancelOrder, getOrders } from '../../services/orderService';
 import './OrdersPage.css';
+
+const REFUND_REQUESTS_KEY = 'refundRequests';
+
+const readRefundRequests = () => {
+    try {
+        const storedRequests = localStorage.getItem(REFUND_REQUESTS_KEY);
+        const parsedRequests = storedRequests ? JSON.parse(storedRequests) : [];
+        return Array.isArray(parsedRequests) ? parsedRequests : [];
+    } catch {
+        return [];
+    }
+};
 
 const STATUS_LABELS = {
     processing: 'Processing',
@@ -60,10 +72,19 @@ const OrderProgress = ({ status }) => {
     );
 };
 
-const OrderCard = ({ order, onReturn }) => {
+const isWithinReturnWindow = (createdAt) => {
+    const orderDate = new Date(createdAt);
+    const ageMs = Date.now() - orderDate.getTime();
+    return ageMs <= 30 * 24 * 60 * 60 * 1000;
+};
+
+const OrderCard = ({ order, refundRequests, onCancel, onReturn }) => {
     const [expanded, setExpanded] = useState(false);
     const visibleItems = expanded ? order.items : order.items.slice(0, 2);
     const hiddenCount = order.items.length - 2;
+    const canCancel = order.status === 'processing';
+    const canRequestRefund = order.status === 'delivered' && isWithinReturnWindow(order.createdAt);
+    const refundForOrder = refundRequests.filter((request) => request.orderId === order.id);
 
     return (
         <article className="order-card">
@@ -94,6 +115,19 @@ const OrderCard = ({ order, onReturn }) => {
                             </Link>
                             <span className="order-item__variant">{item.product?.subcategory}</span>
                             <span className="order-item__qty">Qty: {item.quantity}</span>
+                            {refundRequests.find((request) => request.orderId === order.id && request.productId === item.product_id) ? (
+                                <span className="order-item__refund-status">
+                                    Refund {refundRequests.find((request) => request.orderId === order.id && request.productId === item.product_id)?.status}
+                                </span>
+                            ) : canRequestRefund ? (
+                                <button
+                                    type="button"
+                                    className="order-item__refund-btn"
+                                    onClick={() => onReturn(order, item)}
+                                >
+                                    Request refund
+                                </button>
+                            ) : null}
                         </div>
                         <div className="order-item__price">
                             ${(Number(item.unit_price || 0) * Number(item.quantity || 0)).toFixed(2)}
@@ -117,6 +151,15 @@ const OrderCard = ({ order, onReturn }) => {
                         Show less
                     </button>
                 )}
+                {refundForOrder.length > 0 && (
+                    <div className="order-refund-statuses">
+                        {refundForOrder.map((request) => (
+                            <span key={request.id}>
+                                {request.productName}: {request.status}
+                            </span>
+                        ))}
+                    </div>
+                )}
             </div>
 
             <footer className="order-card__footer">
@@ -134,12 +177,21 @@ const OrderCard = ({ order, onReturn }) => {
                         </button>
                     )}
 
-                    {order.status === 'delivered' && (
+                    {canCancel && (
                         <button
-                            className="order-btn order-btn--primary"
-                            onClick={() => onReturn(order.id)}
+                            className="order-btn order-btn--secondary"
+                            onClick={() => onCancel(order.id)}
                         >
-                            Request Return
+                            Cancel Order
+                        </button>
+                    )}
+
+                    {order.status === 'delivered' && !canRequestRefund && (
+                        <button
+                            className="order-btn order-btn--disabled"
+                            disabled
+                        >
+                            Return window closed
                         </button>
                     )}
                 </div>
@@ -155,6 +207,7 @@ const OrdersPage = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [isPageLoading, setIsPageLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState('');
+    const [refundRequests, setRefundRequests] = useState(readRefundRequests);
 
     useEffect(() => {
         if (isLoading || !user) {
@@ -222,6 +275,10 @@ const OrdersPage = () => {
         return map;
     }, [orders]);
 
+    useEffect(() => {
+        localStorage.setItem(REFUND_REQUESTS_KEY, JSON.stringify(refundRequests));
+    }, [refundRequests]);
+
     if (isLoading) {
         return (
             <div className="orders-page">
@@ -239,13 +296,47 @@ const OrdersPage = () => {
     }
 
     if (user.role === 'product_manager') {
-        return <Navigate to="/admin/orders" replace />;
+        return <Navigate to="/admin/product-manager/deliveries" replace />;
     }
 
-    const handleReturn = (id) => {
-        alert(
-            `Return request submitted for order ${id}. A sales manager will review your request shortly.`
-        );
+    if (user.role === 'sales_manager') {
+        return <Navigate to="/admin/sales-manager/invoices" replace />;
+    }
+
+    const handleCancel = async (orderId) => {
+        try {
+            const data = await cancelOrder(orderId);
+            setOrders((currentOrders) =>
+                currentOrders.map((order) =>
+                    order.id === orderId ? { ...order, status: data.order.status } : order
+                )
+            );
+            setErrorMessage('');
+        } catch (error) {
+            setErrorMessage(error?.response?.data?.message || 'Unable to cancel order.');
+        }
+    };
+
+    const handleReturn = (order, item) => {
+        const existing = refundRequests.some((request) => request.orderId === order.id && request.productId === item.product_id);
+        if (existing) {
+            setErrorMessage('A refund request already exists for this product.');
+            return;
+        }
+
+        setRefundRequests((currentRequests) => [
+            {
+                id: `RR-${order.id}-${item.product_id}-${Date.now()}`,
+                orderId: order.id,
+                productId: item.product_id,
+                productName: item.product?.name || `Product #${item.product_id}`,
+                customerEmail: user.email,
+                status: 'pending',
+                createdAt: new Date().toISOString(),
+            },
+            ...currentRequests,
+        ]);
+        setErrorMessage('');
     };
 
     return (
@@ -328,6 +419,8 @@ const OrdersPage = () => {
                             <OrderCard
                                 key={order.id}
                                 order={order}
+                                refundRequests={refundRequests}
+                                onCancel={handleCancel}
                                 onReturn={handleReturn}
                             />
                         ))

@@ -465,7 +465,7 @@ const ProductDetailsPage = () => {
     const isOutOfStock = totalStock === 0;
     const isLowStock = totalStock > 0 && totalStock <= 10;
     const isWishlisted = isInWishlist(product.id);
-    const isCartDisabled = user?.role === 'product_manager';
+    const isCartDisabled = user?.role === 'product_manager' || user?.role === 'sales_manager';
     const isQuantityExceeded = quantity > remainingStock;
     const canDecreaseQuantity = quantity > 1;
     const canIncreaseQuantity = remainingStock > 0 && quantity < remainingStock;

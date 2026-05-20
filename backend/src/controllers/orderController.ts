@@ -187,9 +187,14 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
     }
 };
 
-const isAdminUser = async (userId: number) => {
+const isProductManager = async (userId: number) => {
     const user = await db.users.findByPk(userId);
     return user?.role === "product_manager";
+};
+
+const canReadOrdersForAdmin = async (userId: number) => {
+    const user = await db.users.findByPk(userId);
+    return user?.role === "product_manager" || user?.role === "sales_manager";
 };
 
 export const getUserOrders = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -211,7 +216,7 @@ export const getUserOrders = async (req: AuthRequest, res: Response): Promise<vo
 
 export const getAllOrders = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        if (!req.userId || !(await isAdminUser(req.userId))) {
+        if (!req.userId || !(await canReadOrdersForAdmin(req.userId))) {
             res.status(403).json({ message: "Admin access required." });
             return;
         }
@@ -231,9 +236,34 @@ export const getAllOrders = async (req: AuthRequest, res: Response): Promise<voi
     }
 };
 
+export const cancelUserOrder = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const orderId = Number(req.params.id);
+        const order = await db.orders.findOne({
+            where: { id: orderId, user_id: req.userId },
+        });
+
+        if (!order) {
+            res.status(404).json({ message: "Order not found." });
+            return;
+        }
+
+        if (order.status !== "processing") {
+            res.status(400).json({ message: "Only processing orders can be cancelled." });
+            return;
+        }
+
+        await order.update({ status: "cancelled" });
+        res.json({ message: "Order cancelled.", order });
+    } catch (error) {
+        console.error("Cancel order error:", error);
+        res.status(500).json({ message: "Failed to cancel order." });
+    }
+};
+
 export const updateOrderStatus = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        if (!req.userId || !(await isAdminUser(req.userId))) {
+        if (!req.userId || !(await isProductManager(req.userId))) {
             res.status(403).json({ message: "Admin access required." });
             return;
         }

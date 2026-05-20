@@ -19,3 +19,8 @@ export const updateOrderStatus = async (orderId, status) => {
   const { data } = await api.patch(`/order/${orderId}/status`, { status });
   return data;
 };
+
+export const cancelOrder = async (orderId) => {
+  const { data } = await api.patch(`/order/${orderId}/cancel`);
+  return data;
+};

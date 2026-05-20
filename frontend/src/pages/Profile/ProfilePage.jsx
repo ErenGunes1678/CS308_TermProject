@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { useWishlist } from "../../hooks/useWishlist";
 import "./ProfilePage.css";
 
 /* ── Inline SVG icons ────────────────────────────────────── */
@@ -285,6 +286,7 @@ const AddressModal = ({ address, onClose, onSave }) => {
 /* ── Main ProfilePage ────────────────────────────────────── */
 function ProfilePage() {
   const { user, isLoading } = useAuth();
+  const { discountNotifications, clearDiscountNotifications } = useWishlist();
   const navigate = useNavigate();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddCard, setShowAddCard] = useState(false);
@@ -416,9 +418,15 @@ function ProfilePage() {
         <div className="profile-summary-cards">
           <button
             className="summary-card"
-            onClick={() =>
-              navigate(user.role === "product_manager" ? "/admin/orders" : "/orders")
-            }
+            onClick={() => {
+              if (user.role === "product_manager") {
+                navigate("/admin/product-manager");
+              } else if (user.role === "sales_manager") {
+                navigate("/admin/sales-manager");
+              } else {
+                navigate("/customer/orders");
+              }
+            }}
             id="profile-orders-card"
           >
             <div className="summary-card__icon summary-card__icon--orders">
@@ -426,14 +434,22 @@ function ProfilePage() {
             </div>
             <div className="summary-card__body">
               <span className="summary-card__label">
-                {user.role === "product_manager" ? "Admin Orders" : "Orders"}
+                {user.role === "product_manager"
+                  ? "Product Manager"
+                  : user.role === "sales_manager"
+                    ? "Sales Manager"
+                    : "Orders"}
               </span>
               <span className="summary-card__value">
-                {user.role === "product_manager" ? "Manage queue" : "View & track"}
+                {user.role === "product_manager" || user.role === "sales_manager"
+                  ? "Open console"
+                  : "View & track"}
               </span>
               <span className="summary-card__desc">
                 {user.role === "product_manager"
-                  ? "Manage order status changes"
+                  ? "Manage inventory, deliveries, and reviews"
+                  : user.role === "sales_manager"
+                    ? "Manage invoices, revenue, pricing, and refunds"
                   : "View and track your orders"}
               </span>
             </div>
@@ -472,6 +488,22 @@ function ProfilePage() {
             <span className="summary-card__arrow">{icons.chevron}</span>
           </button>
         </div>
+
+        {user.role === "customer" && discountNotifications.length > 0 && (
+          <section className="profile-discount-panel">
+            <div>
+              <h2>Wishlist discount updates</h2>
+              <p>{discountNotifications.length} item{discountNotifications.length === 1 ? "" : "s"} from your wishlist received a discount.</p>
+            </div>
+            <button type="button" onClick={clearDiscountNotifications}>Mark all read</button>
+            {discountNotifications.slice(0, 3).map((notice) => (
+              <article key={notice.id}>
+                <strong>{notice.productName}</strong>
+                <span>{notice.discountRate}% off: ${Number(notice.oldPrice || 0).toFixed(2)} to ${Number(notice.newPrice || 0).toFixed(2)}</span>
+              </article>
+            ))}
+          </section>
+        )}
 
         {/* ── Two-Column Grid ───────────────────────────── */}
         <div className="profile-grid">

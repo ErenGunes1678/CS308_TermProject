@@ -437,6 +437,12 @@ export async function seedMockProducts() {
 
 const rawUsers = [
   {
+    name: "Elif Customer",
+    email: "elif.customer@gmail.com",
+    password: "123456",
+    role: "customer",
+  },
+  {
     name: "Elif Product",
     email: "elif.product@gmail.com",
     password: "123456",

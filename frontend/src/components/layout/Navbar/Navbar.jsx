@@ -2,7 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import { useCart } from '../../../hooks/useCart';
+import { useWishlist } from '../../../hooks/useWishlist';
 import './Navbar.css';
+
+const ROLE_LABELS = {
+  customer: 'Customer',
+  product_manager: 'Product Manager',
+  sales_manager: 'Sales Manager',
+};
 
 const Navbar = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -13,10 +20,13 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
   const { itemCount } = useCart();
+  const { wishlistCount, discountNotifications } = useWishlist();
 
-  const wishlistCount = 0;
   const cartBadgeCount = itemCount > 99 ? '99+' : itemCount;
-  const canAccessCart = user?.role !== 'product_manager';
+  const discountBadgeCount = discountNotifications.length > 99 ? '99+' : discountNotifications.length;
+  const isCustomer = !user || user.role === 'customer';
+  const canAccessCart = isCustomer;
+  const canAccessWishlist = isCustomer;
   const userInitial =
     user?.name?.trim().charAt(0).toUpperCase() ||
     user?.email?.trim().charAt(0).toUpperCase() ||
@@ -109,6 +119,41 @@ const Navbar = () => {
     },
   ];
 
+  const managerArea = (() => {
+    if (!isAuthenticated) {
+      return null;
+    }
+
+    if (user?.role === 'product_manager') {
+      return {
+        name: 'Product Manager',
+        path: '/admin/product-manager',
+        links: [
+          { name: 'Dashboard', path: '/admin/product-manager' },
+          { name: 'Delivery List', path: '/admin/product-manager/deliveries' },
+          { name: 'Comment Moderation', path: '/admin/product-manager/comments' },
+          { name: 'Product Inventory', path: '/admin/product-manager/inventory' },
+        ],
+      };
+    }
+
+    if (user?.role === 'sales_manager') {
+      return {
+        name: 'Sales Manager',
+        path: '/admin/sales-manager',
+        links: [
+          { name: 'Dashboard', path: '/admin/sales-manager' },
+          { name: 'Invoices', path: '/admin/sales-manager/invoices' },
+          { name: 'Revenue', path: '/admin/sales-manager/revenue' },
+          { name: 'Pricing & Discounts', path: '/admin/sales-manager/pricing' },
+          { name: 'Refund Requests', path: '/admin/sales-manager/refunds' },
+        ],
+      };
+    }
+
+    return null;
+  })();
+
   return (
     <nav className="navbar">
       <div className="navbar__inner container">
@@ -150,6 +195,28 @@ const Navbar = () => {
               )}
             </li>
           ))}
+          {managerArea && (
+            <li className="navbar__link-wrapper">
+              <Link
+                to={managerArea.path}
+                className={`navbar__link navbar__link--area ${location.pathname.startsWith(managerArea.path) ? 'navbar__link--active' : ''
+                  }`}
+              >
+                {managerArea.name}
+              </Link>
+              <div className="navbar__cat-dropdown navbar__area-dropdown">
+                {managerArea.links.map((link) => (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    className="navbar__cat-dropdown-item"
+                  >
+                    {link.name}
+                  </Link>
+                ))}
+              </div>
+            </li>
+          )}
         </ul>
 
         {/* Right Icons */}
@@ -193,14 +260,19 @@ const Navbar = () => {
             />
           </form>
 
-          <Link to="/wishlist" className="navbar__icon-btn" aria-label="Wishlist">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-            </svg>
-            {wishlistCount > 0 && (
-              <span className="navbar__badge">{wishlistCount}</span>
-            )}
-          </Link>
+          {canAccessWishlist && (
+            <Link to="/wishlist" className="navbar__icon-btn" aria-label="Wishlist">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+              {wishlistCount > 0 && (
+                <span className="navbar__badge">{wishlistCount}</span>
+              )}
+              {discountNotifications.length > 0 && (
+                <span className="navbar__badge navbar__badge--notice">{discountBadgeCount}</span>
+              )}
+            </Link>
+          )}
 
           {canAccessCart && (
             <Link to="/cart" className="navbar__icon-btn" aria-label="Cart">
@@ -244,29 +316,45 @@ const Navbar = () => {
                       <div>
                         <p className="navbar__dropdown-name">{user?.name || 'User'}</p>
                         <p className="navbar__dropdown-email">{user?.email}</p>
+                        <p className="navbar__dropdown-role">{ROLE_LABELS[user?.role] || 'Customer'}</p>
                       </div>
                     </div>
                     <hr className="navbar__dropdown-divider" />
-                    <Link to="/profile" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                    <Link to={user?.role === 'customer' ? '/customer' : '/profile'} className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                       My Account
                     </Link>
-                    {user?.role !== 'product_manager' && (
-                      <Link to="/orders" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                    {user?.role === 'customer' && (
+                      <Link to="/customer/orders" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="18" rx="2" /><path d="m9 12 2 2 4-4" /></svg>
                         My Orders
                       </Link>
                     )}
-                    {user?.role === 'product_manager' && (
-                      <Link to="/admin/orders" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-                        Admin Orders
+                    {user?.role === 'customer' && (
+                      <Link to="/wishlist" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l7.78-7.78a5.5 5.5 0 0 0 1.06-8.84z" /></svg>
+                        Wishlist
+                        {discountNotifications.length > 0 && (
+                          <span className="navbar__item-badge">{discountBadgeCount}</span>
+                        )}
                       </Link>
                     )}
                     {user?.role === 'product_manager' && (
-                      <Link to="/admin/comments" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                      <Link to="/admin/product-manager" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                        Product Manager
+                      </Link>
+                    )}
+                    {user?.role === 'product_manager' && (
+                      <Link to="/admin/product-manager/comments" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /><path d="M8 9h8" /><path d="M8 13h5" /></svg>
                         Comment Queue
+                      </Link>
+                    )}
+                    {user?.role === 'sales_manager' && (
+                      <Link to="/admin/sales-manager" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" /></svg>
+                        Sales Manager
                       </Link>
                     )}
                     <hr className="navbar__dropdown-divider" />

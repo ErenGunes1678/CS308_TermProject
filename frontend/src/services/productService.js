@@ -11,3 +11,18 @@ export const getProductById = async (id) => {
 
   return data.product || data;
 };
+
+export const createProduct = async (payload) => {
+  const { data } = await api.post("/product", payload);
+  return data.product || data;
+};
+
+export const updateProduct = async (id, payload) => {
+  const { data } = await api.put(`/product/${id}`, payload);
+  return data.product || data;
+};
+
+export const deleteProduct = async (id) => {
+  const { data } = await api.delete(`/product/${id}`);
+  return data;
+};

@@ -574,6 +574,58 @@
     box-shadow: 0 6px 16px rgba(233, 30, 99, 0.25);
 }
 
+.order-btn--secondary {
+    border-color: var(--color-gray-200);
+    background: var(--color-white);
+    color: var(--color-gray-700);
+}
+
+.order-btn--disabled {
+    background: var(--color-gray-200);
+    color: var(--color-gray-500);
+    cursor: not-allowed;
+}
+
+.order-refund-statuses {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.order-refund-statuses span {
+    display: inline-flex;
+    padding: 0.3rem 0.65rem;
+    border-radius: var(--radius-full);
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: capitalize;
+}
+
+.order-item__refund-btn,
+.order-item__refund-status {
+    width: fit-content;
+    margin-top: 0.35rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: var(--radius-full);
+    font-size: 0.76rem;
+    font-weight: 800;
+}
+
+.order-item__refund-btn {
+    background: var(--color-light-pink);
+    color: var(--color-primary);
+}
+
+.order-item__refund-status {
+    display: inline-flex;
+    background: #fef3c7;
+    color: #92400e;
+    text-transform: capitalize;
+}
+
 .orders-empty {
     padding: 5rem 2rem;
     text-align: center;
