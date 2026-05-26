@@ -1,0 +1,197 @@
+/* Site-wide scale pass: keep pages usable on regular laptop screens. */
+
+:where(
+  .hero,
+  .account-hero,
+  .orders-hero,
+  .wishlist-hero,
+  .products-hero,
+  .admin-orders-hero,
+  .comment-moderation-hero,
+  .product-manager-hero,
+  .product-inventory-hero
+) {
+  min-height: 200px;
+  margin-bottom: 1.35rem;
+}
+
+:where(.hero__content) {
+  padding: 3.25rem 0;
+  max-width: 580px;
+}
+
+:where(
+  .account-hero,
+  .wishlist-hero
+) {
+  padding-top: 2.15rem;
+  padding-bottom: 2.15rem;
+}
+
+:where(
+  .orders-hero,
+  .admin-orders-hero,
+  .comment-moderation-hero,
+  .product-manager-hero,
+  .product-inventory-hero
+) {
+  height: auto;
+}
+
+:where(
+  .admin-orders-hero__content,
+  .comment-moderation-hero__content,
+  .product-manager-hero__content,
+  .product-inventory-hero__content
+) {
+  min-height: 210px;
+}
+
+:where(.orders-hero__content) {
+  padding-bottom: 1.6rem;
+}
+
+:where(
+  .hero__title,
+  .account-hero__title,
+  .orders-hero__title,
+  .wishlist-hero h1,
+  .products-hero__title,
+  .admin-orders-hero__title,
+  .comment-moderation-hero__title,
+  .product-manager-hero__title,
+  .product-inventory-hero__title
+) {
+  font-size: clamp(1.9rem, 3.4vw, 3rem);
+  line-height: 1.08;
+}
+
+:where(
+  .hero__subtitle,
+  .account-hero__email,
+  .orders-hero__tagline,
+  .wishlist-hero p,
+  .products-hero__tagline,
+  .admin-orders-hero__tagline,
+  .comment-moderation-hero__tagline,
+  .product-manager-hero__tagline,
+  .product-inventory-hero__tagline
+) {
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+:where(
+  .hero__buttons,
+  .hero__stats,
+  .orders-controls
+) {
+  margin-bottom: 1.5rem;
+}
+
+:where(
+  .hero__btn,
+  .products-section__shop-all-btn,
+  .footer__newsletter-button,
+  .orders-filter,
+  .orders-search__input
+) {
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+}
+
+:where(
+  .profile-page,
+  .orders-page,
+  .wishlist-page,
+  .products-page,
+  .admin-orders-page,
+  .comment-moderation-page,
+  .product-manager-page,
+  .product-inventory-page
+) {
+  padding-bottom: 3.5rem;
+}
+
+:where(
+  .profile-summary-cards,
+  .profile-grid,
+  .product-manager-task-grid,
+  .comment-moderation-grid,
+  .products-grid,
+  .wishlist-grid
+) {
+  gap: 0.85rem;
+}
+
+:where(
+  .profile-card,
+  .summary-card,
+  .order-card,
+  .admin-orders-panel,
+  .comment-moderation-panel,
+  .product-manager-panel,
+  .product-inventory-panel
+) {
+  border-radius: 16px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.055);
+}
+
+:where(
+  .profile-card__header,
+  .profile-card__body,
+  .summary-card,
+  .order-card__header,
+  .order-card__body,
+  .order-card__footer,
+  .admin-orders-panel,
+  .comment-moderation-panel
+) {
+  padding: 1rem 1.15rem;
+}
+
+:where(
+  .profile-card__title,
+  .admin-orders-summary__title,
+  .comment-moderation-summary h2,
+  .product-manager-panel__title,
+  .product-inventory-summary h2
+) {
+  font-size: 1.25rem;
+}
+
+:where(
+  .summary-card__value,
+  .order-card__title,
+  .comment-card__customer,
+  .product-card__title
+) {
+  font-size: 1rem;
+}
+
+:where(.newsletter-banner) {
+  padding-top: 42px;
+  padding-bottom: 42px;
+}
+
+@media (min-width: 1280px) {
+  .container {
+    max-width: var(--container-max);
+  }
+}
+
+@media (max-width: 768px) {
+  :where(
+    .hero,
+    .account-hero,
+    .orders-hero,
+    .wishlist-hero,
+    .products-hero,
+    .admin-orders-hero,
+    .comment-moderation-hero,
+    .product-manager-hero,
+    .product-inventory-hero
+  ) {
+    min-height: auto;
+  }
+}

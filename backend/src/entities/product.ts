@@ -23,7 +23,7 @@ module.exports = (sequelize: Sequelize) => {
     },
 
     category: {
-      type: DataTypes.ENUM("makeup", "skincare", "haircare", "men-care"),
+      type: DataTypes.STRING,
       allowNull: false,
     },
 
@@ -124,6 +124,7 @@ module.exports = (sequelize: Sequelize) => {
       as: "comments",
       onDelete: "CASCADE",
     });
+
   };
 
   return Product;

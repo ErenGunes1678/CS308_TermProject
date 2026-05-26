@@ -10,10 +10,28 @@ import cartRoutes from "./routes/cartRoutes";
 import orderRoutes from "./routes/orderRoutes";
 import commentRoutes from "./routes/commentRoutes";
 import searchRoutes from "./routes/searchRoutes";
-import { seedMockProducts, seedMockUsers } from "./seeders/mock_db_data"; // Mock data seeding function
+import categoryRoutes from "./routes/categoryRoutes";
+import { seedDefaultCategories, seedMockProducts, seedMockUsers } from "./seeders/mock_db_data"; // Mock data seeding function
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+async function migrateProductCategoryColumn() {
+  await sequelize.query(`
+    ALTER TABLE IF EXISTS "products"
+    DROP CONSTRAINT IF EXISTS "products_category_fkey";
+  `);
+
+  await sequelize.query(`
+    ALTER TABLE IF EXISTS "products"
+    ALTER COLUMN "category" TYPE VARCHAR(255)
+    USING "category"::text;
+  `);
+
+  await sequelize.query(`
+    DROP TYPE IF EXISTS "enum_products_category";
+  `);
+}
 
 // Middleware
 app.use(express.json());
@@ -28,6 +46,7 @@ app.use("/product", productRoutes);
 app.use("/cart", cartRoutes);
 app.use("/order", orderRoutes);
 app.use("/search", searchRoutes);
+app.use("/category", categoryRoutes);
 app.use("/", commentRoutes);
 
 // Sync Sequelize models then start server (only when run directly, not imported by tests)
@@ -36,9 +55,13 @@ if (require.main === module) {
     .then(() => {
       console.log("Database connected!");
 
+      return migrateProductCategoryColumn();
+    })
+    .then(() => {
       return sequelize.sync({alter: true});
     })
     .then(() => {
+      seedDefaultCategories();
       seedMockProducts();
       seedMockUsers();
       console.log("Database synced successfully");

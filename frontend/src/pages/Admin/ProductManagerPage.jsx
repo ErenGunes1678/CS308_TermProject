@@ -19,7 +19,7 @@ const taskCards = [
     title: 'Product Inventory',
     description: 'Manage product stock, availability, and catalog information.',
     path: '/admin/product-manager/inventory',
-    status: 'Coming soon',
+    status: 'Active',
   },
 ];
 

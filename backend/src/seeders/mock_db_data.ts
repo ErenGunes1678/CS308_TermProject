@@ -8,6 +8,13 @@ import { Op } from "sequelize";
 import db from "../entities";
 import bcrypt from "bcrypt";
 
+const defaultCategories = [
+  { name: "Makeup", slug: "makeup" },
+  { name: "Skincare", slug: "skincare" },
+  { name: "Haircare", slug: "haircare" },
+  { name: "Men Care", slug: "men-care" },
+];
+
 const mockProducts = [
   {
     name: "Velvet Matte Lipstick",
@@ -388,6 +395,23 @@ const mockProducts = [
     distributor_info: "ForHim Grooming Co.",
   },
 ];
+
+export async function seedDefaultCategories() {
+  const slugs = defaultCategories.map((category) => category.slug);
+
+  const existing = await db.categories.findAll({
+    where: { slug: { [Op.in]: slugs } },
+  });
+
+  const existingSlugs = new Set(existing.map((category: any) => category.slug));
+  const toCreate = defaultCategories.filter((category) => !existingSlugs.has(category.slug));
+
+  if (toCreate.length > 0) {
+    await db.categories.bulkCreate(toCreate);
+  }
+
+  console.log(`Seeded ${toCreate.length} default categories.`);
+}
 
 export async function seedMockProducts() {
   const preparedMockProducts = mockProducts.map((product) => ({

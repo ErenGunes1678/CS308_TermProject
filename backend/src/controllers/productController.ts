@@ -4,6 +4,13 @@ import db from "../entities";
 import { mapProductForFrontend } from "../utils/productMapper";
 
 const Product = db["products"];
+const Category = db["categories"];
+
+const categoryExists = async (slug?: string) => {
+    if (!slug) return false;
+    const category = await Category.findOne({ where: { slug } });
+    return Boolean(category);
+};
 
 export const getAllProducts = async (_req: Request, res: Response) => {
     try {
@@ -70,6 +77,12 @@ export const addProduct = async (req: Request, res: Response) => {
         if (!name || !brand || !category || !subcategory || !model || !serial_number || !image || price === undefined) {
             return res.status(400).json({
                 message: "Name, brand, category, subcategory, model, serial number, image, and price are required"
+            });
+        }
+
+        if (!(await categoryExists(category))) {
+            return res.status(400).json({
+                message: "Category does not exist"
             });
         }
 
@@ -150,6 +163,12 @@ export const editProduct = async (req: Request, res: Response) => {
             warranty_status,
             distributor_info
         } = req.body;
+
+        if (category !== undefined && !(await categoryExists(category))) {
+            return res.status(400).json({
+                message: "Category does not exist"
+            });
+        }
 
         await product.update({
             ...(name !== undefined && { name }),

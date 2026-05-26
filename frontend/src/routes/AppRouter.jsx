@@ -14,6 +14,7 @@ import OrdersPage from '../pages/Orders/OrdersPage';
 import ProductManagerPage from '../pages/Admin/ProductManagerPage';
 import OrderManagementPage from '../pages/Admin/OrderManagementPage';
 import CommentModerationPage from '../pages/Admin/CommentModerationPage';
+import ProductInventoryPage from '../pages/Admin/ProductInventoryPage';
 import SearchPage from '../pages/Search/SearchPage';
 import UnauthorizedPage from '../pages/Unauthorized/UnauthorizedPage';
 import WishlistPage from '../pages/Wishlist/WishlistPage';
@@ -120,7 +121,7 @@ const AppRouter = () => {
           <Route path="/admin/product-manager" element={<RoleRoute allowedRoles={['product_manager']}><ProductManagerPage /></RoleRoute>} />
           <Route path="/admin/product-manager/deliveries" element={<RoleRoute allowedRoles={['product_manager']}><OrderManagementPage /></RoleRoute>} />
           <Route path="/admin/product-manager/comments" element={<RoleRoute allowedRoles={['product_manager']}><CommentModerationPage /></RoleRoute>} />
-          <Route path="/admin/product-manager/inventory" element={<RoleRoute allowedRoles={['product_manager']}><PlaceholderPage title="Product Inventory" /></RoleRoute>} />
+          <Route path="/admin/product-manager/inventory" element={<RoleRoute allowedRoles={['product_manager']}><ProductInventoryPage /></RoleRoute>} />
           <Route path="/admin/sales-manager" element={<RoleRoute allowedRoles={['sales_manager']}><PlaceholderPage title="Sales Manager Dashboard" /></RoleRoute>} />
           <Route path="/admin/sales-manager/invoices" element={<RoleRoute allowedRoles={['sales_manager']}><PlaceholderPage title="Invoices" /></RoleRoute>} />
           <Route path="/admin/sales-manager/revenue" element={<RoleRoute allowedRoles={['sales_manager']}><PlaceholderPage title="Revenue" /></RoleRoute>} />

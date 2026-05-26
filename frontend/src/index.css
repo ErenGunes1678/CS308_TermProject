@@ -46,9 +46,9 @@
   --font-auth: 'Manrope', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 
   /* Spacing */
-  --container-max: 1280px;
-  --container-padding: 2rem;
-  --section-spacing: 5rem;
+  --container-max: 1120px;
+  --container-padding: 1.25rem;
+  --section-spacing: 3.25rem;
 
   /* Borders */
   --radius-sm: 6px;
@@ -88,6 +88,7 @@ html {
 
 body {
   font-family: var(--font-body);
+  font-size: 15px;
   color: var(--color-text);
   background-color: var(--color-white);
   line-height: 1.6;
@@ -131,7 +132,7 @@ input {
 /* Section label (pink uppercase text) */
 .section-label {
   font-family: var(--font-body);
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -141,16 +142,16 @@ input {
 
 .section-title {
   font-family: var(--font-display);
-  font-size: 2.25rem;
+  font-size: 1.85rem;
   font-weight: 700;
   color: var(--color-gray-800);
   margin-bottom: 0.75rem;
 }
 
 .section-subtitle {
-  font-size: 1rem;
+  font-size: 0.92rem;
   color: var(--color-text-light);
-  max-width: 600px;
+  max-width: 520px;
 }
 
 .site-inline-message {
