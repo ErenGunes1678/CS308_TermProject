@@ -31,6 +31,7 @@ module.exports = (sequelize: Sequelize) => {
     (OrderItem as any).associate = (db: any) => {
         OrderItem.belongsTo(db.orders, { foreignKey: "order_id", as: "order" });
         OrderItem.belongsTo(db.products, { foreignKey: "product_id", as: "product" });
+        OrderItem.hasOne(db.refund_requests, { foreignKey: "order_item_id", as: "refundRequest" });
     };
 
     return OrderItem;

@@ -15,6 +15,7 @@ import ProductManagerPage from '../pages/Admin/ProductManagerPage';
 import OrderManagementPage from '../pages/Admin/OrderManagementPage';
 import CommentModerationPage from '../pages/Admin/CommentModerationPage';
 import ProductInventoryPage from '../pages/Admin/ProductInventoryPage';
+import RefundRequestsPage from '../pages/Admin/RefundRequestsPage';
 import SearchPage from '../pages/Search/SearchPage';
 import UnauthorizedPage from '../pages/Unauthorized/UnauthorizedPage';
 import WishlistPage from '../pages/Wishlist/WishlistPage';
@@ -126,7 +127,7 @@ const AppRouter = () => {
           <Route path="/admin/sales-manager/invoices" element={<RoleRoute allowedRoles={['sales_manager']}><PlaceholderPage title="Invoices" /></RoleRoute>} />
           <Route path="/admin/sales-manager/revenue" element={<RoleRoute allowedRoles={['sales_manager']}><PlaceholderPage title="Revenue" /></RoleRoute>} />
           <Route path="/admin/sales-manager/pricing" element={<RoleRoute allowedRoles={['sales_manager']}><PlaceholderPage title="Pricing & Discounts" /></RoleRoute>} />
-          <Route path="/admin/sales-manager/refunds" element={<RoleRoute allowedRoles={['sales_manager']}><PlaceholderPage title="Refund Requests" /></RoleRoute>} />
+          <Route path="/admin/sales-manager/refunds" element={<RoleRoute allowedRoles={['sales_manager']}><RefundRequestsPage /></RoleRoute>} />
           <Route path="/admin/orders" element={<Navigate to="/admin/product-manager/deliveries" replace />} />
           <Route path="/admin/comments" element={<Navigate to="/admin/product-manager/comments" replace />} />
           <Route path="*" element={<PlaceholderPage title="404 - Page Not Found" />} />
