@@ -124,19 +124,6 @@ const Navbar = () => {
       return null;
     }
 
-    if (user?.role === 'product_manager') {
-      return {
-        name: 'Product Manager',
-        path: '/admin/product-manager',
-        links: [
-          { name: 'Dashboard', path: '/admin/product-manager' },
-          { name: 'Delivery List', path: '/admin/product-manager/deliveries' },
-          { name: 'Comment Moderation', path: '/admin/product-manager/comments' },
-          { name: 'Product Inventory', path: '/admin/product-manager/inventory' },
-        ],
-      };
-    }
-
     if (user?.role === 'sales_manager') {
       return {
         name: 'Sales Manager',
@@ -320,10 +307,12 @@ const Navbar = () => {
                       </div>
                     </div>
                     <hr className="navbar__dropdown-divider" />
-                    <Link to={user?.role === 'customer' ? '/customer' : '/profile'} className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                      My Account
-                    </Link>
+                    {user?.role === 'customer' && (
+                      <Link to="/customer" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                        My Account
+                      </Link>
+                    )}
                     {user?.role === 'customer' && (
                       <Link to="/customer/orders" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="18" rx="2" /><path d="m9 12 2 2 4-4" /></svg>
@@ -342,7 +331,13 @@ const Navbar = () => {
                     {user?.role === 'product_manager' && (
                       <Link to="/admin/product-manager" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-                        Product Manager
+                        Product Manager Tasks
+                      </Link>
+                    )}
+                    {user?.role === 'product_manager' && (
+                      <Link to="/admin/product-manager/deliveries" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="18" rx="2" /><path d="m9 12 2 2 4-4" /></svg>
+                        Delivery List
                       </Link>
                     )}
                     {user?.role === 'product_manager' && (
