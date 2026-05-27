@@ -103,19 +103,74 @@ const AppRouter = () => {
         <Route element={<MainLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/account" element={<AccountRedirect />} />
-          <Route path="/customer" element={<ProfilePage />} />
-          <Route path="/customer/orders" element={<OrdersPage />} />
-          <Route path="/products" element={<ProductsPage />} />
-          <Route path="/category/:slug" element={<ProductsPage />} />
-          <Route path="/product/:id" element={<ProductDetailsPage />} />
-          <Route path="/cart" element={<CartPage />} />
-          <Route path="/profile" element={<AccountRedirect />} />
-          <Route path="/orders" element={<OrdersPage />} />
+         <Route
+  path="/customer"
+  element={
+    <RoleRoute allowedRoles={['customer']}>
+      <ProfilePage />
+    </RoleRoute>
+  }
+/>
 
-          <Route path="/checkout" element={<CheckoutPage />} />
-          <Route path="/order-success" element={<OrderSuccessPage />} />
+<Route
+  path="/customer/orders"
+  element={
+    <RoleRoute allowedRoles={['customer']}>
+      <OrdersPage />
+    </RoleRoute>
+  }
+/>
 
-          <Route path="/wishlist" element={<WishlistPage />} />
+<Route path="/products" element={<ProductsPage />} />
+<Route path="/category/:slug" element={<ProductsPage />} />
+<Route path="/product/:id" element={<ProductDetailsPage />} />
+
+<Route
+  path="/cart"
+  element={
+    <RoleRoute allowedRoles={['customer']}>
+      <CartPage />
+    </RoleRoute>
+  }
+/>
+
+<Route path="/profile" element={<AccountRedirect />} />
+
+<Route
+  path="/orders"
+  element={
+    <RoleRoute allowedRoles={['customer']}>
+      <OrdersPage />
+    </RoleRoute>
+  }
+/>
+
+<Route
+  path="/checkout"
+  element={
+    <RoleRoute allowedRoles={['customer']}>
+      <CheckoutPage />
+    </RoleRoute>
+  }
+/>
+
+<Route
+  path="/order-success"
+  element={
+    <RoleRoute allowedRoles={['customer']}>
+      <OrderSuccessPage />
+    </RoleRoute>
+  }
+/>
+
+<Route
+  path="/wishlist"
+  element={
+    <RoleRoute allowedRoles={['customer']}>
+      <WishlistPage />
+    </RoleRoute>
+  }
+/>
           <Route path="/search" element={<SearchPage />} />
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
           <Route path="/admin" element={<AdminRedirect />} />

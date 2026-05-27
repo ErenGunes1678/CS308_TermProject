@@ -120,26 +120,39 @@ const Navbar = () => {
   ];
 
   const managerArea = (() => {
-    if (!isAuthenticated) {
-      return null;
-    }
-
-    if (user?.role === 'sales_manager') {
-      return {
-        name: 'Sales Manager',
-        path: '/admin/sales-manager',
-        links: [
-          { name: 'Dashboard', path: '/admin/sales-manager' },
-          { name: 'Invoices', path: '/admin/sales-manager/invoices' },
-          { name: 'Revenue', path: '/admin/sales-manager/revenue' },
-          { name: 'Pricing & Discounts', path: '/admin/sales-manager/pricing' },
-          { name: 'Refund Requests', path: '/admin/sales-manager/refunds' },
-        ],
-      };
-    }
-
+  if (!isAuthenticated) {
     return null;
-  })();
+  }
+
+  if (user?.role === 'product_manager') {
+    return {
+      name: 'Product Manager',
+      path: '/admin/product-manager',
+      links: [
+        { name: 'Dashboard', path: '/admin/product-manager' },
+        { name: 'Deliveries', path: '/admin/product-manager/deliveries' },
+        { name: 'Inventory', path: '/admin/product-manager/inventory' },
+        { name: 'Comments', path: '/admin/product-manager/comments' },
+      ],
+    };
+  }
+
+  if (user?.role === 'sales_manager') {
+    return {
+      name: 'Sales Manager',
+      path: '/admin/sales-manager',
+      links: [
+        { name: 'Dashboard', path: '/admin/sales-manager' },
+        { name: 'Invoices', path: '/admin/sales-manager/invoices' },
+        { name: 'Revenue', path: '/admin/sales-manager/revenue' },
+        { name: 'Pricing & Discounts', path: '/admin/sales-manager/pricing' },
+        { name: 'Refund Requests', path: '/admin/sales-manager/refunds' },
+      ],
+    };
+  }
+
+  return null;
+})();
 
   return (
     <nav className="navbar">

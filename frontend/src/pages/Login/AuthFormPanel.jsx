@@ -1,6 +1,24 @@
 import { ArrowRight, Eye, EyeOff, Lock, Mail, User } from "lucide-react";
 import "./AuthFormPanel.css";
 
+const DEMO_ACCOUNTS = [
+  {
+    role: "Customer",
+    email: "customer@example.com",
+    password: "123456",
+  },
+  {
+    role: "Sales Manager",
+    email: "sales@example.com",
+    password: "123456",
+  },
+  {
+    role: "Product Manager",
+    email: "product@example.com",
+    password: "123456",
+  },
+];
+
 function AuthFormPanel({
   mode,
   showPassword,
@@ -17,6 +35,13 @@ function AuthFormPanel({
   onLoginSubmit,
   onRegisterSubmit,
 }) {
+  const handleDemoAccountSelect = (account) => {
+    onModeChange("login");
+    setLoginForm({
+      email: account.email,
+      password: account.password,
+    });
+  };
   return (
     <section className="login-hero-right">
       <div className="auth-switch">
@@ -114,7 +139,7 @@ function AuthFormPanel({
                   <a href="#">Forgot password?</a>
                 </div>
 
-                <button
+                                <button
                   type="submit"
                   className="sign-in-btn"
                   disabled={isSubmitting}
@@ -122,6 +147,31 @@ function AuthFormPanel({
                   {isSubmitting ? "Signing In..." : "Sign In"}{" "}
                   <ArrowRight size={16} />
                 </button>
+
+                <div className="demo-accounts">
+                  <div className="demo-accounts__header">
+                    <p className="demo-accounts__title">Demo Accounts</p>
+                    <span>Click to fill login details</span>
+                  </div>
+
+                  <div className="demo-accounts__list">
+                    {DEMO_ACCOUNTS.map((account) => (
+                      <button
+                        key={account.role}
+                        type="button"
+                        className="demo-account-card"
+                        onClick={() => handleDemoAccountSelect(account)}
+                      >
+                        <span className="demo-account-card__role">
+                          {account.role}
+                        </span>
+                        <span className="demo-account-card__email">
+                          {account.email}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </form>
             ) : (
               <form
@@ -227,6 +277,7 @@ function AuthFormPanel({
       </div>
     </section>
   );
+  
 }
 
 export default AuthFormPanel;
