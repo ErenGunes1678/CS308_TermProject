@@ -52,6 +52,7 @@ const ProductInventoryPage = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [stockFilter, setStockFilter] = useState('all');
   const [query, setQuery] = useState('');
   const [form, setForm] = useState(emptyForm);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -114,7 +115,12 @@ const ProductInventoryPage = () => {
     const normalizedQuery = query.trim().toLowerCase();
 
     return products.filter((product) => {
+      const stock = Number(product.quantity_in_stock || 0);
       const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
+      const matchesStock =
+        stockFilter === 'all' ||
+        (stockFilter === 'low' && stock > 0 && stock <= 10) ||
+        (stockFilter === 'out' && stock === 0);
       const matchesQuery =
         !normalizedQuery ||
         product.name?.toLowerCase().includes(normalizedQuery) ||
@@ -122,9 +128,9 @@ const ProductInventoryPage = () => {
         product.model?.toLowerCase().includes(normalizedQuery) ||
         product.serial_number?.toLowerCase().includes(normalizedQuery);
 
-      return matchesCategory && matchesQuery;
+      return matchesCategory && matchesStock && matchesQuery;
     });
-  }, [products, query, selectedCategory]);
+  }, [products, query, selectedCategory, stockFilter]);
 
   const stockCounts = useMemo(() => ({
     total: products.length,
@@ -326,9 +332,7 @@ const ProductInventoryPage = () => {
                   </div>
                 ))}
               </div>
-            </aside>
 
-            <section className="product-inventory-content">
               <form className="product-inventory-form" onSubmit={handleSaveProduct}>
                 <div className="product-inventory-form__header">
                   <div>
@@ -377,7 +381,9 @@ const ProductInventoryPage = () => {
                   {isSaving ? 'Saving...' : editingProduct ? 'Save product' : 'Add product'}
                 </button>
               </form>
+            </aside>
 
+            <section className="product-inventory-content">
               <div className="product-inventory-toolbar">
                 <input
                   type="search"
@@ -385,6 +391,42 @@ const ProductInventoryPage = () => {
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Search product, brand, model, serial"
                 />
+                <div className="product-inventory-filter-chips" aria-label="Inventory filters">
+                  <button
+                    type="button"
+                    className={stockFilter === 'all' && selectedCategory === 'all' ? 'is-active' : ''}
+                    onClick={() => {
+                      setStockFilter('all');
+                      setSelectedCategory('all');
+                    }}
+                  >
+                    All
+                  </button>
+                  <button
+                    type="button"
+                    className={stockFilter === 'low' ? 'is-active' : ''}
+                    onClick={() => setStockFilter('low')}
+                  >
+                    Low stock
+                  </button>
+                  <button
+                    type="button"
+                    className={stockFilter === 'out' ? 'is-active' : ''}
+                    onClick={() => setStockFilter('out')}
+                  >
+                    Out of stock
+                  </button>
+                  {categories.map((category) => (
+                    <button
+                      key={category.slug}
+                      type="button"
+                      className={selectedCategory === category.slug ? 'is-active' : ''}
+                      onClick={() => setSelectedCategory(category.slug)}
+                    >
+                      {category.name}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {isPageLoading ? (

@@ -420,9 +420,9 @@ function ProfilePage() {
             className="summary-card"
             onClick={() => {
               if (user.role === "product_manager") {
-                navigate("/admin/product-manager");
+                navigate("/admin/product-manager/deliveries");
               } else if (user.role === "sales_manager") {
-                navigate("/admin/sales-manager");
+                navigate("/admin/sales-manager/invoices");
               } else {
                 navigate("/customer/orders");
               }

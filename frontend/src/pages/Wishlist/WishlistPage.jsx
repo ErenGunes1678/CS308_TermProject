@@ -19,7 +19,8 @@ function WishlistPage() {
   return (
     <div className="wishlist-page">
       <section className="wishlist-hero">
-        <div className="container">
+        <div className="wishlist-hero__overlay" />
+        <div className="container wishlist-hero__content">
           <span className="section-label">My Account</span>
           <h1>Wishlist</h1>
           <p>Keep favorite products close and see discount updates when they happen.</p>

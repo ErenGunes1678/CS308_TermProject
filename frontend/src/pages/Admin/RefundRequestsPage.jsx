@@ -95,6 +95,7 @@ const RefundRequestsPage = () => {
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [resolvingId, setResolvingId] = useState(null);
+  const [activeStatus, setActiveStatus] = useState('pending');
 
   const isSalesManager = user?.role === 'sales_manager';
 
@@ -139,6 +140,11 @@ const RefundRequestsPage = () => {
     return map;
   }, [requests]);
 
+  const filteredRequests = useMemo(
+    () => requests.filter((request) => request.status === activeStatus),
+    [requests, activeStatus]
+  );
+
   if (isLoading) {
     return null;
   }
@@ -171,29 +177,50 @@ const RefundRequestsPage = () => {
   return (
     <div className="refunds-page">
       <section className="refunds-hero">
+        <div className="refunds-hero__overlay" />
+        <div className="refunds-hero__bubbles" aria-hidden="true">
+          <span className="refunds-hero__bubble refunds-hero__bubble--1" />
+          <span className="refunds-hero__bubble refunds-hero__bubble--2" />
+          <span className="refunds-hero__bubble refunds-hero__bubble--3" />
+        </div>
         <div className="container refunds-hero__content">
           <p className="refunds-hero__eyebrow">Sales Manager</p>
-          <h1>Refund Requests</h1>
-          <p>Review returned products and authorize customer refunds.</p>
+          <h1 className="refunds-hero__title">Refund Requests</h1>
+          <p className="refunds-hero__tagline">Review returned products and authorize customer refunds.</p>
         </div>
       </section>
 
       <main className="container refunds-panel">
         <div className="refunds-summary">
-          <span>Pending: {counts.pending}</span>
-          <span>Approved: {counts.approved}</span>
-          <span>Rejected: {counts.rejected}</span>
+          <div>
+            <p className="refunds-summary__label">Refund Queue</p>
+            <h2 className="refunds-summary__title">{STATUS_LABELS[activeStatus]} refund requests</h2>
+          </div>
+          <div className="refunds-summary__tabs" role="tablist" aria-label="Refund request status">
+            {Object.entries(STATUS_LABELS).map(([status, label]) => (
+              <button
+                key={status}
+                type="button"
+                role="tab"
+                aria-selected={activeStatus === status}
+                className={`refunds-summary__tab refunds-summary__tab--${status} ${activeStatus === status ? 'is-active' : ''}`}
+                onClick={() => setActiveStatus(status)}
+              >
+                {label}: {counts[status] || 0}
+              </button>
+            ))}
+          </div>
         </div>
 
         {errorMessage ? <div className="refunds-alert">{errorMessage}</div> : null}
 
         {isPageLoading ? (
           <div className="refunds-empty">Loading refund requests...</div>
-        ) : requests.length === 0 ? (
-          <div className="refunds-empty">No refund requests yet.</div>
+        ) : filteredRequests.length === 0 ? (
+          <div className="refunds-empty">No {STATUS_LABELS[activeStatus].toLowerCase()} refund requests.</div>
         ) : (
           <div className="refunds-list">
-            {requests.map((request) => (
+            {filteredRequests.map((request) => (
               <RefundRequestCard
                 key={request.id}
                 request={request}

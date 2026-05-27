@@ -25,6 +25,7 @@ const Navbar = () => {
   const cartBadgeCount = itemCount > 99 ? '99+' : itemCount;
   const discountBadgeCount = discountNotifications.length > 99 ? '99+' : discountNotifications.length;
   const isCustomer = !user || user.role === 'customer';
+  const isManager = user?.role === 'product_manager' || user?.role === 'sales_manager';
   const canAccessCart = isCustomer;
   const canAccessWishlist = isCustomer;
   const userInitial =
@@ -96,7 +97,7 @@ const Navbar = () => {
     setSearchOpen(true);
   };
 
-  const navLinks = [
+  const categoryNavLinks = [
     {
       name: 'Makeup',
       path: '/category/makeup',
@@ -119,40 +120,31 @@ const Navbar = () => {
     },
   ];
 
-  const managerArea = (() => {
-  if (!isAuthenticated) {
-    return null;
-  }
-
-  if (user?.role === 'product_manager') {
-    return {
-      name: 'Product Manager',
-      path: '/admin/product-manager',
-      links: [
-        { name: 'Dashboard', path: '/admin/product-manager' },
-        { name: 'Deliveries', path: '/admin/product-manager/deliveries' },
-        { name: 'Inventory', path: '/admin/product-manager/inventory' },
-        { name: 'Comments', path: '/admin/product-manager/comments' },
-      ],
-    };
-  }
-
-  if (user?.role === 'sales_manager') {
-    return {
-      name: 'Sales Manager',
-      path: '/admin/sales-manager',
-      links: [
-        { name: 'Dashboard', path: '/admin/sales-manager' },
+  const managerNavLinks = (() => {
+    if (user?.role === 'sales_manager') {
+      return [
         { name: 'Invoices', path: '/admin/sales-manager/invoices' },
         { name: 'Revenue', path: '/admin/sales-manager/revenue' },
         { name: 'Pricing & Discounts', path: '/admin/sales-manager/pricing' },
         { name: 'Refund Requests', path: '/admin/sales-manager/refunds' },
-      ],
-    };
-  }
+      ];
+    }
 
-  return null;
-})();
+    if (user?.role === 'product_manager') {
+      return [
+        { name: 'Deliveries', path: '/admin/product-manager/deliveries' },
+        { name: 'Comment Queue', path: '/admin/product-manager/comments' },
+        { name: 'Inventory', path: '/admin/product-manager/inventory' },
+      ];
+    }
+
+    return [];
+  })();
+  const navLinks = isManager ? managerNavLinks : categoryNavLinks;
+
+  const isNavLinkActive = (path) => {
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  };
 
   return (
     <nav className="navbar">
@@ -170,7 +162,7 @@ const Navbar = () => {
             <li key={link.name} className="navbar__link-wrapper">
               <Link
                 to={link.path}
-                className={`navbar__link ${location.pathname === link.path ? 'navbar__link--active' : ''
+                className={`navbar__link ${isManager ? 'navbar__link--task' : ''} ${isNavLinkActive(link.path) ? 'navbar__link--active' : ''
                   }`}
               >
                 {link.name}
@@ -195,28 +187,6 @@ const Navbar = () => {
               )}
             </li>
           ))}
-          {managerArea && (
-            <li className="navbar__link-wrapper">
-              <Link
-                to={managerArea.path}
-                className={`navbar__link navbar__link--area ${location.pathname.startsWith(managerArea.path) ? 'navbar__link--active' : ''
-                  }`}
-              >
-                {managerArea.name}
-              </Link>
-              <div className="navbar__cat-dropdown navbar__area-dropdown">
-                {managerArea.links.map((link) => (
-                  <Link
-                    key={link.path}
-                    to={link.path}
-                    className="navbar__cat-dropdown-item"
-                  >
-                    {link.name}
-                  </Link>
-                ))}
-              </div>
-            </li>
-          )}
         </ul>
 
         {/* Right Icons */}
@@ -291,8 +261,11 @@ const Navbar = () => {
           <div className="navbar__user-wrapper">
             <button
               type="button"
-              className={`navbar__user-btn ${isAuthenticated ? 'navbar__user-btn--logged-in' : ''}`}
+              className={`navbar__user-btn ${isAuthenticated ? 'navbar__user-btn--logged-in' : ''} ${isManager ? 'navbar__user-btn--static' : ''}`}
               onClick={() => setUserMenuOpen(!userMenuOpen)}
+              aria-label="Account menu"
+              aria-haspopup
+              aria-expanded={userMenuOpen}
             >
               {isAuthenticated ? (
                 <span className="navbar__user-avatar">{userInitial}</span>
@@ -311,15 +284,17 @@ const Navbar = () => {
               <div className="navbar__dropdown">
                 {isAuthenticated ? (
                   <>
-                    <div className="navbar__dropdown-header">
-                      <span className="navbar__dropdown-avatar">{userInitial}</span>
-                      <div>
-                        <p className="navbar__dropdown-name">{user?.name || 'User'}</p>
-                        <p className="navbar__dropdown-email">{user?.email}</p>
-                        <p className="navbar__dropdown-role">{ROLE_LABELS[user?.role] || 'Customer'}</p>
+                    {!isManager && (
+                      <div className="navbar__dropdown-header">
+                        <span className="navbar__dropdown-avatar">{userInitial}</span>
+                        <div>
+                          <p className="navbar__dropdown-name">{user?.name || 'User'}</p>
+                          <p className="navbar__dropdown-email">{user?.email}</p>
+                          <p className="navbar__dropdown-role">{ROLE_LABELS[user?.role] || 'Customer'}</p>
+                        </div>
                       </div>
-                    </div>
-                    <hr className="navbar__dropdown-divider" />
+                    )}
+                    {!isManager && <hr className="navbar__dropdown-divider" />}
                     {user?.role === 'customer' && (
                       <Link to="/customer" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
@@ -341,31 +316,7 @@ const Navbar = () => {
                         )}
                       </Link>
                     )}
-                    {user?.role === 'product_manager' && (
-                      <Link to="/admin/product-manager" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-                        Product Manager Tasks
-                      </Link>
-                    )}
-                    {user?.role === 'product_manager' && (
-                      <Link to="/admin/product-manager/deliveries" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="18" rx="2" /><path d="m9 12 2 2 4-4" /></svg>
-                        Delivery List
-                      </Link>
-                    )}
-                    {user?.role === 'product_manager' && (
-                      <Link to="/admin/product-manager/comments" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /><path d="M8 9h8" /><path d="M8 13h5" /></svg>
-                        Comment Queue
-                      </Link>
-                    )}
-                    {user?.role === 'sales_manager' && (
-                      <Link to="/admin/sales-manager" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" /></svg>
-                        Sales Manager
-                      </Link>
-                    )}
-                    <hr className="navbar__dropdown-divider" />
+                    {!isManager && <hr className="navbar__dropdown-divider" />}
                     <button
                       className="navbar__dropdown-item navbar__dropdown-item--logout"
                       onClick={handleLogout}

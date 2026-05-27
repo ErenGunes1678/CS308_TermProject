@@ -11,7 +11,6 @@ import ProductDetailsPage from '../pages/ProductDetails/ProductDetailsPage';
 import CheckoutPage from '../pages/Checkout/CheckoutPage';
 import OrderSuccessPage from '../pages/Checkout/OrderSuccessPage';
 import OrdersPage from '../pages/Orders/OrdersPage';
-import ProductManagerPage from '../pages/Admin/ProductManagerPage';
 import OrderManagementPage from '../pages/Admin/OrderManagementPage';
 import CommentModerationPage from '../pages/Admin/CommentModerationPage';
 import ProductInventoryPage from '../pages/Admin/ProductInventoryPage';
@@ -40,11 +39,11 @@ const AdminRedirect = () => {
   }
 
   if (user.role === 'product_manager') {
-    return <Navigate to="/admin/product-manager" replace />;
+    return <Navigate to="/admin/product-manager/deliveries" replace />;
   }
 
   if (user.role === 'sales_manager') {
-    return <Navigate to="/admin/sales-manager" replace />;
+    return <Navigate to="/admin/sales-manager/invoices" replace />;
   }
 
   return <Navigate to="/customer" replace />;
@@ -80,11 +79,11 @@ const AccountRedirect = () => {
   }
 
   if (user.role === 'product_manager') {
-    return <Navigate to="/admin/product-manager" replace />;
+    return <Navigate to="/admin/product-manager/deliveries" replace />;
   }
 
   if (user.role === 'sales_manager') {
-    return <Navigate to="/admin/sales-manager" replace />;
+    return <Navigate to="/admin/sales-manager/invoices" replace />;
   }
 
   return <ProfilePage />;
@@ -103,82 +102,25 @@ const AppRouter = () => {
         <Route element={<MainLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/account" element={<AccountRedirect />} />
-         <Route
-  path="/customer"
-  element={
-    <RoleRoute allowedRoles={['customer']}>
-      <ProfilePage />
-    </RoleRoute>
-  }
-/>
-
-<Route
-  path="/customer/orders"
-  element={
-    <RoleRoute allowedRoles={['customer']}>
-      <OrdersPage />
-    </RoleRoute>
-  }
-/>
-
-<Route path="/products" element={<ProductsPage />} />
-<Route path="/category/:slug" element={<ProductsPage />} />
-<Route path="/product/:id" element={<ProductDetailsPage />} />
-
-<Route
-  path="/cart"
-  element={
-    <RoleRoute allowedRoles={['customer']}>
-      <CartPage />
-    </RoleRoute>
-  }
-/>
-
-<Route path="/profile" element={<AccountRedirect />} />
-
-<Route
-  path="/orders"
-  element={
-    <RoleRoute allowedRoles={['customer']}>
-      <OrdersPage />
-    </RoleRoute>
-  }
-/>
-
-<Route
-  path="/checkout"
-  element={
-    <RoleRoute allowedRoles={['customer']}>
-      <CheckoutPage />
-    </RoleRoute>
-  }
-/>
-
-<Route
-  path="/order-success"
-  element={
-    <RoleRoute allowedRoles={['customer']}>
-      <OrderSuccessPage />
-    </RoleRoute>
-  }
-/>
-
-<Route
-  path="/wishlist"
-  element={
-    <RoleRoute allowedRoles={['customer']}>
-      <WishlistPage />
-    </RoleRoute>
-  }
-/>
+          <Route path="/customer" element={<RoleRoute allowedRoles={['customer']}><ProfilePage /></RoleRoute>} />
+          <Route path="/customer/orders" element={<RoleRoute allowedRoles={['customer']}><OrdersPage /></RoleRoute>} />
+          <Route path="/products" element={<ProductsPage />} />
+          <Route path="/category/:slug" element={<ProductsPage />} />
+          <Route path="/product/:id" element={<ProductDetailsPage />} />
+          <Route path="/cart" element={<RoleRoute allowedRoles={['customer']}><CartPage /></RoleRoute>} />
+          <Route path="/profile" element={<AccountRedirect />} />
+          <Route path="/orders" element={<RoleRoute allowedRoles={['customer']}><OrdersPage /></RoleRoute>} />
+          <Route path="/checkout" element={<RoleRoute allowedRoles={['customer']}><CheckoutPage /></RoleRoute>} />
+          <Route path="/order-success" element={<RoleRoute allowedRoles={['customer']}><OrderSuccessPage /></RoleRoute>} />
+          <Route path="/wishlist" element={<RoleRoute allowedRoles={['customer']}><WishlistPage /></RoleRoute>} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
           <Route path="/admin" element={<AdminRedirect />} />
-          <Route path="/admin/product-manager" element={<RoleRoute allowedRoles={['product_manager']}><ProductManagerPage /></RoleRoute>} />
+          <Route path="/admin/product-manager" element={<Navigate to="/admin/product-manager/deliveries" replace />} />
           <Route path="/admin/product-manager/deliveries" element={<RoleRoute allowedRoles={['product_manager']}><OrderManagementPage /></RoleRoute>} />
           <Route path="/admin/product-manager/comments" element={<RoleRoute allowedRoles={['product_manager']}><CommentModerationPage /></RoleRoute>} />
           <Route path="/admin/product-manager/inventory" element={<RoleRoute allowedRoles={['product_manager']}><ProductInventoryPage /></RoleRoute>} />
-          <Route path="/admin/sales-manager" element={<RoleRoute allowedRoles={['sales_manager']}><PlaceholderPage title="Sales Manager Dashboard" /></RoleRoute>} />
+          <Route path="/admin/sales-manager" element={<Navigate to="/admin/sales-manager/invoices" replace />} />
           <Route path="/admin/sales-manager/invoices" element={<RoleRoute allowedRoles={['sales_manager']}><PlaceholderPage title="Invoices" /></RoleRoute>} />
           <Route path="/admin/sales-manager/revenue" element={<RoleRoute allowedRoles={['sales_manager']}><PlaceholderPage title="Revenue" /></RoleRoute>} />
           <Route path="/admin/sales-manager/pricing" element={<RoleRoute allowedRoles={['sales_manager']}><PlaceholderPage title="Pricing & Discounts" /></RoleRoute>} />

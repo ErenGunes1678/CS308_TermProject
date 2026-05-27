@@ -18,30 +18,19 @@ const STATUS_COLORS = {
   cancelled: 'order-status--cancelled',
 };
 
-const STEP_LABELS = ['Processing', 'In Transit', 'Delivered'];
+const FILTER_TABS = [
+  { key: 'all', label: 'All Orders' },
+  { key: 'processing', label: 'Processing' },
+  { key: 'in-transit', label: 'In Transit' },
+  { key: 'delivered', label: 'Delivered' },
+  { key: 'cancelled', label: 'Cancelled' },
+];
 
-const OrderProgress = ({ status }) => {
-  const activeIndex = STEP_LABELS.findIndex((label) =>
-    label.toLowerCase().replace(/ /g, '-') === status
-  );
-
-  return (
-    <div className="admin-order-progress">
-      {STEP_LABELS.map((label, index) => (
-        <div key={label} className="admin-order-progress__step">
-          <span
-            className={`admin-order-progress__dot ${index <= activeIndex ? 'is-active' : ''}`}
-          />
-          <span className={`admin-order-progress__label ${index <= activeIndex ? 'is-active' : ''}`}>
-            {label}
-          </span>
-          {index < STEP_LABELS.length - 1 && (
-            <span className={`admin-order-progress__line ${index < activeIndex ? 'is-active' : ''}`} />
-          )}
-        </div>
-      ))}
-    </div>
-  );
+const STATUS_PRIORITY = {
+  processing: 0,
+  'in-transit': 1,
+  cancelled: 2,
+  delivered: 3,
 };
 
 const nextStatus = {
@@ -51,65 +40,124 @@ const nextStatus = {
 
 const getNextActionLabel = (status) => {
   if (status === 'processing') return 'Send to Delivery';
-  if (status === 'in-transit') return 'Mark Delivered';
+  if (status === 'in-transit') return 'Mark as Delivered';
   return null;
 };
 
+const formatDate = (value) =>
+  new Date(value).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+const getCustomerLabel = (order) =>
+  order.user?.name || order.user?.email || 'Unknown customer';
+
+const getProductSummary = (items = []) => {
+  if (items.length > 2) {
+    return `${items.length} products`;
+  }
+
+  return items
+    .map((item) => `${item.product?.name || `Product #${item.product_id}`} x${item.quantity}`)
+    .join(' · ');
+};
+
+const getQuantitySummary = (items = []) => {
+  const totalQuantity = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+  return `${totalQuantity} ${totalQuantity === 1 ? 'item' : 'items'}`;
+};
+
 const OrderRow = ({ order, onAction, isUpdating }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const next = nextStatus[order.status];
   const actionLabel = getNextActionLabel(order.status);
+  const canToggleDetails = order.items.length > 0;
 
   return (
-    <article className="admin-order-card">
-      <header className="admin-order-card__header">
-        <div>
-          <p className="admin-order-card__subtitle">Order #{order.id}</p>
-          <h3>{order.user?.name || order.user?.email || 'Unknown customer'}</h3>
-          <p className="admin-order-card__meta">
-            Placed on {new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-          </p>
+    <article className={`admin-order-row admin-order-row--${order.status}`}>
+      <div className="admin-order-row__main">
+        <div className="admin-order-row__cell admin-order-row__id">
+          <span className="admin-order-row__label">Order</span>
+          <strong>#{order.id}</strong>
         </div>
+
+        <div className="admin-order-row__cell admin-order-row__customer">
+          <span className="admin-order-row__label">Customer</span>
+          <strong>{getCustomerLabel(order)}</strong>
+          <span>{order.user?.email || 'N/A'}</span>
+        </div>
+
+        <div className="admin-order-row__cell">
+          <span className="admin-order-row__label">Date</span>
+          <span>{formatDate(order.createdAt)}</span>
+        </div>
+
+        <div className="admin-order-row__cell admin-order-row__products">
+          <span className="admin-order-row__label">Products</span>
+          <strong>{getProductSummary(order.items)}</strong>
+          {order.items.length > 2 ? (
+            <button
+              type="button"
+              className="admin-order-row__details-btn"
+              onClick={() => setIsExpanded((current) => !current)}
+            >
+              {isExpanded ? 'Hide details' : 'View details'}
+            </button>
+          ) : null}
+        </div>
+
+        <div className="admin-order-row__cell">
+          <span className="admin-order-row__label">Qty</span>
+          <span>{getQuantitySummary(order.items)}</span>
+        </div>
+
+        <div className="admin-order-row__cell admin-order-row__total">
+          <span className="admin-order-row__label">Total</span>
+          <strong>${Number(order.total_amount || 0).toFixed(2)}</strong>
+        </div>
+
         <div className={`order-status ${STATUS_COLORS[order.status] || ''}`}>
           <span className="order-status__dot" />
           {STATUS_LABELS[order.status]}
         </div>
-      </header>
 
-      <OrderProgress status={order.status} />
-
-      <div className="admin-order-card__items">
-        {order.items.map((item) => (
-          <div key={item.id} className="admin-order-item">
-            <span className="admin-order-item__name">{item.product?.name || `Product #${item.product_id}`}</span>
-            <span className="admin-order-item__qty">Qty: {item.quantity}</span>
-          </div>
-        ))}
+        <div className="admin-order-row__actions">
+          {actionLabel ? (
+            <button
+              type="button"
+              className="admin-order-row__action"
+              onClick={() => onAction(order.id, next)}
+              disabled={isUpdating}
+            >
+              {isUpdating ? 'Saving...' : actionLabel}
+            </button>
+          ) : canToggleDetails ? (
+            <button
+              type="button"
+              className="admin-order-row__action admin-order-row__action--secondary"
+              onClick={() => setIsExpanded((current) => !current)}
+            >
+              {isExpanded ? 'Hide Details' : 'View Details'}
+            </button>
+          ) : (
+            <span className="admin-order-row__status-note">No action</span>
+          )}
+        </div>
       </div>
 
-      <footer className="admin-order-card__footer">
-        <div>
-          <p className="admin-order-card__total">Total: ${Number(order.total_amount || 0).toFixed(2)}</p>
-          <p className="admin-order-card__user">Customer: {order.user?.email || 'N/A'}</p>
+      {isExpanded ? (
+        <div className="admin-order-row__details">
+          {order.items.map((item) => (
+            <div key={item.id} className="admin-order-detail">
+              <span>{item.product?.name || `Product #${item.product_id}`}</span>
+              <span>Qty {item.quantity}</span>
+              <span>${Number(item.unit_price || 0).toFixed(2)}</span>
+            </div>
+          ))}
         </div>
-        {actionLabel ? (
-          <button
-            type="button"
-            className="admin-order-card__action"
-            onClick={() => onAction(order.id, next)}
-            disabled={isUpdating}
-          >
-            {isUpdating ? 'Saving...' : actionLabel}
-          </button>
-        ) : (
-          <span className="admin-order-card__status-note">
-            {order.status === 'delivered'
-              ? 'Delivery completed'
-              : order.status === 'cancelled'
-              ? 'Order cancelled'
-              : 'No action available'}
-          </span>
-        )}
-      </footer>
+      ) : null}
     </article>
   );
 };
@@ -120,6 +168,7 @@ const OrderManagementPage = () => {
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
+  const [activeStatus, setActiveStatus] = useState('all');
 
   const isAdmin = user?.role === 'product_manager';
 
@@ -191,6 +240,26 @@ const OrderManagementPage = () => {
     return map;
   }, [orders]);
 
+  const visibleOrders = useMemo(() => {
+    const filtered =
+      activeStatus === 'all'
+        ? orders
+        : orders.filter((order) => order.status === activeStatus);
+
+    return [...filtered].sort((a, b) => {
+      const priorityDiff =
+        (STATUS_PRIORITY[a.status] ?? 99) - (STATUS_PRIORITY[b.status] ?? 99);
+
+      if (priorityDiff !== 0) {
+        return priorityDiff;
+      }
+
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }, [orders, activeStatus]);
+
+  const actionableCount = counts.processing + counts['in-transit'];
+
   return (
     <div className="admin-orders-page">
       <section className="admin-orders-hero">
@@ -215,13 +284,26 @@ const OrderManagementPage = () => {
           <div className="admin-orders-summary">
             <div>
               <p className="admin-orders-summary__label">Order Overview</p>
-              <h2 className="admin-orders-summary__title">{orders.length} active orders</h2>
+              <h2 className="admin-orders-summary__title">
+                {activeStatus === 'all'
+                  ? `${actionableCount} orders need action`
+                  : `${counts[activeStatus] || 0} ${STATUS_LABELS[activeStatus]?.toLowerCase()} orders`}
+              </h2>
             </div>
-            <div className="admin-orders-summary__counts">
-              <span>Processing: {counts.processing}</span>
-              <span>In Transit: {counts['in-transit']}</span>
-              <span>Delivered: {counts.delivered}</span>
-              <span>Cancelled: {counts.cancelled}</span>
+            <div className="admin-orders-status-tabs" role="tablist" aria-label="Filter orders by status">
+              {FILTER_TABS.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeStatus === tab.key}
+                  className={`admin-orders-status-tab ${activeStatus === tab.key ? 'is-active' : ''}`}
+                  onClick={() => setActiveStatus(tab.key)}
+                >
+                  {tab.label}
+                  <span>{counts[tab.key] || 0}</span>
+                </button>
+              ))}
             </div>
           </div>
 
@@ -231,11 +313,21 @@ const OrderManagementPage = () => {
 
           {isPageLoading ? (
             <div className="admin-orders-loading">Loading orders...</div>
-          ) : orders.length === 0 ? (
+          ) : visibleOrders.length === 0 ? (
             <div className="admin-orders-empty">No orders available.</div>
           ) : (
             <div className="admin-orders-list">
-              {orders.map((order) => (
+              <div className="admin-orders-table-head" aria-hidden="true">
+                <span>Order</span>
+                <span>Customer</span>
+                <span>Date</span>
+                <span>Products</span>
+                <span>Qty</span>
+                <span>Total</span>
+                <span>Status</span>
+                <span>Action</span>
+              </div>
+              {visibleOrders.map((order) => (
                 <OrderRow
                   key={order.id}
                   order={order}
