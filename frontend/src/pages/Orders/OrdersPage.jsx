@@ -68,127 +68,90 @@ const isWithinReturnWindow = (createdAt) => {
 
 const OrderCard = ({ order, canCancel, onCancel, onReturn, returningItemId }) => {
     const [expanded, setExpanded] = useState(false);
-    const visibleItems = expanded ? order.items : order.items.slice(0, 2);
-    const hiddenCount = order.items.length - 2;
     const canRequestRefund = order.status === 'delivered' && isWithinReturnWindow(order.createdAt);
-    const refundForOrder = order.items
-        .map((item) => ({
-            ...item.refundRequest,
-            productName: item.product?.name || `Product #${item.product_id}`,
-        }))
-        .filter((request) => request.id);
+    const refundableItems = order.items.filter((item) => !item.refundRequest && canRequestRefund);
 
     return (
         <article className="order-card">
-            <header className="order-card__header">
-                <div className="order-card__header-left">
-                    <span className="order-card__label">Order</span>
-                    <h3 className="order-card__id">{order.id}</h3>
-                    <span className="order-card__date">Placed on {formatDate(order.createdAt)}</span>
+            {/* Always-visible summary row */}
+            <button
+                type="button"
+                className="order-card__summary-row"
+                onClick={() => setExpanded((v) => !v)}
+                aria-expanded={expanded}
+            >
+                <div className="order-card__summary-left">
+                    <span className="order-card__label">Order #{order.id}</span>
+                    <span className="order-card__date">{formatDate(order.createdAt)}</span>
+                    <span className="order-card__item-count">
+                        {order.items.length} {order.items.length === 1 ? 'item' : 'items'}
+                    </span>
                 </div>
-                <div className={`order-status order-status--${order.status}`}>
-                    <span className="order-status__dot" />
-                    {STATUS_LABELS[order.status]}
+                <div className="order-card__summary-right">
+                    <span className="order-card__total-value">${Number(order.total_amount || 0).toFixed(2)}</span>
+                    <div className={`order-status order-status--${order.status}`}>
+                        <span className="order-status__dot" />
+                        {STATUS_LABELS[order.status]}
+                    </div>
+                    <span className="order-card__chevron">{expanded ? '▲' : '▼'}</span>
                 </div>
-            </header>
+            </button>
 
-            <OrderProgress status={order.status} />
+            {/* Expandable detail */}
+            {expanded && (
+                <>
+                    <OrderProgress status={order.status} />
 
-            <div className="order-card__items">
-                {visibleItems.map((item) => (
-                    <div key={item.id} className="order-item">
-                        <div className="order-item__image">
-                            <img src={item.product?.image} alt={item.product?.name} />
-                        </div>
-                        <div className="order-item__info">
-                            <span className="order-item__brand">{item.product?.brand}</span>
-                            <Link to={`/product/${item.product_id}`} className="order-item__name">
-                                {item.product?.name}
-                            </Link>
-                            <span className="order-item__variant">{item.product?.subcategory}</span>
-                            <span className="order-item__qty">Qty: {item.quantity}</span>
-                            {item.refundRequest ? (
-                                <span className="order-item__refund-status">
-                                    Refund {item.refundRequest.status}
-                                </span>
-                            ) : canRequestRefund ? (
+                    <div className="order-card__items">
+                        {order.items.map((item) => (
+                            <div key={item.id} className="order-item">
+                                <div className="order-item__image">
+                                    <img src={item.product?.image} alt={item.product?.name} />
+                                </div>
+                                <div className="order-item__info">
+                                    <span className="order-item__brand">{item.product?.brand}</span>
+                                    <Link to={`/product/${item.product_id}`} className="order-item__name">
+                                        {item.product?.name}
+                                    </Link>
+                                    <span className="order-item__qty">Qty: {item.quantity}</span>
+                                    {item.refundRequest && (
+                                        <span className={`order-item__refund-status order-item__refund-status--${item.refundRequest.status}`}>
+                                            Refund: {item.refundRequest.status}
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="order-item__price">
+                                    ${(Number(item.unit_price || 0) * Number(item.quantity || 0)).toFixed(2)}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <footer className="order-card__footer">
+                        <div className="order-card__actions">
+                            {canCancel && (
+                                <button className="order-btn order-btn--secondary" onClick={() => onCancel(order.id)}>
+                                    Cancel Order
+                                </button>
+                            )}
+                            {canRequestRefund && refundableItems.length > 0 && refundableItems.map((item) => (
                                 <button
+                                    key={item.id}
                                     type="button"
-                                    className="order-item__refund-btn"
+                                    className="order-btn order-btn--refund"
                                     onClick={() => onReturn(order, item)}
                                     disabled={returningItemId === item.id}
                                 >
-                                    {returningItemId === item.id ? 'Requesting...' : 'Request refund'}
+                                    {returningItemId === item.id ? 'Requesting…' : `Refund: ${item.product?.name || `Item #${item.id}`}`}
                                 </button>
-                            ) : null}
+                            ))}
+                            {order.status === 'delivered' && !canRequestRefund && (
+                                <span className="order-btn order-btn--disabled">Return window closed</span>
+                            )}
                         </div>
-                        <div className="order-item__price">
-                            ${(Number(item.unit_price || 0) * Number(item.quantity || 0)).toFixed(2)}
-                        </div>
-                    </div>
-                ))}
-
-                {hiddenCount > 0 && !expanded && (
-                    <button
-                        className="order-card__expand"
-                        onClick={() => setExpanded(true)}
-                    >
-                        + View {hiddenCount} more {hiddenCount === 1 ? 'item' : 'items'}
-                    </button>
-                )}
-                {expanded && order.items.length > 2 && (
-                    <button
-                        className="order-card__expand"
-                        onClick={() => setExpanded(false)}
-                    >
-                        Show less
-                    </button>
-                )}
-                {refundForOrder.length > 0 && (
-                    <div className="order-refund-statuses">
-                        {refundForOrder.map((request) => (
-                            <span key={request.id}>
-                                {request.productName}: {request.status}
-                            </span>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            <footer className="order-card__footer">
-                <div className="order-card__summary">
-                    <div className="order-card__total">
-                        <span className="order-card__total-label">Total</span>
-                        <span className="order-card__total-value">${Number(order.total_amount || 0).toFixed(2)}</span>
-                    </div>
-                </div>
-
-                <div className="order-card__actions">
-                    {(order.status === 'processing' || order.status === 'in-transit') && (
-                        <button className="order-btn order-btn--primary">
-                            Track Package
-                        </button>
-                    )}
-
-                    {canCancel && (
-                        <button
-                            className="order-btn order-btn--secondary"
-                            onClick={() => onCancel(order.id)}
-                        >
-                            Cancel Order
-                        </button>
-                    )}
-
-                    {order.status === 'delivered' && !canRequestRefund && (
-                        <button
-                            className="order-btn order-btn--disabled"
-                            disabled
-                        >
-                            Return window closed
-                        </button>
-                    )}
-                </div>
-            </footer>
+                    </footer>
+                </>
+            )}
         </article>
     );
 };
