@@ -1,4 +1,4 @@
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import './ProductManagerPage.css';
 
@@ -25,6 +25,7 @@ const taskCards = [
 
 const ProductManagerPage = () => {
   const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
 
   if (isLoading) {
     return null;
@@ -40,31 +41,22 @@ const ProductManagerPage = () => {
 
   return (
     <div className="product-manager-page">
-      <section className="product-manager-hero">
-        <div className="product-manager-hero__overlay" />
-        <div className="product-manager-hero__bubbles" aria-hidden="true">
-          <span className="product-manager-hero__bubble product-manager-hero__bubble--1" />
-          <span className="product-manager-hero__bubble product-manager-hero__bubble--2" />
-          <span className="product-manager-hero__bubble product-manager-hero__bubble--3" />
+      <div className="admin-page-header container">
+        <div className="admin-page-header__text">
+          <p className="admin-page-header__eyebrow">Admin Panel</p>
+          <h1 className="admin-page-header__title">Product Manager</h1>
         </div>
-        <div className="container product-manager-hero__content">
-          <p className="product-manager-hero__eyebrow">Product Manager Console</p>
-          <h1 className="product-manager-hero__title">Product Manager Tasks</h1>
-          <p className="product-manager-hero__tagline">
-            Use this workspace to manage deliveries, review comments, and monitor product operations.
-          </p>
-        </div>
-      </section>
+        <button
+          type="button"
+          className="admin-page-header__back-btn"
+          onClick={() => navigate('/')}
+        >
+          Back to Store
+        </button>
+      </div>
 
       <main className="container product-manager-main">
         <section className="product-manager-panel">
-          <div className="product-manager-panel__header">
-            <div>
-              <p className="product-manager-panel__label">Workspace</p>
-              <h2 className="product-manager-panel__title">Choose a task</h2>
-            </div>
-            <span className="product-manager-panel__role">Product Manager</span>
-          </div>
 
           <div className="product-manager-task-grid">
             {taskCards.map((task) => (

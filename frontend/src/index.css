@@ -46,7 +46,7 @@
   --font-auth: 'Manrope', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 
   /* Spacing */
-  --container-max: 1180px;
+  --container-max: 1360px;
   --container-padding: 1.25rem;
   --section-spacing: 3.25rem;
 
@@ -167,4 +167,51 @@ input {
   background: linear-gradient(180deg, rgba(239, 68, 68, 0.08), rgba(255, 245, 247, 0.9));
   border-color: rgba(239, 68, 68, 0.18);
   color: #b42318;
+}
+
+/* Shared admin page header */
+.admin-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.admin-page-header__eyebrow {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  margin: 0 0 0.3rem;
+}
+
+.admin-page-header__title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--color-gray-900, #111827);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.admin-page-header__back-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.55rem 1.25rem;
+  border: 1px solid var(--color-gray-200);
+  border-radius: 999px;
+  background: var(--color-white);
+  color: var(--color-gray-700);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  white-space: nowrap;
+}
+
+.admin-page-header__back-btn:hover {
+  border-color: var(--color-gray-400);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
 }

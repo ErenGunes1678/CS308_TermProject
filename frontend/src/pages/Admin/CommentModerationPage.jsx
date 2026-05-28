@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import {
   approveComment,
@@ -22,6 +22,7 @@ const formatDate = (value) => {
 
 function CommentModerationPage() {
   const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
   const [comments, setComments] = useState([]);
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -104,36 +105,22 @@ function CommentModerationPage() {
 
   return (
     <div className="comment-moderation-page">
-      <section className="comment-moderation-hero">
-        <div className="comment-moderation-hero__overlay" />
-        <div className="comment-moderation-hero__bubbles" aria-hidden="true">
-          <span className="comment-moderation-hero__bubble comment-moderation-hero__bubble--1" />
-          <span className="comment-moderation-hero__bubble comment-moderation-hero__bubble--2" />
-          <span className="comment-moderation-hero__bubble comment-moderation-hero__bubble--3" />
-          <span className="comment-moderation-hero__bubble comment-moderation-hero__bubble--4" />
+      <div className="admin-page-header container">
+        <div className="admin-page-header__text">
+          <p className="admin-page-header__eyebrow">Admin Panel</p>
+          <h1 className="admin-page-header__title">Comment Queue</h1>
         </div>
-        <div className="container comment-moderation-hero__content">
-          <p className="comment-moderation-hero__eyebrow">Product Manager Console</p>
-          <h1 className="comment-moderation-hero__title">Comment Moderation</h1>
-          <p className="comment-moderation-hero__tagline">
-            Review and manage pending comments.
-          </p>
-        </div>
-      </section>
+        <button
+          type="button"
+          className="admin-page-header__back-btn"
+          onClick={() => navigate('/')}
+        >
+          Back to Store
+        </button>
+      </div>
 
       <div className="container">
         <section className="comment-moderation-panel">
-          <div className="comment-moderation-panel__header">
-            <div>
-              <p className="comment-moderation-panel__label">Pending Reviews</p>
-              <h2 className="comment-moderation-panel__title">
-                {isPageLoading ? "Loading queue" : `${comments.length} awaiting review`}
-              </h2>
-            </div>
-            <div className="comment-moderation-panel__badge">
-              {comments.length} open
-            </div>
-          </div>
 
           {errorMessage ? (
             <div className="comment-moderation-state comment-moderation-state--error">

@@ -15,6 +15,9 @@ const categoryExists = async (slug?: string) => {
 export const getAllProducts = async (_req: Request, res: Response) => {
     try {
         const products = await Product.findAll({
+            where: {
+                price: { [Op.gt]: 0 }
+            },
             order: [["id", "ASC"]]
         });
 
@@ -30,12 +33,51 @@ export const getAllProducts = async (_req: Request, res: Response) => {
     }
 };
 
+export const getManageProducts = async (_req: Request, res: Response) => {
+    try {
+        const products = await Product.findAll({
+            order: [["id", "ASC"]]
+        });
+
+        return res.status(200).json({
+            message: "Products fetched successfully",
+            products: products.map(mapProductForFrontend)
+        });
+    } catch (error) {
+        console.error("Get manage products error:", error);
+        return res.status(500).json({
+            message: "Server error while fetching products"
+        });
+    }
+};
+
+export const getPendingPricingProducts = async (_req: Request, res: Response) => {
+    try {
+        const products = await Product.findAll({
+            where: {
+                price: 0
+            },
+            order: [["id", "ASC"]]
+        });
+
+        return res.status(200).json({
+            message: "Pending pricing products fetched successfully",
+            products: products.map(mapProductForFrontend)
+        });
+    } catch (error) {
+        console.error("Get pending pricing products error:", error);
+        return res.status(500).json({
+            message: "Server error while fetching pending pricing products"
+        });
+    }
+};
+
 export const getProductById = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 
         const product = await Product.findByPk(id);
-        if (!product) {
+        if (!product || Number(product.get("price")) <= 0) {
             return res.status(404).json({
                 message: "Product not found"
             });
@@ -49,6 +91,42 @@ export const getProductById = async (req: Request, res: Response) => {
         console.error("Get product by id error:", error);
         return res.status(500).json({
             message: "Server error while fetching product"
+        });
+    }
+};
+
+export const updateProductPrice = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { price, original_price } = req.body;
+        const nextPrice = Number(price);
+
+        if (!Number.isFinite(nextPrice) || nextPrice <= 0) {
+            return res.status(400).json({
+                message: "A valid product price greater than 0 is required"
+            });
+        }
+
+        const product = await Product.findByPk(id);
+        if (!product) {
+            return res.status(404).json({
+                message: "Product not found"
+            });
+        }
+
+        await product.update({
+            price: nextPrice,
+            ...(original_price !== undefined && { original_price })
+        });
+
+        return res.status(200).json({
+            message: "Product price updated successfully",
+            product: mapProductForFrontend(product)
+        });
+    } catch (error) {
+        console.error("Update product price error:", error);
+        return res.status(500).json({
+            message: "Server error while updating product price"
         });
     }
 };
@@ -154,8 +232,6 @@ export const editProduct = async (req: Request, res: Response) => {
             serial_number,
             description,
             quantity_in_stock,
-            price,
-            original_price,
             rating,
             review_count,
             image,
@@ -179,8 +255,6 @@ export const editProduct = async (req: Request, res: Response) => {
             ...(serial_number !== undefined && { serial_number }),
             ...(description !== undefined && { description }),
             ...(quantity_in_stock !== undefined && { quantity_in_stock }),
-            ...(price !== undefined && { price }),
-            ...(original_price !== undefined && { original_price }),
             ...(rating !== undefined && { rating }),
             ...(review_count !== undefined && { review_count }),
             ...(image !== undefined && { image }),

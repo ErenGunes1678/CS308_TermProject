@@ -24,6 +24,9 @@ jest.mock("../entities", () => {
             findOne: jest.fn().mockResolvedValue(null),
             findAll: jest.fn().mockResolvedValue([]),
         },
+        categories: {
+            findOne: jest.fn().mockResolvedValue({ slug: "skincare" }),
+        },
         carts: {
             findOne: (...args: any[]) => mockCartFindOne(...args),
             findOrCreate: (...args: any[]) => mockCartFindOrCreate(...args),

@@ -4,82 +4,9 @@
   padding-bottom: 4rem;
 }
 
-.admin-orders-hero {
-  position: relative;
-  overflow: hidden;
-  min-height: 290px;
-  background: var(--gradient-account-hero);
-  color: #ffffff;
-  margin-bottom: 2.25rem;
-}
-
-.admin-orders-hero__overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to right,
-    rgba(200, 10, 80, 0.35) 0%,
-    rgba(255, 70, 130, 0.1) 100%
-  );
-}
-
-.admin-orders-hero__bubbles {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.admin-orders-hero__bubble {
-  position: absolute;
-  width: 6rem;
-  height: 6rem;
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.admin-orders-hero__bubble--1 { top: 1rem; left: 10%; }
-.admin-orders-hero__bubble--2 { top: 3rem; right: 12%; }
-.admin-orders-hero__bubble--3 { bottom: 2rem; left: 16%; }
-.admin-orders-hero__bubble--4 { bottom: 1rem; right: 20%; }
-
-.admin-orders-hero__content {
-  position: relative;
-  z-index: 1;
-  min-height: 290px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-.admin-orders-hero__eyebrow {
-  font-size: 0.78rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.82);
-  margin-bottom: 1rem;
-  font-weight: 700;
-}
-
-.admin-orders-hero__title {
-  font-family: var(--font-display);
-  font-size: clamp(2.75rem, 5vw, 4rem);
-  margin: 0;
-  font-style: italic;
-  line-height: 1.05;
-}
-
-.admin-orders-hero__tagline {
-  margin-top: 1rem;
-  max-width: 520px;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 1rem;
-  line-height: 1.5;
-}
 
 .admin-orders-panel {
-  margin-top: 1.5rem;
+  margin-top: 2rem;
   background: var(--color-white);
   border: 1px solid var(--color-gray-200);
   border-radius: 24px;
@@ -89,7 +16,7 @@
 
 .admin-orders-summary {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 1rem;
   flex-wrap: wrap;
   padding-bottom: 1.25rem;
@@ -560,13 +487,10 @@
 }
 
 @media (max-width: 768px) {
-  .admin-orders-hero {
-    min-height: 240px;
-  }
-
-  .admin-orders-hero__content {
-    min-height: 240px;
-    padding: 0 1rem;
+  .admin-page-header.container {
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding-top: 1.5rem;
   }
 
   .admin-orders-panel {

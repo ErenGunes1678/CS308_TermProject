@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { getAllOrders, updateOrderStatus } from '../../services/orderService';
 import './OrderManagementPage.css';
@@ -164,6 +164,7 @@ const OrderRow = ({ order, onAction, isUpdating }) => {
 
 const OrderManagementPage = () => {
   const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
@@ -262,34 +263,23 @@ const OrderManagementPage = () => {
 
   return (
     <div className="admin-orders-page">
-      <section className="admin-orders-hero">
-        <div className="admin-orders-hero__overlay" />
-        <div className="admin-orders-hero__bubbles" aria-hidden="true">
-          <span className="admin-orders-hero__bubble admin-orders-hero__bubble--1" />
-          <span className="admin-orders-hero__bubble admin-orders-hero__bubble--2" />
-          <span className="admin-orders-hero__bubble admin-orders-hero__bubble--3" />
-          <span className="admin-orders-hero__bubble admin-orders-hero__bubble--4" />
+      <div className="admin-page-header container">
+        <div className="admin-page-header__text">
+          <p className="admin-page-header__eyebrow">Admin Panel</p>
+          <h1 className="admin-page-header__title">Order Workflow</h1>
         </div>
-        <div className="container admin-orders-hero__content">
-          <p className="admin-orders-hero__eyebrow">Admin Console</p>
-          <h1 className="admin-orders-hero__title">Order Workflow</h1>
-          <p className="admin-orders-hero__tagline">
-            Move orders from processing to in-transit and deliver them when ready.
-          </p>
-        </div>
-      </section>
+        <button
+          type="button"
+          className="admin-page-header__back-btn"
+          onClick={() => navigate('/')}
+        >
+          Back to Store
+        </button>
+      </div>
 
       <div className="container">
         <section className="admin-orders-panel">
           <div className="admin-orders-summary">
-            <div>
-              <p className="admin-orders-summary__label">Order Overview</p>
-              <h2 className="admin-orders-summary__title">
-                {activeStatus === 'all'
-                  ? `${actionableCount} orders need action`
-                  : `${counts[activeStatus] || 0} ${STATUS_LABELS[activeStatus]?.toLowerCase()} orders`}
-              </h2>
-            </div>
             <div className="admin-orders-status-tabs" role="tablist" aria-label="Filter orders by status">
               {FILTER_TABS.map((tab) => (
                 <button

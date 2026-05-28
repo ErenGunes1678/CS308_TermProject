@@ -4,99 +4,13 @@
   padding-bottom: 3.5rem;
 }
 
-.refunds-hero {
-  position: relative;
-  overflow: hidden;
-  flex: 0 0 auto;
-  min-height: 200px;
-  margin-bottom: 1rem;
-  background: var(--gradient-account-hero);
-  color: #ffffff;
-}
-
-.refunds-hero__overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to right,
-    rgba(200, 10, 80, 0.35) 0%,
-    rgba(255, 70, 130, 0.1) 100%
-  );
-}
-
-.refunds-hero__bubbles {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.refunds-hero__bubble {
-  position: absolute;
-  width: 5rem;
-  height: 5rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.refunds-hero__bubble--1 {
-  top: 1rem;
-  left: 11%;
-}
-
-.refunds-hero__bubble--2 {
-  top: 3rem;
-  right: 12%;
-}
-
-.refunds-hero__bubble--3 {
-  bottom: 1.5rem;
-  left: 18%;
-}
-
-.refunds-hero__content {
-  position: relative;
-  z-index: 1;
-  min-height: 200px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-.refunds-hero__eyebrow {
-  margin: 0 0 0.65rem;
-  color: rgba(255, 255, 255, 0.82);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
-.refunds-hero__title {
-  margin: 0;
-  color: #ffffff;
-  font-family: var(--font-display);
-  font-size: clamp(2.1rem, 4vw, 3.15rem);
-  font-style: italic;
-  line-height: 1.05;
-}
-
-.refunds-hero__tagline {
-  max-width: 520px;
-  margin: 0.7rem 0 0;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.95rem;
-  line-height: 1.45;
-}
-
 .refunds-panel {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  margin-top: 1rem;
+  margin-top: 2rem;
   margin-bottom: 1rem;
   padding: 1rem;
   border: 1px solid var(--color-gray-200);
@@ -399,15 +313,6 @@
 }
 
 @media (max-width: 760px) {
-  .refunds-hero,
-  .refunds-hero__content {
-    min-height: 170px;
-  }
-
-  .refunds-hero__title {
-    font-size: clamp(2rem, 8vw, 2.55rem);
-  }
-
   .refunds-panel {
     margin-bottom: 0.75rem;
     padding: 0.85rem;

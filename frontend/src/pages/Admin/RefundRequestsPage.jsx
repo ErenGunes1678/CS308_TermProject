@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { getRefundRequests, resolveRefundRequest } from '../../services/orderService';
 import './RefundRequestsPage.css';
@@ -91,6 +91,7 @@ const RefundRequestCard = ({ request, onResolve, resolvingId }) => {
 
 const RefundRequestsPage = () => {
   const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
@@ -176,26 +177,22 @@ const RefundRequestsPage = () => {
 
   return (
     <div className="refunds-page">
-      <section className="refunds-hero">
-        <div className="refunds-hero__overlay" />
-        <div className="refunds-hero__bubbles" aria-hidden="true">
-          <span className="refunds-hero__bubble refunds-hero__bubble--1" />
-          <span className="refunds-hero__bubble refunds-hero__bubble--2" />
-          <span className="refunds-hero__bubble refunds-hero__bubble--3" />
+      <div className="admin-page-header container">
+        <div className="admin-page-header__text">
+          <p className="admin-page-header__eyebrow">Admin Panel</p>
+          <h1 className="admin-page-header__title">Refund Requests</h1>
         </div>
-        <div className="container refunds-hero__content">
-          <p className="refunds-hero__eyebrow">Sales Manager</p>
-          <h1 className="refunds-hero__title">Refund Requests</h1>
-          <p className="refunds-hero__tagline">Review returned products and authorize customer refunds.</p>
-        </div>
-      </section>
+        <button
+          type="button"
+          className="admin-page-header__back-btn"
+          onClick={() => navigate('/')}
+        >
+          Back to Store
+        </button>
+      </div>
 
       <main className="container refunds-panel">
         <div className="refunds-summary">
-          <div>
-            <p className="refunds-summary__label">Refund Queue</p>
-            <h2 className="refunds-summary__title">{STATUS_LABELS[activeStatus]} refund requests</h2>
-          </div>
           <div className="refunds-summary__tabs" role="tablist" aria-label="Refund request status">
             {Object.entries(STATUS_LABELS).map(([status, label]) => (
               <button

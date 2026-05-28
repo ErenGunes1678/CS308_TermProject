@@ -9,7 +9,9 @@ export const searchProducts = async (req: Request, res: Response): Promise<void>
     try {
         const { q, category, subcategory, brands, minPrice, maxPrice, inStock, minRating, sortBy } = req.query;
 
-        const where: WhereOptions = {};
+        const where: WhereOptions = {
+            price: { [Op.gt]: 0 }
+        };
 
         if (q) {
             (where as any)[Op.or] = [
@@ -30,7 +32,7 @@ export const searchProducts = async (req: Request, res: Response): Promise<void>
         }
 
         if (minPrice || maxPrice) {
-            const priceFilter: any = {};
+            const priceFilter: any = { [Op.gt]: 0 };
             if (minPrice) priceFilter[Op.gte] = Number(minPrice);
             if (maxPrice) priceFilter[Op.lte] = Number(maxPrice);
             (where as any).price = priceFilter;
