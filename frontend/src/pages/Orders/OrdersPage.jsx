@@ -1,8 +1,46 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { cancelOrder, getOrders, requestRefund } from '../../services/orderService';
+import { invalidateNotifications } from '../../services/notificationService';
+import { useNotifications } from '../../context/NotificationContext';
 import './OrdersPage.css';
+
+const RefundModal = ({ item, onConfirm, onClose, isSubmitting }) => {
+    const [reason, setReason] = useState('');
+    return (
+        <div className="refund-modal-overlay" onClick={onClose}>
+            <div className="refund-modal" onClick={(e) => e.stopPropagation()}>
+                <h3 className="refund-modal__title">Request Refund</h3>
+                <p className="refund-modal__product">{item.product?.name}</p>
+                <label className="refund-modal__label">
+                    Reason for return
+                    <textarea
+                        className="refund-modal__textarea"
+                        placeholder="Please describe why you want to return this item…"
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                        rows={4}
+                        autoFocus
+                    />
+                </label>
+                <div className="refund-modal__actions">
+                    <button type="button" className="refund-modal__cancel" onClick={onClose} disabled={isSubmitting}>
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        className="refund-modal__submit"
+                        onClick={() => onConfirm(item, reason)}
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting ? 'Submitting…' : 'Submit refund request'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const STATUS_LABELS = {
     processing: 'Processing',
@@ -66,14 +104,77 @@ const isWithinReturnWindow = (createdAt) => {
     return ageMs <= 30 * 24 * 60 * 60 * 1000;
 };
 
-const OrderCard = ({ order, canCancel, onCancel, onReturn, returningItemId }) => {
-    const [expanded, setExpanded] = useState(false);
-    const canRequestRefund = order.status === 'delivered' && isWithinReturnWindow(order.createdAt);
-    const refundableItems = order.items.filter((item) => !item.refundRequest && canRequestRefund);
+const OrderItem = ({ item, canRequestRefund, onReturn, returningItemId }) => {
+    const [showRefundForm, setShowRefundForm] = useState(false);
+    const [reason, setReason] = useState('');
+
+    const canRefundThis = canRequestRefund && !item.refundRequest;
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        onReturn(item, reason);
+        setShowRefundForm(false);
+        setReason('');
+    };
 
     return (
-        <article className="order-card">
-            {/* Always-visible summary row */}
+        <>
+            <div className="order-item">
+                <div className="order-item__image">
+                    <img src={item.product?.image} alt={item.product?.name} />
+                </div>
+                <div className="order-item__info">
+                    <Link to={`/product/${item.product_id}`} className="order-item__name">
+                        {item.product?.name}
+                    </Link>
+                    <span className="order-item__meta">{item.product?.brand} · Qty {item.quantity}</span>
+                </div>
+                <div className="order-item__right">
+                    <span className="order-item__price">
+                        ${(Number(item.unit_price || 0) * Number(item.quantity || 0)).toFixed(2)}
+                    </span>
+                    {item.refundRequest ? (
+                        <span className={`order-item__refund-badge order-item__refund-badge--${item.refundRequest.status}`}>
+                            Refund {item.refundRequest.status}
+                        </span>
+                    ) : canRefundThis ? (
+                        <button
+                            type="button"
+                            className="order-item__return-btn"
+                            onClick={() => setShowRefundForm((v) => !v)}
+                            disabled={returningItemId === item.id}
+                        >
+                            {returningItemId === item.id ? 'Sending…' : showRefundForm ? 'Cancel' : 'Return'}
+                        </button>
+                    ) : null}
+                </div>
+            </div>
+            {showRefundForm && (
+                <form className="order-item__refund-form" onSubmit={handleSubmit}>
+                    <textarea
+                        className="order-item__refund-reason"
+                        placeholder="Why are you returning this item? (optional)"
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                        rows={2}
+                        autoFocus
+                    />
+                    <button type="submit" className="order-item__refund-submit" disabled={returningItemId === item.id}>
+                        {returningItemId === item.id ? 'Submitting…' : 'Submit refund request'}
+                    </button>
+                </form>
+            )}
+        </>
+    );
+};
+
+const OrderCard = ({ order, canCancel, onCancel, onReturn, returningItemId, autoExpand, cardRef }) => {
+    const [expanded, setExpanded] = useState(autoExpand);
+    const canRequestRefund = order.status === 'delivered' && isWithinReturnWindow(order.createdAt);
+    const hasRefundable = order.items.some((item) => !item.refundRequest && canRequestRefund);
+
+    return (
+        <article className="order-card" ref={cardRef}>
             <button
                 type="button"
                 className="order-card__summary-row"
@@ -89,6 +190,7 @@ const OrderCard = ({ order, canCancel, onCancel, onReturn, returningItemId }) =>
                 </div>
                 <div className="order-card__summary-right">
                     <span className="order-card__total-value">${Number(order.total_amount || 0).toFixed(2)}</span>
+                    {hasRefundable && <span className="order-card__refund-hint">Return available</span>}
                     <div className={`order-status order-status--${order.status}`}>
                         <span className="order-status__dot" />
                         {STATUS_LABELS[order.status]}
@@ -97,60 +199,28 @@ const OrderCard = ({ order, canCancel, onCancel, onReturn, returningItemId }) =>
                 </div>
             </button>
 
-            {/* Expandable detail */}
             {expanded && (
-                <>
+                <div className="order-card__expanded">
                     <OrderProgress status={order.status} />
-
                     <div className="order-card__items">
                         {order.items.map((item) => (
-                            <div key={item.id} className="order-item">
-                                <div className="order-item__image">
-                                    <img src={item.product?.image} alt={item.product?.name} />
-                                </div>
-                                <div className="order-item__info">
-                                    <span className="order-item__brand">{item.product?.brand}</span>
-                                    <Link to={`/product/${item.product_id}`} className="order-item__name">
-                                        {item.product?.name}
-                                    </Link>
-                                    <span className="order-item__qty">Qty: {item.quantity}</span>
-                                    {item.refundRequest && (
-                                        <span className={`order-item__refund-status order-item__refund-status--${item.refundRequest.status}`}>
-                                            Refund: {item.refundRequest.status}
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="order-item__price">
-                                    ${(Number(item.unit_price || 0) * Number(item.quantity || 0)).toFixed(2)}
-                                </div>
-                            </div>
+                            <OrderItem
+                                key={item.id}
+                                item={item}
+                                canRequestRefund={canRequestRefund}
+                                onReturn={onReturn}
+                                returningItemId={returningItemId}
+                            />
                         ))}
                     </div>
-
-                    <footer className="order-card__footer">
-                        <div className="order-card__actions">
-                            {canCancel && (
-                                <button className="order-btn order-btn--secondary" onClick={() => onCancel(order.id)}>
-                                    Cancel Order
-                                </button>
-                            )}
-                            {canRequestRefund && refundableItems.length > 0 && refundableItems.map((item) => (
-                                <button
-                                    key={item.id}
-                                    type="button"
-                                    className="order-btn order-btn--refund"
-                                    onClick={() => onReturn(order, item)}
-                                    disabled={returningItemId === item.id}
-                                >
-                                    {returningItemId === item.id ? 'Requesting…' : `Refund: ${item.product?.name || `Item #${item.id}`}`}
-                                </button>
-                            ))}
-                            {order.status === 'delivered' && !canRequestRefund && (
-                                <span className="order-btn order-btn--disabled">Return window closed</span>
-                            )}
+                    {canCancel && (
+                        <div className="order-card__footer-slim">
+                            <button className="order-btn order-btn--secondary" onClick={() => onCancel(order.id)}>
+                                Cancel Order
+                            </button>
                         </div>
-                    </footer>
-                </>
+                    )}
+                </div>
             )}
         </article>
     );
@@ -158,12 +228,23 @@ const OrderCard = ({ order, canCancel, onCancel, onReturn, returningItemId }) =>
 
 const OrdersPage = () => {
     const { user, isLoading } = useAuth();
+    const { showToast } = useNotifications();
     const [orders, setOrders] = useState([]);
     const [activeTab, setActiveTab] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
     const [isPageLoading, setIsPageLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState('');
     const [returningItemId, setReturningItemId] = useState(null);
+    const [searchParams] = useSearchParams();
+    const targetOrderId = Number(searchParams.get('order')) || null;
+    const targetRef = useRef(null);
+
+    // Scroll to + highlight the target order once orders are loaded
+    useEffect(() => {
+        if (!targetOrderId || !targetRef.current) return;
+        const el = targetRef.current;
+        setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+    }, [targetOrderId, orders]);
 
     useEffect(() => {
         if (isLoading || !user) {
@@ -269,10 +350,10 @@ const OrdersPage = () => {
         }
     };
 
-    const handleReturn = async (_order, item) => {
+    const handleReturn = async (item, reason) => {
         try {
             setReturningItemId(item.id);
-            const data = await requestRefund(item.id);
+            const data = await requestRefund(item.id, reason);
             setOrders((currentOrders) =>
                 currentOrders.map((currentOrder) => ({
                     ...currentOrder,
@@ -284,6 +365,15 @@ const OrdersPage = () => {
                 }))
             );
             setErrorMessage('');
+            // Show toast immediately — don't wait for the background fetch
+            showToast({
+                type: 'refund',
+                icon: '🔄',
+                title: 'Refund request received',
+                body: `Your return request for "${item.product?.name}" has been submitted.`,
+                link: `/customer/orders?order=${item.order_id || ''}`,
+            });
+            invalidateNotifications();
         } catch (error) {
             setErrorMessage(error?.response?.data?.message || 'Unable to request refund.');
         } finally {
@@ -375,6 +465,8 @@ const OrdersPage = () => {
                                 onCancel={handleCancel}
                                 onReturn={handleReturn}
                                 returningItemId={returningItemId}
+                                autoExpand={order.id === targetOrderId}
+                                cardRef={order.id === targetOrderId ? targetRef : null}
                             />
                         ))
                     ) : (

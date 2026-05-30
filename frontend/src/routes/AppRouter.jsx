@@ -19,6 +19,7 @@ import PricingManagementPage from '../pages/Admin/PricingManagementPage';
 import SearchPage from '../pages/Search/SearchPage';
 import UnauthorizedPage from '../pages/Unauthorized/UnauthorizedPage';
 import WishlistPage from '../pages/Wishlist/WishlistPage';
+import NotificationsPage from '../pages/Notifications/NotificationsPage';
 
 // Placeholder pages - replace with real ones later
 const PlaceholderPage = ({ title }) => (
@@ -105,15 +106,17 @@ const AppRouter = () => {
           <Route path="/account" element={<AccountRedirect />} />
           <Route path="/customer" element={<RoleRoute allowedRoles={['customer']}><ProfilePage /></RoleRoute>} />
           <Route path="/customer/orders" element={<RoleRoute allowedRoles={['customer']}><OrdersPage /></RoleRoute>} />
+          <Route path="/customer/notifications" element={<RoleRoute allowedRoles={['customer']}><NotificationsPage /></RoleRoute>} />
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/category/:slug" element={<ProductsPage />} />
           <Route path="/product/:id" element={<ProductDetailsPage />} />
-          <Route path="/cart" element={<RoleRoute allowedRoles={['customer']}><CartPage /></RoleRoute>} />
+          <Route path="/cart" element={<CartPage />} />
           <Route path="/profile" element={<AccountRedirect />} />
           <Route path="/orders" element={<RoleRoute allowedRoles={['customer']}><OrdersPage /></RoleRoute>} />
           <Route path="/checkout" element={<RoleRoute allowedRoles={['customer']}><CheckoutPage /></RoleRoute>} />
           <Route path="/order-success" element={<RoleRoute allowedRoles={['customer']}><OrderSuccessPage /></RoleRoute>} />
           <Route path="/wishlist" element={<RoleRoute allowedRoles={['customer']}><WishlistPage /></RoleRoute>} />
+          <Route path="/notifications" element={<Navigate to="/customer/notifications" replace />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
           <Route path="/admin" element={<AdminRedirect />} />

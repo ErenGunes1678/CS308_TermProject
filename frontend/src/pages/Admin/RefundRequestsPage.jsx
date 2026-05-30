@@ -50,7 +50,17 @@ const RefundRequestCard = ({ request, onResolve, resolvingId }) => {
           <span>Quantity: {Number(item?.quantity || 0)}</span>
           <span>Purchased at: ${Number(item?.unit_price || 0).toFixed(2)}</span>
           <span>Refund amount: ${refundAmount.toFixed(2)}</span>
-          {request.reason ? <p>{request.reason}</p> : null}
+          {request.reason ? (
+            <div className="refund-card__reason">
+              <p className="refund-card__reason-label">Customer's reason</p>
+              <p className="refund-card__reason-text">"{request.reason}"</p>
+            </div>
+          ) : (
+            <div className="refund-card__reason refund-card__reason--empty">
+              <p className="refund-card__reason-label">Customer's reason</p>
+              <p className="refund-card__reason-text refund-card__reason-text--none">No reason provided</p>
+            </div>
+          )}
         </div>
       </div>
 

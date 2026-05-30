@@ -343,3 +343,43 @@
     grid-template-columns: 1fr;
   }
 }
+
+.refund-card__reason {
+  grid-column: 1 / -1;
+  margin-top: 0.25rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  background: rgba(255, 64, 129, 0.04);
+  border-left: 3px solid var(--color-primary);
+}
+
+.refund-card__reason--empty {
+  background: var(--color-gray-100);
+  border-left-color: var(--color-gray-300);
+}
+
+.refund-card__reason-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  margin: 0 0 0.3rem;
+}
+
+.refund-card__reason--empty .refund-card__reason-label {
+  color: var(--color-gray-400);
+}
+
+.refund-card__reason-text {
+  font-size: 0.88rem;
+  color: var(--color-gray-700);
+  margin: 0;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.refund-card__reason-text--none {
+  color: var(--color-gray-400);
+  font-style: normal;
+}
