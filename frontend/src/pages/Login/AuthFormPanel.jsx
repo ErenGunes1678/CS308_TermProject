@@ -4,17 +4,17 @@ import "./AuthFormPanel.css";
 const DEMO_ACCOUNTS = [
   {
     role: "Customer",
-    email: "customer@example.com",
+    email: "elif.customer@gmail.com",
     password: "123456",
   },
   {
     role: "Sales Manager",
-    email: "sales@example.com",
+    email: "elif.sales@gmail.com",
     password: "123456",
   },
   {
     role: "Product Manager",
-    email: "product@example.com",
+    email: "elif.product@gmail.com",
     password: "123456",
   },
 ];
