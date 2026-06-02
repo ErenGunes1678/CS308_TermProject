@@ -20,8 +20,32 @@ type InvoicePayload = {
     total: number;
 };
 
-const escapePdfText = (value: string): string =>
-    value.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+// ISO-8859-9 (Turkish) byte positions for characters not in WinAnsiEncoding
+const TURKISH_CHAR_BYTES: Record<string, number> = {
+    "Ğ": 0xD0, // Ğ
+    "ğ": 0xF0, // ğ
+    "İ": 0xDD, // İ
+    "ı": 0xFD, // ı
+    "Ş": 0xDE, // Ş
+    "ş": 0xFE, // ş
+};
+
+const toOctal = (byte: number): string => `\\${byte.toString(8).padStart(3, "0")}`;
+
+const escapePdfText = (value: string): string => {
+    let result = "";
+    for (const char of value) {
+        const code = char.charCodeAt(0);
+        if (char === "\\") result += "\\\\";
+        else if (char === "(") result += "\\(";
+        else if (char === ")") result += "\\)";
+        else if (TURKISH_CHAR_BYTES[char] !== undefined) result += toOctal(TURKISH_CHAR_BYTES[char]);
+        else if (code > 127 && code <= 255) result += toOctal(code);
+        else if (code > 255) result += "?";
+        else result += char;
+    }
+    return result;
+};
 
 const toPdfLine = (text: string, x: number, y: number, size = 12): string =>
     `BT /F1 ${size} Tf ${x} ${y} Td (${escapePdfText(text)}) Tj ET`;
@@ -32,19 +56,19 @@ const buildPdf = (lines: string[]): Buffer => {
         "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",
         "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj",
         "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj",
-        "4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj",
-        `5 0 obj << /Length ${Buffer.byteLength(content, "utf8")} >> stream\n${content}\nendstream endobj`,
+        "4 0 obj << /Type /Font /Subtype /TrueType /BaseFont /Arial /Encoding << /Type /Encoding /BaseEncoding /WinAnsiEncoding /Differences [208 /Gbreve 221 /Idotaccent /Scedilla 240 /gbreve 253 /dotlessi /scedilla] >> >> endobj",
+        `5 0 obj << /Length ${Buffer.byteLength(content, "latin1")} >> stream\n${content}\nendstream endobj`,
     ];
 
     let pdf = "%PDF-1.4\n";
     const offsets = [0];
 
     for (const object of objects) {
-        offsets.push(Buffer.byteLength(pdf, "utf8"));
+        offsets.push(Buffer.byteLength(pdf, "latin1"));
         pdf += `${object}\n`;
     }
 
-    const xrefStart = Buffer.byteLength(pdf, "utf8");
+    const xrefStart = Buffer.byteLength(pdf, "latin1");
     pdf += `xref\n0 ${objects.length + 1}\n`;
     pdf += "0000000000 65535 f \n";
 
@@ -53,7 +77,7 @@ const buildPdf = (lines: string[]): Buffer => {
     }
 
     pdf += `trailer << /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
-    return Buffer.from(pdf, "utf8");
+    return Buffer.from(pdf, "latin1");
 };
 
 export const createInvoicePdfBuffer = (invoice: InvoicePayload): Buffer => {
