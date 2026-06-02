@@ -1,4 +1,3 @@
-//
 // Task 9: A product should have the following properties at the very least: 
 // ID, name, model, serial number, description, quantity in stocks, price, 
 // warranty status, and distributor information.
@@ -24,7 +23,7 @@ module.exports = (sequelize: Sequelize) => {
     },
 
     category: {
-      type: DataTypes.ENUM("makeup", "skincare", "haircare", "men-care"),
+      type: DataTypes.STRING,
       allowNull: false,
     },
 
@@ -78,6 +77,22 @@ module.exports = (sequelize: Sequelize) => {
       defaultValue: 0,
     },
 
+    // This stores the original mock rating permanently.
+    // Example: Pro Glow Eyeshadow Palette starts with 4.8.
+    base_rating: {
+      type: DataTypes.DECIMAL(2, 1),
+      allowNull: false,
+      defaultValue: 0.0,
+    },
+
+    // This stores the original mock review count permanently.
+    // Example: Pro Glow Eyeshadow Palette starts with 13 reviews.
+    base_review_count: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+
     image: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -109,6 +124,7 @@ module.exports = (sequelize: Sequelize) => {
       as: "comments",
       onDelete: "CASCADE",
     });
+
   };
 
   return Product;

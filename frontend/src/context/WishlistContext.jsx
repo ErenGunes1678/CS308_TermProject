@@ -3,6 +3,7 @@ import { createContext, useEffect, useMemo, useState } from "react";
 export const WishlistContext = createContext(null);
 
 const WISHLIST_STORAGE_KEY = "wishlistItems";
+const DISCOUNT_NOTIFICATION_KEY = "wishlistDiscountNotifications";
 
 const readStoredWishlist = () => {
   try {
@@ -18,6 +19,20 @@ const saveStoredWishlist = (wishlistItems) => {
   localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(wishlistItems));
 };
 
+const readStoredDiscountNotifications = () => {
+  try {
+    const storedNotifications = localStorage.getItem(DISCOUNT_NOTIFICATION_KEY);
+    const parsedNotifications = storedNotifications ? JSON.parse(storedNotifications) : [];
+    return Array.isArray(parsedNotifications) ? parsedNotifications : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveStoredDiscountNotifications = (notifications) => {
+  localStorage.setItem(DISCOUNT_NOTIFICATION_KEY, JSON.stringify(notifications));
+};
+
 const getProductImage = (product) =>
   product.image || product.images?.[0] || "";
 
@@ -31,10 +46,15 @@ const toWishlistItem = (product) => ({
 
 export function WishlistProvider({ children }) {
   const [wishlistItems, setWishlistItems] = useState(readStoredWishlist);
+  const [discountNotifications, setDiscountNotifications] = useState(readStoredDiscountNotifications);
 
   useEffect(() => {
     saveStoredWishlist(wishlistItems);
   }, [wishlistItems]);
+
+  useEffect(() => {
+    saveStoredDiscountNotifications(discountNotifications);
+  }, [discountNotifications]);
 
   const isInWishlist = (productId) =>
     wishlistItems.some((item) => item.id === productId);
@@ -51,14 +71,36 @@ export function WishlistProvider({ children }) {
     });
   };
 
+  const addDiscountNotification = (notification) => {
+    const nextNotification = {
+      id: `${notification.productId}-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      ...notification,
+    };
+
+    setDiscountNotifications((currentNotifications) => [
+      nextNotification,
+      ...currentNotifications,
+    ]);
+
+    return nextNotification;
+  };
+
+  const clearDiscountNotifications = () => {
+    setDiscountNotifications([]);
+  };
+
   const value = useMemo(
     () => ({
       wishlistItems,
       wishlistCount: wishlistItems.length,
+      discountNotifications,
       isInWishlist,
       toggleWishlist,
+      addDiscountNotification,
+      clearDiscountNotifications,
     }),
-    [wishlistItems]
+    [discountNotifications, wishlistItems]
   );
 
   return (

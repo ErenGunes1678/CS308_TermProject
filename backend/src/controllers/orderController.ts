@@ -6,8 +6,18 @@ import { sendInvoiceEmail } from "../utils/emailService";
 
 const SHIPPING_COST = 5.99;
 const FREE_SHIPPING_MINIMUM = 50;
+const RETURN_WINDOW_DAYS = 30;
 
 const formatMoney = (value: number): number => Number(value.toFixed(2));
+
+const calculateRefundAmount = (orderItem: any): number =>
+    formatMoney(Number(orderItem.unit_price) * Number(orderItem.quantity));
+
+const isWithinReturnWindow = (createdAt: string | Date): boolean => {
+    const purchasedAt = new Date(createdAt).getTime();
+    const ageMs = Date.now() - purchasedAt;
+    return ageMs >= 0 && ageMs <= RETURN_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+};
 
 const buildAddressLabel = (shippingAddress: any): string =>
     [
@@ -187,9 +197,19 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
     }
 };
 
-const isAdminUser = async (userId: number) => {
+const isProductManager = async (userId: number) => {
     const user = await db.users.findByPk(userId);
     return user?.role === "product_manager";
+};
+
+const isSalesManager = async (userId: number) => {
+    const user = await db.users.findByPk(userId);
+    return user?.role === "sales_manager";
+};
+
+const canReadOrdersForAdmin = async (userId: number) => {
+    const user = await db.users.findByPk(userId);
+    return user?.role === "product_manager" || user?.role === "sales_manager";
 };
 
 export const getUserOrders = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -197,7 +217,10 @@ export const getUserOrders = async (req: AuthRequest, res: Response): Promise<vo
         const orders = await db.orders.findAll({
             where: { user_id: req.userId },
             include: [{ model: db.order_items, as: "items",
-                include: [{ model: db.products, as: "product" }]
+                include: [
+                    { model: db.products, as: "product" },
+                    { model: db.refund_requests, as: "refundRequest" },
+                ]
             }],
             order: [["createdAt", "DESC"]],
         });
@@ -211,7 +234,7 @@ export const getUserOrders = async (req: AuthRequest, res: Response): Promise<vo
 
 export const getAllOrders = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        if (!req.userId || !(await isAdminUser(req.userId))) {
+        if (!req.userId || !(await canReadOrdersForAdmin(req.userId))) {
             res.status(403).json({ message: "Admin access required." });
             return;
         }
@@ -219,7 +242,14 @@ export const getAllOrders = async (req: AuthRequest, res: Response): Promise<voi
         const orders = await db.orders.findAll({
             include: [
                 { model: db.users, as: "user", attributes: ["id", "name", "email"] },
-                { model: db.order_items, as: "items", include: [{ model: db.products, as: "product" }] },
+                {
+                    model: db.order_items,
+                    as: "items",
+                    include: [
+                        { model: db.products, as: "product" },
+                        { model: db.refund_requests, as: "refundRequest" },
+                    ],
+                },
             ],
             order: [["createdAt", "DESC"]],
         });
@@ -231,9 +261,47 @@ export const getAllOrders = async (req: AuthRequest, res: Response): Promise<voi
     }
 };
 
+export const cancelUserOrder = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const orderId = Number(req.params.id);
+        const userId = req.userId;
+
+        if (!userId) {
+            res.status(401).json({ message: "Authentication required." });
+            return;
+        }
+
+        const userIsSalesManager = await isSalesManager(userId);
+        const order = await db.orders.findOne({
+            where: userIsSalesManager ? { id: orderId } : { id: orderId, user_id: userId },
+        });
+
+        if (!order) {
+            res.status(404).json({ message: "Order not found." });
+            return;
+        }
+
+        if (order.status !== "processing") {
+            res.status(400).json({ message: "Only processing orders can be cancelled." });
+            return;
+        }
+
+        if (!userIsSalesManager) {
+            res.status(403).json({ message: "Sales manager approval required to cancel this order." });
+            return;
+        }
+
+        await order.update({ status: "cancelled" });
+        res.json({ message: "Order cancelled.", order });
+    } catch (error) {
+        console.error("Cancel order error:", error);
+        res.status(500).json({ message: "Failed to cancel order." });
+    }
+};
+
 export const updateOrderStatus = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        if (!req.userId || !(await isAdminUser(req.userId))) {
+        if (!req.userId || !(await isProductManager(req.userId))) {
             res.status(403).json({ message: "Admin access required." });
             return;
         }
@@ -278,5 +346,196 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
     } catch (error) {
         console.error('Update order status error:', error);
         res.status(500).json({ message: 'Failed to update order status.' });
+    }
+};
+
+export const requestRefund = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const orderItemId = Number(req.params.itemId);
+        const reason = typeof req.body?.reason === "string" ? req.body.reason.trim() : null;
+
+        if (!Number.isInteger(orderItemId) || orderItemId <= 0) {
+            res.status(400).json({ message: "Valid order item id is required." });
+            return;
+        }
+
+        const orderItem = await db.order_items.findByPk(orderItemId, {
+            include: [
+                {
+                    model: db.orders,
+                    as: "order",
+                    where: { user_id: req.userId },
+                    required: true,
+                },
+                { model: db.products, as: "product" },
+                { model: db.refund_requests, as: "refundRequest" },
+            ],
+        });
+
+        if (!orderItem) {
+            res.status(404).json({ message: "Purchased product not found in your order history." });
+            return;
+        }
+
+        if (orderItem.order.status !== "delivered") {
+            res.status(400).json({ message: "Only delivered products can be returned." });
+            return;
+        }
+
+        if (!isWithinReturnWindow(orderItem.order.createdAt)) {
+            res.status(400).json({ message: "The 30-day return window has closed for this product." });
+            return;
+        }
+
+        if (orderItem.refundRequest) {
+            res.status(409).json({ message: "A refund request already exists for this product." });
+            return;
+        }
+
+        const refundAmount = calculateRefundAmount(orderItem);
+        const refundRequest = await db.refund_requests.create({
+            order_item_id: orderItem.id,
+            user_id: req.userId,
+            reason: reason || null,
+            status: "pending",
+            refund_amount: refundAmount,
+        });
+
+        res.status(201).json({
+            message: "Refund request submitted for sales manager review.",
+            refundRequest,
+        });
+    } catch (error) {
+        console.error("Request refund error:", error);
+        res.status(500).json({ message: "Failed to submit refund request." });
+    }
+};
+
+export const getRefundRequests = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        if (!req.userId || !(await isSalesManager(req.userId))) {
+            res.status(403).json({ message: "Sales manager access required." });
+            return;
+        }
+
+        const refundRequests = await db.refund_requests.findAll({
+            include: [
+                { model: db.users, as: "user", attributes: ["id", "name", "email"] },
+                { model: db.users, as: "resolver", attributes: ["id", "name", "email"] },
+                {
+                    model: db.order_items,
+                    as: "orderItem",
+                    include: [
+                        { model: db.products, as: "product" },
+                        { model: db.orders, as: "order" },
+                    ],
+                },
+            ],
+            order: [["requested_at", "DESC"]],
+        });
+
+        res.json({ refundRequests });
+    } catch (error) {
+        console.error("Get refund requests error:", error);
+        res.status(500).json({ message: "Failed to fetch refund requests." });
+    }
+};
+
+export const resolveRefundRequest = async (req: AuthRequest, res: Response): Promise<void> => {
+    const t = await sequelize.transaction();
+
+    try {
+        if (!req.userId || !(await isSalesManager(req.userId))) {
+            await t.rollback();
+            res.status(403).json({ message: "Sales manager access required." });
+            return;
+        }
+
+        const refundRequestId = Number(req.params.id);
+        const requestedStatus = String(req.body?.status || "").trim().toLowerCase();
+
+        if (!["approved", "rejected"].includes(requestedStatus)) {
+            await t.rollback();
+            res.status(400).json({ message: "Refund request status must be approved or rejected." });
+            return;
+        }
+
+        const refundRequest = await db.refund_requests.findByPk(refundRequestId, {
+            include: [
+                {
+                    model: db.order_items,
+                    as: "orderItem",
+                    include: [
+                        { model: db.products, as: "product" },
+                        { model: db.orders, as: "order" },
+                    ],
+                },
+            ],
+            transaction: t,
+        });
+
+        if (!refundRequest) {
+            await t.rollback();
+            res.status(404).json({ message: "Refund request not found." });
+            return;
+        }
+
+        if (refundRequest.status !== "pending") {
+            await t.rollback();
+            res.status(400).json({ message: "Only pending refund requests can be resolved." });
+            return;
+        }
+
+        const refundAmount = calculateRefundAmount(refundRequest.orderItem);
+
+        if (requestedStatus === "approved") {
+            const product = await db.products.findByPk(refundRequest.orderItem.product_id, { transaction: t });
+            if (!product) {
+                await t.rollback();
+                res.status(404).json({ message: "Returned product no longer exists." });
+                return;
+            }
+
+            await product.update({
+                quantity_in_stock: Number(product.quantity_in_stock) + Number(refundRequest.orderItem.quantity),
+            }, { transaction: t });
+        }
+
+        await refundRequest.update({
+            status: requestedStatus,
+            refund_amount: refundAmount,
+            resolved_at: new Date(),
+            resolved_by: req.userId,
+        }, { transaction: t });
+
+        await t.commit();
+
+        const resolvedRequest = await db.refund_requests.findByPk(refundRequest.id, {
+            include: [
+                { model: db.users, as: "user", attributes: ["id", "name", "email"] },
+                { model: db.users, as: "resolver", attributes: ["id", "name", "email"] },
+                {
+                    model: db.order_items,
+                    as: "orderItem",
+                    include: [
+                        { model: db.products, as: "product" },
+                        { model: db.orders, as: "order" },
+                    ],
+                },
+            ],
+        });
+
+        res.json({
+            message: requestedStatus === "approved"
+                ? "Refund approved. Stock has been restored and the purchase price has been refunded to the customer's account."
+                : "Refund request rejected.",
+            refundRequest: resolvedRequest,
+        });
+    } catch (error) {
+        if (!(t as typeof t & { finished?: string }).finished) {
+            await t.rollback();
+        }
+        console.error("Resolve refund request error:", error);
+        res.status(500).json({ message: "Failed to resolve refund request." });
     }
 };

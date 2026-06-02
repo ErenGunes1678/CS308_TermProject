@@ -1,0 +1,56 @@
+/* Global layout scale
+   Keep this file generic. It should define shared page sizing, spacing tokens,
+   and reusable layout utilities, not override individual page components. */
+
+:root {
+  --site-max-width: 1360px;
+  --site-gutter: clamp(1rem, 3vw, 2rem);
+  --site-page-y: clamp(1.5rem, 3vw, 3rem);
+  --site-section-y: clamp(2.5rem, 5vw, 4rem);
+  --site-card-padding: clamp(1rem, 2vw, 1.5rem);
+  --site-navbar-height: 72px;
+}
+
+body {
+  min-width: 320px;
+}
+
+.container {
+  width: min(var(--site-max-width), calc(100% - (var(--site-gutter) * 2)));
+  max-width: none;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.page-shell {
+  min-height: calc(100vh - var(--site-navbar-height));
+  padding-bottom: var(--site-section-y);
+}
+
+.page-header {
+  padding-top: var(--site-page-y);
+  padding-bottom: clamp(1rem, 2vw, 1.5rem);
+}
+
+.section {
+  padding-top: var(--site-section-y);
+  padding-bottom: var(--site-section-y);
+}
+
+.panel {
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-xl);
+  background: var(--color-white);
+  box-shadow: var(--shadow-card);
+  padding: var(--site-card-padding);
+}
+
+@media (max-width: 768px) {
+  :root {
+    --site-navbar-height: 72px;
+    --site-page-y: 1.5rem;
+    --site-section-y: 2.5rem;
+  }
+}

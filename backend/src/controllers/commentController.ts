@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { Op } from "sequelize";
 import db from "../entities";
 import { AuthRequest } from "../middleware/authMiddleware";
 
@@ -7,31 +8,46 @@ const Product = db["products"];
 const User = db["users"];
 
 const updateProductRatingStats = async (productId: number) => {
-    const approvedComments = await Comment.findAll({
+    const product = await Product.findByPk(productId);
+
+    if (!product) {
+        return {
+            rating: 0,
+            review_count: 0
+        };
+    }
+
+    const ratedComments = await Comment.findAll({
         where: {
             product_id: productId,
-            status: "approved"
+            status: {
+                [Op.ne]: "rejected"
+            }
         },
         attributes: ["rating"]
     });
 
-    const reviewCount = approvedComments.length;
+    const baseRating = Number(product.base_rating || 0);
+    const baseReviewCount = Number(product.base_review_count || 0);
 
-    let averageRating = 0;
+    let commentTotalRating = 0;
 
-    if (reviewCount > 0) {
-        const totalRating = approvedComments.reduce(
-            (sum: number, comment: any) => sum + Number(comment.rating),
-            0
-        );
-
-        averageRating = Number((totalRating / reviewCount).toFixed(1));
+    for (let i = 0; i < ratedComments.length; i++) {
+        commentTotalRating += Number(ratedComments[i].rating);
     }
+
+    const totalReviewCount = baseReviewCount + ratedComments.length;
+    const totalRatingValue = (baseRating * baseReviewCount) + commentTotalRating;
+
+    const averageRating =
+        totalReviewCount > 0
+            ? Number((totalRatingValue / totalReviewCount).toFixed(1))
+            : 0;
 
     await Product.update(
         {
             rating: averageRating,
-            review_count: reviewCount
+            review_count: totalReviewCount
         },
         {
             where: {
@@ -42,7 +58,7 @@ const updateProductRatingStats = async (productId: number) => {
 
     return {
         rating: averageRating,
-        review_count: reviewCount
+        review_count: totalReviewCount
     };
 };
 
@@ -84,9 +100,9 @@ export const createComment = async (req: AuthRequest, res: Response) => {
             });
         }
 
-        if (rating === undefined || !comment_text) {
+        if (rating === undefined) {
             return res.status(400).json({
-                message: "Rating and comment text are required"
+                message: "Rating is required"
             });
         }
 
@@ -103,17 +119,26 @@ export const createComment = async (req: AuthRequest, res: Response) => {
             });
         }
 
+        const trimmedComment = comment_text?.trim() || "";
+        const hasComment = trimmedComment.length > 0;
+
         const comment = await Comment.create({
             product_id: Number(productId),
             user_id: currentUser.id,
             rating,
-            comment_text,
-            status: "pending"
+            comment_text: trimmedComment,
+            status: hasComment ? "pending" : "approved"
         });
 
+        const ratingStats = await updateProductRatingStats(Number(productId));
+
         return res.status(201).json({
-            message: "Comment submitted successfully and is waiting for approval",
-            comment
+            message: hasComment
+                ? "Review is pending approval"
+                : "Rating submitted successfully",
+            comment,
+            rating: ratingStats.rating,
+            review_count: ratingStats.review_count
         });
     } catch (error) {
         console.error("Create comment error:", error);
@@ -155,13 +180,16 @@ export const getApprovedCommentsByProduct = async (req: Request, res: Response) 
             order: [["createdAt", "DESC"]]
         });
 
-        const ratingStats = await updateProductRatingStats(Number(productId));
-
         return res.status(200).json({
             message: "Approved comments fetched successfully",
             comments,
-            rating: ratingStats.rating,
-            review_count: ratingStats.review_count
+
+            // Important:
+            // We only READ product rating here.
+            // We do NOT recalculate on product page visit.
+            // This prevents mock ratings from resetting to 0.
+            rating: Number(product.rating),
+            review_count: Number(product.review_count)
         });
     } catch (error) {
         console.error("Get approved comments error:", error);
@@ -194,7 +222,10 @@ export const getPendingComments = async (req: AuthRequest, res: Response) => {
 
         const comments = await Comment.findAll({
             where: {
-                status: "pending"
+                status: "pending",
+                comment_text: {
+                    [Op.ne]: ""
+                }
             },
             include: [
                 {
@@ -267,7 +298,7 @@ export const approveComment = async (req: AuthRequest, res: Response) => {
             rating: ratingStats.rating,
             review_count: ratingStats.review_count
         });
-        
+
     } catch (error) {
         console.error("Approve comment error:", error);
         return res.status(500).json({
@@ -312,9 +343,13 @@ export const rejectComment = async (req: AuthRequest, res: Response) => {
             approved_at: new Date()
         });
 
+        const ratingStats = await updateProductRatingStats(Number(comment.product_id));
+
         return res.status(200).json({
             message: "Comment rejected successfully",
-            comment
+            comment,
+            rating: ratingStats.rating,
+            review_count: ratingStats.review_count
         });
     } catch (error) {
         console.error("Reject comment error:", error);

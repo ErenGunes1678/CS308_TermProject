@@ -9,6 +9,7 @@ import {
     createComment,
     getApprovedComments,
 } from '../../services/commentService';
+import { emitProductReviewUpdated, PRODUCT_REVIEW_UPDATED_EVENT } from '../../utils/reviewUpdates';
 
 const CATEGORY_LABELS = {
     makeup: 'Makeup',
@@ -186,7 +187,7 @@ function CartToast({ cartToast }) {
 }
 
 function ProductTabs(props) {
-    const { product, approvedReviews, writtenReviewCount, averageReviewRating, activeTab, showReviewForm, reviewRating, reviewText, reviewSubmitted, isLoadingReviews, reviewError, onActiveTabChange, onShowReviewFormChange, onReviewRatingChange, onReviewTextChange, onSubmitReview, onReviewButtonClick } = props;
+    const { product, approvedReviews, writtenReviewCount, averageReviewRating, activeTab, showReviewForm, reviewRating, reviewText, reviewSubmitted, reviewSuccessMessage, isLoadingReviews, reviewError, onActiveTabChange, onShowReviewFormChange, onReviewRatingChange, onReviewTextChange, onSubmitReview, onReviewButtonClick } = props;
     return (
         <section className="pdp-tabs-section">
             <div className="container">
@@ -212,7 +213,7 @@ function ProductTabs(props) {
                                         <>
                                             <span className="pdp-reviews-summary__number">{averageReviewRating}</span>
                                             <div className="pdp-reviews-summary__stars"><StarRating rating={Number(averageReviewRating)} size={20} /></div>
-                                            <span className="pdp-reviews-summary__count">Based on {writtenReviewCount} written reviews</span>
+                                            <span className="pdp-reviews-summary__count">Based on {writtenReviewCount} reviews</span>
                                         </>
                                     ) : (
                                         <>
@@ -223,7 +224,7 @@ function ProductTabs(props) {
                                 </div>
                                 <button className="pdp-reviews-summary__write-btn" onClick={onReviewButtonClick}>Write a Review</button>
                             </div>
-                            {reviewSubmitted && <div className="pdp-review-success"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>Thank you! Your review has been submitted and is pending approval.</div>}
+                            {reviewSubmitted && reviewSuccessMessage && <div className="pdp-review-success"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>{reviewSuccessMessage}</div>}
                             {reviewError && !showReviewForm && (
                                 <div className="site-inline-message site-inline-message--error" role="alert">
                                     {reviewError}
@@ -236,9 +237,9 @@ function ProductTabs(props) {
                                         <span>Your Rating:</span>
                                         <div className="pdp-review-form__stars"><ClickableStars reviewRating={reviewRating} onRatingChange={onReviewRatingChange} /></div>
                                     </div>
-                                    <textarea className="pdp-review-form__textarea" placeholder="Share your experience with this product..." value={reviewText} onChange={(event) => onReviewTextChange(event.target.value)} rows={4} />
+                                    <textarea className="pdp-review-form__textarea" placeholder="Leave a comment (optional)..." value={reviewText} onChange={(event) => onReviewTextChange(event.target.value)} rows={4} />
                                     <div className="pdp-review-form__actions">
-                                        <button className="pdp-review-form__submit" onClick={onSubmitReview} disabled={reviewRating === 0 || reviewText.trim() === ''}>Submit Review</button>
+                                        <button className="pdp-review-form__submit" onClick={onSubmitReview} disabled={reviewRating === 0}>Submit Review</button>
                                         <button className="pdp-review-form__cancel" onClick={() => onShowReviewFormChange(false)}>Cancel</button>
                                     </div>
                                 </div>
@@ -290,9 +291,18 @@ const ProductDetailsPage = () => {
     const [reviewRating, setReviewRating] = useState(0);
     const [reviewText, setReviewText] = useState('');
     const [reviewSubmitted, setReviewSubmitted] = useState(false);
+    const [reviewSuccessMessage, setReviewSuccessMessage] = useState('');
     const [approvedReviews, setApprovedReviews] = useState([]);
     const [isLoadingReviews, setIsLoadingReviews] = useState(true);
     const [reviewError, setReviewError] = useState('');
+
+    const refreshProduct = async (productId) => {
+        const productFromApi = await getProductById(productId);
+        const mappedProduct = mapApiProductToDetails(productFromApi);
+        setApiProduct(mappedProduct);
+        setSelectedImage(0);
+        setQuantity(mappedProduct.stock > 0 ? 1 : 0);
+    };
 
     useLayoutEffect(() => {
         window.scrollTo(0, 0);
@@ -306,13 +316,8 @@ const ProductDetailsPage = () => {
             setApiProduct(null);
 
             try {
-                const productFromApi = await getProductById(id);
-
-                if (isMounted && productFromApi) {
-                    const mappedProduct = mapApiProductToDetails(productFromApi);
-                    setApiProduct(mappedProduct);
-                    setSelectedImage(0);
-                    setQuantity(mappedProduct.stock > 0 ? 1 : 0);
+                if (isMounted) {
+                    await refreshProduct(id);
                 }
             } catch {
                 if (isMounted) {
@@ -332,48 +337,57 @@ const ProductDetailsPage = () => {
         };
     }, [id]);
 
-    useEffect(() => {
-        let isMounted = true;
+    const loadApprovedComments = async () => {
+        setIsLoadingReviews(true);
+        setReviewError('');
 
-        const loadApprovedComments = async () => {
-            setIsLoadingReviews(true);
-            setReviewError('');
+        try {
+            const data = await getApprovedComments(id);
+            const comments = Array.isArray(data?.comments) ? data.comments : [];
+
+            setApprovedReviews(
+                comments.map((comment) => ({
+                    id: comment.id,
+                    author: comment.user?.name || 'Anonymous',
+                    date: new Date(comment.createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                    }),
+                    rating: Number(comment.rating || 0),
+                    text: comment.comment_text || '',
+                }))
+            );
+        } catch {
+            setApprovedReviews([]);
+            setReviewError('Reviews could not be loaded right now.');
+        } finally {
+            setIsLoadingReviews(false);
+        }
+    };
+
+    useEffect(() => {
+        loadApprovedComments();
+    }, [id]);
+
+    useEffect(() => {
+        const handleProductReviewUpdated = async (event) => {
+            if (Number(event.detail?.productId) !== Number(id)) {
+                return;
+            }
 
             try {
-                const data = await getApprovedComments(id);
-                const comments = Array.isArray(data?.comments) ? data.comments : [];
-
-                if (isMounted) {
-                    setApprovedReviews(
-                        comments.map((comment) => ({
-                            id: comment.id,
-                            author: comment.user?.name || 'Anonymous',
-                            date: new Date(comment.createdAt).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                            }),
-                            rating: Number(comment.rating || 0),
-                            text: comment.comment_text || '',
-                        }))
-                    );
-                }
+                await refreshProduct(id);
+                await loadApprovedComments();
             } catch {
-                if (isMounted) {
-                    setApprovedReviews([]);
-                    setReviewError('Reviews could not be loaded right now.');
-                }
-            } finally {
-                if (isMounted) {
-                    setIsLoadingReviews(false);
-                }
+                // Keep the current UI state if the refresh fails.
             }
         };
 
-        loadApprovedComments();
+        window.addEventListener(PRODUCT_REVIEW_UPDATED_EVENT, handleProductReviewUpdated);
 
         return () => {
-            isMounted = false;
+            window.removeEventListener(PRODUCT_REVIEW_UPDATED_EVENT, handleProductReviewUpdated);
         };
     }, [id]);
 
@@ -446,14 +460,15 @@ const ProductDetailsPage = () => {
     const cartItem = cartItems.find((item) => item.id === product.id);
     const cartQuantity = Number(cartItem?.quantity || 0);
     const totalStock = Number(product.stock || 0);
-    const availableStock = Math.max(0, totalStock - cartQuantity);
-    const isOutOfStock = availableStock === 0;
-    const isLowStock = availableStock > 0 && availableStock <= 10;
+    const remainingStock = Math.max(0, totalStock - cartQuantity);
+    const availableStock = remainingStock;
+    const isOutOfStock = totalStock === 0;
+    const isLowStock = totalStock > 0 && totalStock <= 10;
     const isWishlisted = isInWishlist(product.id);
-    const isCartDisabled = user?.role === 'product_manager';
-    const isQuantityExceeded = quantity > availableStock;
+    const isCartDisabled = user?.role === 'product_manager' || user?.role === 'sales_manager';
+    const isQuantityExceeded = quantity > remainingStock;
     const canDecreaseQuantity = quantity > 1;
-    const canIncreaseQuantity = availableStock > 0 && quantity < availableStock;
+    const canIncreaseQuantity = remainingStock > 0 && quantity < remainingStock;
     const isPurchaseDisabled = isOutOfStock || isCartDisabled || isQuantityExceeded;
     const writtenReviewCount = approvedReviews.length;
     const averageReviewRating =
@@ -466,7 +481,7 @@ const ProductDetailsPage = () => {
 
     const handleAddToCart = async () => {
         const quantityToAdd = Math.max(1, Number(quantity) || 0);
-        const effectiveQuantity = Math.min(quantityToAdd, availableStock);
+        const effectiveQuantity = Math.min(quantityToAdd, remainingStock);
 
         if (isOutOfStock || isCartDisabled || effectiveQuantity <= 0) return;
 
@@ -476,7 +491,7 @@ const ProductDetailsPage = () => {
         };
 
         await addToCart(selectedProduct, effectiveQuantity);
-        const remainingStockAfterAdd = Math.max(0, availableStock - effectiveQuantity);
+        const remainingStockAfterAdd = Math.max(0, remainingStock - effectiveQuantity);
         setQuantity(remainingStockAfterAdd > 0 ? 1 : 0);
 
         setCartToast({
@@ -503,20 +518,25 @@ const ProductDetailsPage = () => {
 
     const handleSubmitReview = async (event) => {
         event.preventDefault();
-        if (reviewRating === 0 || reviewText.trim() === '') return;
+        if (reviewRating === 0) return;
 
         try {
-            await createComment(id, {
+            const response = await createComment(id, {
                 rating: reviewRating,
                 comment_text: reviewText.trim(),
             });
+            await refreshProduct(id);
+            await loadApprovedComments();
+            emitProductReviewUpdated(id);
             setReviewSubmitted(true);
+            setReviewSuccessMessage(response.message || 'Your rating was submitted successfully.');
             setReviewError('');
             setShowReviewForm(false);
             setReviewRating(0);
             setReviewText('');
         } catch (error) {
             setReviewSubmitted(false);
+            setReviewSuccessMessage('');
             setReviewError(
                 error?.response?.data?.message || 'Unable to submit your review right now.'
             );
@@ -574,6 +594,7 @@ const ProductDetailsPage = () => {
                 reviewRating={reviewRating}
                 reviewText={reviewText}
                 reviewSubmitted={reviewSubmitted}
+                reviewSuccessMessage={reviewSuccessMessage}
                 isLoadingReviews={isLoadingReviews}
                 reviewError={reviewError}
                 onActiveTabChange={setActiveTab}

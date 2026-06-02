@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { getProducts } from "../../services/productService";
 import { searchProducts } from "../../services/searchService";
+import { PRODUCT_REVIEW_UPDATED_EVENT } from "../../utils/reviewUpdates";
 import "../../styles/product-card.css";
 import "../Products/ProductsPage.css";
 import "./SearchPage.css";
@@ -223,8 +224,15 @@ function SearchPage() {
 
     loadProducts();
 
+    const handleProductReviewUpdated = () => {
+      loadProducts();
+    };
+
+    window.addEventListener(PRODUCT_REVIEW_UPDATED_EVENT, handleProductReviewUpdated);
+
     return () => {
       isMounted = false;
+      window.removeEventListener(PRODUCT_REVIEW_UPDATED_EVENT, handleProductReviewUpdated);
     };
   }, []);
 
@@ -403,8 +411,15 @@ function SearchPage() {
 
     loadSearchResults();
 
+    const handleProductReviewUpdated = () => {
+      loadSearchResults();
+    };
+
+    window.addEventListener(PRODUCT_REVIEW_UPDATED_EVENT, handleProductReviewUpdated);
+
     return () => {
       isMounted = false;
+      window.removeEventListener(PRODUCT_REVIEW_UPDATED_EVENT, handleProductReviewUpdated);
     };
   }, [hasActiveSearch, requestParams]);
 

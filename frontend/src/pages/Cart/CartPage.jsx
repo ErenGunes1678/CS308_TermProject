@@ -21,7 +21,11 @@ export default function CartPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isLoading && user?.role === "product_manager") {
-    return <Navigate to="/admin/orders" replace />;
+    return <Navigate to="/admin/product-manager/deliveries" replace />;
+  }
+
+  if (!isLoading && user?.role === "sales_manager") {
+    return <Navigate to="/admin/sales-manager/invoices" replace />;
   }
 
   const handleClearCart = async () => {

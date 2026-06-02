@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { getProducts } from '../../services/productService';
+import { PRODUCT_REVIEW_UPDATED_EVENT } from '../../utils/reviewUpdates';
 import '../../styles/product-card.css';
 import './ProductsPage.css';
 
@@ -328,8 +329,15 @@ const ProductsPage = () => {
 
         loadProducts();
 
+        const handleProductReviewUpdated = () => {
+            loadProducts();
+        };
+
+        window.addEventListener(PRODUCT_REVIEW_UPDATED_EVENT, handleProductReviewUpdated);
+
         return () => {
             isMounted = false;
+            window.removeEventListener(PRODUCT_REVIEW_UPDATED_EVENT, handleProductReviewUpdated);
         };
     }, []);
 

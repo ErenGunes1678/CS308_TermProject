@@ -8,6 +8,13 @@ import { Op } from "sequelize";
 import db from "../entities";
 import bcrypt from "bcrypt";
 
+const defaultCategories = [
+  { name: "Makeup", slug: "makeup" },
+  { name: "Skincare", slug: "skincare" },
+  { name: "Haircare", slug: "haircare" },
+  { name: "Men Care", slug: "men-care" },
+];
+
 const mockProducts = [
   {
     name: "Velvet Matte Lipstick",
@@ -35,7 +42,7 @@ const mockProducts = [
     model: "Radiance Pro",
     serial_number: "GL-RBS-002",
     description: "A brightening serum with vitamin C, niacinamide, and hyaluronic acid.",
-    quantity_in_stock: 15,
+    quantity_in_stock: 0,
     price: 54,
     original_price: 68,
     rating: 4.7,
@@ -389,8 +396,36 @@ const mockProducts = [
   },
 ];
 
+export async function seedDefaultCategories() {
+  const slugs = defaultCategories.map((category) => category.slug);
+
+  const existing = await db.categories.findAll({
+    where: { slug: { [Op.in]: slugs } },
+  });
+
+  const existingSlugs = new Set(existing.map((category: any) => category.slug));
+  const toCreate = defaultCategories.filter((category) => !existingSlugs.has(category.slug));
+
+  if (toCreate.length > 0) {
+    await db.categories.bulkCreate(toCreate);
+  }
+
+  console.log(`Seeded ${toCreate.length} default categories.`);
+}
+
 export async function seedMockProducts() {
-  const serials = mockProducts.map((item) => item.serial_number);
+  const preparedMockProducts = mockProducts.map((product) => ({
+    ...product,
+
+    // Preserve the original mock rating separately.
+    // rating/review_count will be the displayed live values.
+    // base_rating/base_review_count will stay as the starting mock values.
+    base_rating: product.rating,
+    base_review_count: product.review_count,
+  }));
+
+  const serials = preparedMockProducts.map((item) => item.serial_number);
+
   const existing = await db.products.findAll({
     where: { serial_number: { [Op.in]: serials } },
   });
@@ -398,11 +433,14 @@ export async function seedMockProducts() {
   const existingBySerial = new Map<string, any>(
     existing.map((product: any) => [product.serial_number, product])
   );
+
   const existingSerials = new Set(existingBySerial.keys());
-  const toCreate = mockProducts.filter(
+
+  const toCreate = preparedMockProducts.filter(
     (product: any) => !existingSerials.has(product.serial_number)
   );
-  const toUpdate = mockProducts.filter(
+
+  const toUpdate = preparedMockProducts.filter(
     (product: any) => existingSerials.has(product.serial_number)
   );
 
@@ -422,6 +460,12 @@ export async function seedMockProducts() {
 }
 
 const rawUsers = [
+  {
+    name: "Elif Customer",
+    email: "elif.customer@gmail.com",
+    password: "123456",
+    role: "customer",
+  },
   {
     name: "Elif Product",
     email: "elif.product@gmail.com",

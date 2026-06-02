@@ -1,0 +1,142 @@
+.product-manager-page {
+  min-height: calc(100vh - var(--navbar-height, 72px));
+  background: var(--color-white);
+  padding-bottom: 3.5rem;
+}
+
+.product-manager-main {
+  margin-top: 0;
+}
+
+.product-manager-panel {
+  margin-top: 2rem;
+  border: 1px solid var(--color-gray-200);
+  border-radius: 18px;
+  background: var(--color-white);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+  padding: 1rem;
+}
+
+.product-manager-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.product-manager-panel__label {
+  margin: 0;
+  color: var(--color-primary);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.product-manager-panel__title {
+  margin: 0.25rem 0 0;
+  color: var(--color-gray-800);
+  font-size: 1.45rem;
+}
+
+.product-manager-panel__role {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 0.72rem;
+  border-radius: 999px;
+  background: var(--color-light-pink);
+  color: var(--color-primary-dark);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.product-manager-task-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.product-manager-task-card {
+  display: grid;
+  gap: 0.75rem;
+  min-height: 160px;
+  padding: 1rem;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 14px;
+  background: #ffffff;
+  color: inherit;
+  transition:
+    transform var(--transition-base),
+    border-color var(--transition-base),
+    box-shadow var(--transition-base);
+}
+
+.product-manager-task-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(233, 30, 99, 0.22);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+}
+
+.product-manager-task-card__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.product-manager-task-card h3 {
+  margin: 0;
+  color: var(--color-gray-800);
+  font-size: 1rem;
+}
+
+.product-manager-task-card__top span {
+  flex-shrink: 0;
+  padding: 0.22rem 0.5rem;
+  border-radius: 999px;
+  background: var(--color-gray-100);
+  color: var(--color-gray-600);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.product-manager-task-card__top span.is-active {
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+}
+
+.product-manager-task-card p {
+  margin: 0;
+  color: var(--color-gray-600);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.product-manager-task-card__action {
+  align-self: end;
+  color: var(--color-primary);
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  .product-manager-task-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .product-manager-main {
+    margin-top: 0;
+  }
+
+  .product-manager-panel,
+  .product-manager-task-card {
+    border-radius: 16px;
+  }
+
+}

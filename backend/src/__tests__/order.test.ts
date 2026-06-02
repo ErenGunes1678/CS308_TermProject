@@ -137,6 +137,45 @@ describe("Orders", () => {
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.orders)).toBe(true);
   });
+
+  test("Customer cannot cancel order without sales manager approval", async () => {
+    const ordersRes = await request(app)
+      .get("/order")
+      .set("Authorization", `Bearer ${authToken}`);
+
+    const order = (ordersRes.body.orders || []).find((o: any) => o.status === "processing");
+    expect(order).toBeDefined();
+
+    const cancelRes = await request(app)
+      .patch(`/order/${order.id}/cancel`)
+      .set("Authorization", `Bearer ${authToken}`);
+
+    expect(cancelRes.status).toBe(403);
+    expect(cancelRes.body.message).toMatch(/Sales manager approval required/i);
+  });
+
+  test("Sales manager can cancel a processing order", async () => {
+    const loginRes = await request(app)
+      .post("/auth/login")
+      .send({ email: "elif.sales@gmail.com", password: "123456" });
+
+    const salesToken = loginRes.body.token;
+    expect(salesToken).toBeDefined();
+
+    const ordersRes = await request(app)
+      .get("/order")
+      .set("Authorization", `Bearer ${authToken}`);
+
+    const order = (ordersRes.body.orders || []).find((o: any) => o.status === "processing");
+    expect(order).toBeDefined();
+
+    const cancelRes = await request(app)
+      .patch(`/order/${order.id}/cancel`)
+      .set("Authorization", `Bearer ${salesToken}`);
+
+    expect(cancelRes.status).toBe(200);
+    expect(cancelRes.body.order.status).toBe("cancelled");
+  });
  
   test("Unauthenticated user cannot place an order", async () => {
     const res = await request(app)
