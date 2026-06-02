@@ -1,8 +1,13 @@
+import fs from "fs";
+import path from "path";
 import { Response } from "express";
 import { AuthRequest } from "../middleware/authMiddleware";
 import db, { sequelize } from "../entities";
 import { createInvoicePdfBuffer } from "../utils/invoicePdf";
 import { sendInvoiceEmail } from "../utils/emailService";
+
+const INVOICES_DIR = path.resolve(process.cwd(), "invoices");
+fs.mkdirSync(INVOICES_DIR, { recursive: true });
 
 const SHIPPING_COST = 5.99;
 const FREE_SHIPPING_MINIMUM = 50;
@@ -172,6 +177,16 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
         const pdfBuffer = createInvoicePdfBuffer(invoice);
         const pdfFilename = `invoice-${invoice.invoiceNumber}.pdf`;
         const pdfBase64 = pdfBuffer.toString("base64");
+
+        fs.writeFileSync(path.join(INVOICES_DIR, pdfFilename), pdfBuffer);
+
+        await db.invoices.create({
+            invoice_number: invoice.invoiceNumber,
+            file_name: pdfFilename,
+            customer_name: invoice.customerName,
+            amount: invoice.total,
+            order_id: order.id,
+        });
 
         try {
             await sendInvoiceEmail(invoice.customerEmail, invoice.customerName, invoice.invoiceNumber, pdfBuffer);
