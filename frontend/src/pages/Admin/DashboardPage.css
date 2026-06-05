@@ -322,7 +322,7 @@
 }
 .percent-axis {
   margin-left: 80px;
-  width: calc(70% - 122px);
+  width: calc(70% - 12px);
   margin-top: 0.55rem;
   display: flex;
   align-items: center;
@@ -330,6 +330,8 @@
   color: var(--color-gray-600);
   font-size: 0.72rem;
 }
+/* COMMENTS */
+
 /* COMMENTS */
 
 .comments-card {
@@ -348,60 +350,67 @@
   padding: 0.8rem 1rem;
   border-radius: 14px;
   background: var(--color-gray-100);
+
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
 }
 
-.comment-row p {
-  margin: 0 0 0.25rem;
-  color: var(--color-gray-600);
-  font-size: 0.75rem;
-  line-height: 1.4;
+.comment-row > div:first-child {
+  min-width: 0;
+  flex: 1;
 }
 
-.comment-row strong {
-  color: var(--color-gray-800);
-  font-weight: 800;
-}
-
-.comment-row a {
-  color: var(--color-primary);
-  text-decoration: none;
-}
-
-.comment-row blockquote {
-  margin: 0;
-  color: var(--color-gray-700);
-  font-size: 0.82rem;
-  line-height: 1.45;
-}
-
-.comment-actions {
+.dashboard-comment-actions {
+  margin-left: auto;
   display: flex;
+  align-items: center;
+  justify-content: flex-end;
   gap: 0.45rem;
+  flex-shrink: 0;
 }
 
-.comment-actions button {
+.dashboard-comment-btn {
   width: 30px;
   height: 30px;
+  min-width: 30px;
+  padding: 0;
   border: none;
   border-radius: 9px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 0.9rem;
+  line-height: 1;
   font-weight: 800;
   cursor: pointer;
 }
 
-.approve-btn {
+.dashboard-comment-btn--approve {
   background: rgba(16, 185, 129, 0.12);
   color: #047857;
 }
 
-.reject-btn {
+.dashboard-comment-btn--reject {
   background: rgba(220, 38, 38, 0.1);
   color: #dc2626;
 }
 
+.comments-empty {
+  margin-top: 1rem;
+  min-height: 90px;
+  border-radius: 14px;
+  background: var(--color-gray-100);
+  color: var(--color-gray-700);
+  font-size: 0.95rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 /* RESPONSIVE */
 
 @media (max-width: 900px) {

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./DashboardPage.css";
 
+
 const stats = [
   {
     title: "Monthly Revenue",
@@ -49,7 +50,7 @@ const categories = [
   { name: "Men Care", percent: 12 },
 ];
 
-const comments = [
+const initialComments  = [
   {
     id: 1,
     user: "Luna B.",
@@ -70,6 +71,13 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [hoveredRevenue, setHoveredRevenue] = useState(null);
   const [hoveredCategory, setHoveredCategory] = useState(null);
+  const [comments, setComments] = useState(initialComments);
+
+  const handleReviewComment = (commentId) => {
+  setComments((currentComments) =>
+    currentComments.filter((comment) => comment.id !== commentId)
+  );
+};
 
   const revenueData = mockRevenueData.map((item) => ({
     ...item,
@@ -268,7 +276,7 @@ export default function DashboardPage() {
         <div className="bar-track">
           <div
             className="bar-fill"
-            style={{ width: `${category.percent}%` }}
+            style={{ width: `${category.percent * 2}%` }}
           />
         </div>
       </div>
@@ -298,34 +306,49 @@ export default function DashboardPage() {
 </div>
 </section>
 
-        <section className="comments-card">
-          <h3>Pending Comments Approval</h3>
+              <section className="comments-card">
+  <h3>Pending Comments Approval</h3>
 
-          <div className="comments-list">
-            {comments.map((comment) => (
-              <div className="comment-row" key={comment.id}>
-                <div>
-                  <p>
-                    <strong>{comment.user}</strong>
-                    <span> on </span>
-                    <a href="#">{comment.product}</a>
-                  </p>
+  {comments.length === 0 ? (
+    <div className="comments-empty">
+      All comments have been reviewed!
+    </div>
+  ) : (
+    <div className="comments-list">
+      {comments.map((comment) => (
+        <div className="comment-row" key={comment.id}>
+          <div>
+            <p>
+              <strong>{comment.user}</strong>
+              <span> on </span>
+              <a href="#">{comment.product}</a>
+            </p>
 
-                  <blockquote>“{comment.text}”</blockquote>
-                </div>
-
-                <div className="comment-actions">
-                  <button type="button" className="approve-btn">
-                    ✓
-                  </button>
-                  <button type="button" className="reject-btn">
-                    ×
-                  </button>
-                </div>
-              </div>
-            ))}
+            <blockquote>“{comment.text}”</blockquote>
           </div>
-        </section>
+
+          <div className="dashboard-comment-actions">
+            <button
+              type="button"
+              className="dashboard-comment-btn dashboard-comment-btn--approve"
+              onClick={() => handleReviewComment(comment.id)}
+            >
+              ✓
+            </button>
+
+            <button
+              type="button"
+              className="dashboard-comment-btn dashboard-comment-btn--reject"
+              onClick={() => handleReviewComment(comment.id)}
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  )}
+</section>
       </main>
     </div>
   );
