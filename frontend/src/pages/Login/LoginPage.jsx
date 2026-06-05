@@ -70,8 +70,13 @@ function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      await login(loginForm);
-      navigate("/account");
+      const user = await login(loginForm);
+
+    if (user?.role === "sales_manager" || user?.role === "salesManager") {
+      navigate("/admin/dashboard", { replace: true });
+    } else {
+      navigate("/account", { replace: true });
+    }
     } catch (error) {
       setErrorMessage(getAuthErrorMessage(error, "Unable to sign in."));
     } finally {
@@ -120,12 +125,12 @@ function LoginPage() {
     setSearchParams(nextMode === "register" ? { mode: "register" } : {});
   }
 
-  useEffect(() => {
+ /* useEffect(() => {
     if (!isLoading && isAuthenticated) {
       navigate("/account", { replace: true });
     }
   }, [isAuthenticated, isLoading, navigate]);
-
+*/
   useEffect(() => {
     if (testimonials.length <= 1) {
       return undefined;
