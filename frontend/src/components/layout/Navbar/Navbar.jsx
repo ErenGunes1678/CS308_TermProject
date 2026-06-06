@@ -126,7 +126,8 @@ const Navbar = () => {
       return [
         { name: 'Revenue', path: '/admin/sales-manager/revenue' },
         { name: 'Invoices', path: '/admin/sales-manager/invoices' },
-        { name: 'Pricing & Discounts', path: '/admin/sales-manager/pricing' },
+        { name: 'Pricing', path: '/admin/sales-manager/pricing' },
+        { name: 'Discounts', path: '/admin/sales-manager/discounts' },
         { name: 'Refund Requests', path: '/admin/sales-manager/refunds' },
       ];
     }

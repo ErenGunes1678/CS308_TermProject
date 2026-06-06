@@ -18,6 +18,7 @@ import RefundRequestsPage from '../pages/Admin/RefundRequestsPage';
 import PricingManagementPage from '../pages/Admin/PricingManagementPage';
 import RevenuePage from '../pages/Admin/RevenuePage';
 import InvoicesPage from '../pages/Admin/InvoicesPage';
+import DiscountsPage from '../pages/Admin/DiscountsPage';
 import SearchPage from '../pages/Search/SearchPage';
 import UnauthorizedPage from '../pages/Unauthorized/UnauthorizedPage';
 import WishlistPage from '../pages/Wishlist/WishlistPage';
@@ -130,6 +131,7 @@ const AppRouter = () => {
           <Route path="/admin/sales-manager/invoices" element={<RoleRoute allowedRoles={['sales_manager']}><InvoicesPage /></RoleRoute>} />
           <Route path="/admin/sales-manager/revenue" element={<RoleRoute allowedRoles={['sales_manager']}><RevenuePage /></RoleRoute>} />
           <Route path="/admin/sales-manager/pricing" element={<RoleRoute allowedRoles={['sales_manager']}><PricingManagementPage /></RoleRoute>} />
+          <Route path="/admin/sales-manager/discounts" element={<RoleRoute allowedRoles={['sales_manager']}><DiscountsPage /></RoleRoute>} />
           <Route path="/admin/sales-manager/refunds" element={<RoleRoute allowedRoles={['sales_manager']}><RefundRequestsPage /></RoleRoute>} />
           <Route path="/admin/orders" element={<Navigate to="/admin/product-manager/deliveries" replace />} />
           <Route path="/admin/comments" element={<Navigate to="/admin/product-manager/comments" replace />} />
