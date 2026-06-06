@@ -16,11 +16,12 @@ import CommentModerationPage from '../pages/Admin/CommentModerationPage';
 import ProductInventoryPage from '../pages/Admin/ProductInventoryPage';
 import RefundRequestsPage from '../pages/Admin/RefundRequestsPage';
 import PricingManagementPage from '../pages/Admin/PricingManagementPage';
+import RevenuePage from '../pages/Admin/RevenuePage';
+import InvoicesPage from '../pages/Admin/InvoicesPage';
 import SearchPage from '../pages/Search/SearchPage';
 import UnauthorizedPage from '../pages/Unauthorized/UnauthorizedPage';
 import WishlistPage from '../pages/Wishlist/WishlistPage';
 import NotificationsPage from '../pages/Notifications/NotificationsPage';
-import DashboardPage from "../pages/Admin/DashboardPage";
 
 // Placeholder pages - replace with real ones later
 const PlaceholderPage = ({ title }) => (
@@ -45,9 +46,9 @@ const AdminRedirect = () => {
     return <Navigate to="/admin/product-manager/deliveries" replace />;
   }
 
- if (user.role === 'sales_manager') {
-  return <Navigate to="/admin/dashboard" replace />;
-}
+  if (user.role === 'sales_manager') {
+    return <Navigate to="/admin/sales-manager/revenue" replace />;
+  }
 
   return <Navigate to="/customer" replace />;
 };
@@ -86,8 +87,8 @@ const AccountRedirect = () => {
   }
 
   if (user.role === 'sales_manager') {
-  return <Navigate to="/admin/dashboard" replace />;
-}
+    return <Navigate to="/admin/sales-manager/revenue" replace />;
+  }
 
   return <ProfilePage />;
 };
@@ -125,21 +126,15 @@ const AppRouter = () => {
           <Route path="/admin/product-manager/deliveries" element={<RoleRoute allowedRoles={['product_manager']}><OrderManagementPage /></RoleRoute>} />
           <Route path="/admin/product-manager/comments" element={<RoleRoute allowedRoles={['product_manager']}><CommentModerationPage /></RoleRoute>} />
           <Route path="/admin/product-manager/inventory" element={<RoleRoute allowedRoles={['product_manager']}><ProductInventoryPage /></RoleRoute>} />
-          <Route path="/admin/sales-manager" element={<Navigate to="/admin/dashboard" replace />} />            
-          <Route path="/admin/sales-manager/invoices" element={<RoleRoute allowedRoles={['sales_manager']}><PlaceholderPage title="Invoices" /></RoleRoute>} />
-          <Route path="/admin/sales-manager/revenue" element={<RoleRoute allowedRoles={['sales_manager']}><PlaceholderPage title="Revenue" /></RoleRoute>} />
+          <Route path="/admin/sales-manager" element={<Navigate to="/admin/sales-manager/revenue" replace />} />            
+          <Route path="/admin/sales-manager/invoices" element={<RoleRoute allowedRoles={['sales_manager']}><InvoicesPage /></RoleRoute>} />
+          <Route path="/admin/sales-manager/revenue" element={<RoleRoute allowedRoles={['sales_manager']}><RevenuePage /></RoleRoute>} />
           <Route path="/admin/sales-manager/pricing" element={<RoleRoute allowedRoles={['sales_manager']}><PricingManagementPage /></RoleRoute>} />
           <Route path="/admin/sales-manager/refunds" element={<RoleRoute allowedRoles={['sales_manager']}><RefundRequestsPage /></RoleRoute>} />
           <Route path="/admin/orders" element={<Navigate to="/admin/product-manager/deliveries" replace />} />
           <Route path="/admin/comments" element={<Navigate to="/admin/product-manager/comments" replace />} />
-          <Route 
-            path="/admin/dashboard" 
-            element={
-              <RoleRoute allowedRoles={['sales_manager']}>
-                <DashboardPage />
-              </RoleRoute>
-            } 
-/>          <Route path="*" element={<PlaceholderPage title="404 - Page Not Found" />} />
+          <Route path="/admin/dashboard" element={<Navigate to="/admin/sales-manager/revenue" replace />} />
+          <Route path="*" element={<PlaceholderPage title="404 - Page Not Found" />} />
         </Route>
       </Routes>
     </BrowserRouter>

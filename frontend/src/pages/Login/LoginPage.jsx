@@ -70,13 +70,14 @@ function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      const user = await login(loginForm);
+      const data = await login(loginForm);
+      const role = data?.user?.role;
 
-    if (user?.role === "sales_manager" || user?.role === "salesManager") {
-      navigate("/admin/dashboard", { replace: true });
-    } else {
-      navigate("/account", { replace: true });
-    }
+      if (role === "sales_manager") {
+        navigate("/admin/sales-manager/revenue", { replace: true });
+      } else {
+        navigate("/account", { replace: true });
+      }
     } catch (error) {
       setErrorMessage(getAuthErrorMessage(error, "Unable to sign in."));
     } finally {
