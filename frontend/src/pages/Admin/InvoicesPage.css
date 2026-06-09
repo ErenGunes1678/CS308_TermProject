@@ -243,6 +243,16 @@
   overflow: hidden;
 }
 
+/* ── SPINNER ─────────────────────────────────────────────────────────────── */
+
+@keyframes inv-spin {
+  to { transform: rotate(360deg); }
+}
+
+.inv-spinner {
+  animation: inv-spin 0.8s linear infinite;
+}
+
 /* ── EMPTY STATE ─────────────────────────────────────────────────────────── */
 
 .inv-state {

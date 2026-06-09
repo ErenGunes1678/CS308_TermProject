@@ -1,152 +1,7 @@
-import { useState, useMemo } from "react";
-import { Download, Printer, Search, FileText } from "lucide-react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { Download, Printer, Search, FileText, Loader } from "lucide-react";
+import { getInvoices, downloadInvoicePdf } from "../../services/invoiceService";
 import "./InvoicesPage.css";
-
-/* ─── Mock data ──────────────────────────────────────────────────────────── */
-
-const MOCK_INVOICES = [
-  {
-    id: 1,
-    invoiceNumber: "INV-2026-001",
-    customerName: "Sophie Laurent",
-    customerEmail: "sophie.l@example.com",
-    customerPhone: "+1 310 555 0101",
-    shippingAddress: "15 Sunrise Blvd, Beverly Hills, CA 90210, USA",
-    amount: 128.00,
-    subtotal: 122.01,
-    shipping: 5.99,
-    orderId: 101,
-    createdAt: "2026-03-21T10:30:00Z",
-    items: [
-      { productName: "Pro Glow Serum 30ml", quantity: 1, unitPrice: 49.99, lineTotal: 49.99 },
-      { productName: "Hydra Boost Moisturizer", quantity: 2, unitPrice: 34.00, lineTotal: 68.00 },
-      { productName: "Rose Lip Balm", quantity: 1, unitPrice: 4.02, lineTotal: 4.02 },
-    ],
-  },
-  {
-    id: 2,
-    invoiceNumber: "INV-2026-002",
-    customerName: "Emma Klein",
-    customerEmail: "emma.k@example.com",
-    customerPhone: "+1 212 555 0182",
-    shippingAddress: "42 Park Avenue, New York, NY 10016, USA",
-    amount: 62.00,
-    subtotal: 56.01,
-    shipping: 5.99,
-    orderId: 102,
-    createdAt: "2026-03-20T14:15:00Z",
-    items: [
-      { productName: "Velvet Matte Lipstick – Ruby", quantity: 2, unitPrice: 24.99, lineTotal: 49.98 },
-      { productName: "Setting Powder Compact", quantity: 1, unitPrice: 6.03, lineTotal: 6.03 },
-    ],
-  },
-  {
-    id: 3,
-    invoiceNumber: "INV-2026-003",
-    customerName: "Anna Rossi",
-    customerEmail: "anna.r@example.com",
-    customerPhone: "+39 02 5550193",
-    shippingAddress: "Via Montenapoleone 8, 20121 Milan, Italy",
-    amount: 210.00,
-    subtotal: 210.00,
-    shipping: 0.00,
-    orderId: 103,
-    createdAt: "2026-03-18T09:05:00Z",
-    items: [
-      { productName: "Luxury Night Repair Cream", quantity: 1, unitPrice: 95.00, lineTotal: 95.00 },
-      { productName: "Vitamin C Brightening Serum", quantity: 1, unitPrice: 75.00, lineTotal: 75.00 },
-      { productName: "Collagen Eye Patches (10pk)", quantity: 2, unitPrice: 20.00, lineTotal: 40.00 },
-    ],
-  },
-  {
-    id: 4,
-    invoiceNumber: "INV-2026-004",
-    customerName: "Julia Petit",
-    customerEmail: "julia.p@example.com",
-    customerPhone: "+33 1 5550 4821",
-    shippingAddress: "14 Rue de Rivoli, 75001 Paris, France",
-    amount: 48.00,
-    subtotal: 42.01,
-    shipping: 5.99,
-    orderId: 104,
-    createdAt: "2026-03-17T16:45:00Z",
-    items: [
-      { productName: "Argan Hair Mask 250ml", quantity: 1, unitPrice: 32.00, lineTotal: 32.00 },
-      { productName: "Silk Serum Spray", quantity: 1, unitPrice: 10.01, lineTotal: 10.01 },
-    ],
-  },
-  {
-    id: 5,
-    invoiceNumber: "INV-2026-005",
-    customerName: "Clara Müller",
-    customerEmail: "clara.m@example.com",
-    customerPhone: "+49 89 5550671",
-    shippingAddress: "Marienplatz 5, 80331 Munich, Germany",
-    amount: 156.00,
-    subtotal: 156.00,
-    shipping: 0.00,
-    orderId: 105,
-    createdAt: "2026-03-16T11:20:00Z",
-    items: [
-      { productName: "Foundation SPF 30 – Ivory", quantity: 2, unitPrice: 42.00, lineTotal: 84.00 },
-      { productName: "Contour & Highlight Duo", quantity: 1, unitPrice: 38.00, lineTotal: 38.00 },
-      { productName: "Primer Perfecting Base", quantity: 1, unitPrice: 34.00, lineTotal: 34.00 },
-    ],
-  },
-  {
-    id: 6,
-    invoiceNumber: "INV-2026-006",
-    customerName: "Rosa Navarro",
-    customerEmail: "rosa.n@example.com",
-    customerPhone: "+34 91 5550823",
-    shippingAddress: "Calle Gran Vía 45, 28013 Madrid, Spain",
-    amount: 89.00,
-    subtotal: 83.01,
-    shipping: 5.99,
-    orderId: 106,
-    createdAt: "2026-03-15T08:55:00Z",
-    items: [
-      { productName: "Men Grooming Kit – Essentials", quantity: 1, unitPrice: 59.00, lineTotal: 59.00 },
-      { productName: "Charcoal Face Wash 150ml", quantity: 2, unitPrice: 12.00, lineTotal: 24.00 },
-    ],
-  },
-  {
-    id: 7,
-    invoiceNumber: "INV-2026-007",
-    customerName: "Hana Yıldız",
-    customerEmail: "hana.y@example.com",
-    customerPhone: "+90 212 555 0744",
-    shippingAddress: "Bağdat Caddesi 112, Kadıköy, 34710 Istanbul, Turkey",
-    amount: 74.00,
-    subtotal: 74.00,
-    shipping: 0.00,
-    orderId: 107,
-    createdAt: "2026-03-12T13:30:00Z",
-    items: [
-      { productName: "Shampoo Repair & Restore 500ml", quantity: 1, unitPrice: 28.00, lineTotal: 28.00 },
-      { productName: "Conditioner Deep Nourish 500ml", quantity: 1, unitPrice: 26.00, lineTotal: 26.00 },
-      { productName: "Scalp Oil Treatment 50ml", quantity: 1, unitPrice: 20.00, lineTotal: 20.00 },
-    ],
-  },
-  {
-    id: 8,
-    invoiceNumber: "INV-2026-008",
-    customerName: "Lena Fischer",
-    customerEmail: "lena.f@example.com",
-    customerPhone: "+49 30 5550992",
-    shippingAddress: "Unter den Linden 22, 10117 Berlin, Germany",
-    amount: 193.00,
-    subtotal: 193.00,
-    shipping: 0.00,
-    orderId: 108,
-    createdAt: "2026-03-10T17:05:00Z",
-    items: [
-      { productName: "Anti-Aging Retinol Cream 50ml", quantity: 1, unitPrice: 88.00, lineTotal: 88.00 },
-      { productName: "Hyaluronic Acid Serum 30ml", quantity: 1, unitPrice: 65.00, lineTotal: 65.00 },
-      { productName: "SPF 50 Daily Shield Lotion", quantity: 1, unitPrice: 40.00, lineTotal: 40.00 },
-    ],
-  },
-];
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 
@@ -176,7 +31,39 @@ const fmtDateLong = (iso) =>
       })
     : "—";
 
-/* ─── PDF generation (browser-side, no library) ─────────────────────────── */
+/* ─── Shape raw API invoice into what the PDF generators expect ──────────── */
+
+function shapeInvoice(raw) {
+  const items = (raw.order?.items ?? []).map((it) => ({
+    productName: it.product?.name ?? "Unknown Product",
+    quantity: it.quantity,
+    unitPrice: parseFloat(it.unit_price),
+    lineTotal: parseFloat(it.unit_price) * it.quantity,
+  }));
+
+  const subtotal = items.reduce((sum, it) => sum + it.lineTotal, 0);
+  const amount = parseFloat(raw.amount);
+  const shipping = Math.max(0, parseFloat((amount - subtotal).toFixed(2)));
+
+  return {
+    id: raw.id,
+    invoiceNumber: raw.invoice_number,
+    fileName: raw.file_name,
+    customerName: raw.customer_name,
+    customerEmail: raw.order?.user?.email ?? "",
+    customerPhone: "",
+    shippingAddress: "",
+    amount,
+    subtotal,
+    shipping,
+    orderId: raw.order_id,
+    orderStatus: raw.order?.status ?? "",
+    createdAt: raw.createdAt,
+    items,
+  };
+}
+
+/* ─── Browser-side PDF generation (no library) ───────────────────────────── */
 
 function escapePdf(str) {
   let out = "";
@@ -192,85 +79,87 @@ function escapePdf(str) {
   return out;
 }
 
-const line = (text, x, y, size = 11) =>
+const pdfLine = (text, x, y, size = 11) =>
   `BT /F1 ${size} Tf ${x} ${y} Td (${escapePdf(text)}) Tj ET`;
 
 function invoicePageLines(inv) {
   const ops = [];
   let y = 750;
 
-  ops.push(line("Lumiere Cosmetics", 50, y, 18));
+  ops.push(pdfLine("Lumiere Cosmetics", 50, y, 18));
   y -= 26;
-  ops.push(line("INVOICE", 50, y, 13));
+  ops.push(pdfLine("INVOICE", 50, y, 13));
   y -= 22;
-  ops.push(line(`Number: ${inv.invoiceNumber}`, 50, y));
+  ops.push(pdfLine(`Number: ${inv.invoiceNumber}`, 50, y));
   y -= 16;
-  ops.push(line(`Date:   ${new Date(inv.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "2-digit" })}`, 50, y));
+  ops.push(
+    pdfLine(
+      `Date:   ${new Date(inv.createdAt).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "2-digit",
+      })}`,
+      50,
+      y
+    )
+  );
   y -= 16;
-  ops.push(line(`Order:  #${inv.orderId}`, 50, y));
+  ops.push(pdfLine(`Order:  #${inv.orderId}`, 50, y));
   y -= 28;
 
-  ops.push(line("Bill To", 50, y, 12));
+  ops.push(pdfLine("Bill To", 50, y, 12));
   y -= 18;
-  ops.push(line(inv.customerName, 50, y));
+  ops.push(pdfLine(inv.customerName, 50, y));
   y -= 15;
-  ops.push(line(inv.customerEmail, 50, y));
-  y -= 15;
-  ops.push(line(inv.customerPhone, 50, y));
-  y -= 15;
-  ops.push(line(inv.shippingAddress.slice(0, 72), 50, y));
+  if (inv.customerEmail) ops.push(pdfLine(inv.customerEmail, 50, y));
   y -= 30;
 
-  ops.push(line("Product", 50, y, 10));
-  ops.push(line("Qty", 330, y, 10));
-  ops.push(line("Unit", 390, y, 10));
-  ops.push(line("Total", 470, y, 10));
+  ops.push(pdfLine("Product", 50, y, 10));
+  ops.push(pdfLine("Qty", 330, y, 10));
+  ops.push(pdfLine("Unit", 390, y, 10));
+  ops.push(pdfLine("Total", 470, y, 10));
   y -= 16;
 
   for (const it of inv.items) {
-    ops.push(line(it.productName.slice(0, 40), 50, y));
-    ops.push(line(String(it.quantity), 330, y));
-    ops.push(line(`$${it.unitPrice.toFixed(2)}`, 390, y));
-    ops.push(line(`$${it.lineTotal.toFixed(2)}`, 470, y));
+    ops.push(pdfLine(it.productName.slice(0, 40), 50, y));
+    ops.push(pdfLine(String(it.quantity), 330, y));
+    ops.push(pdfLine(`$${it.unitPrice.toFixed(2)}`, 390, y));
+    ops.push(pdfLine(`$${it.lineTotal.toFixed(2)}`, 470, y));
     y -= 15;
   }
 
   y -= 10;
-  ops.push(line(`Subtotal : $${inv.subtotal.toFixed(2)}`, 380, y));
+  ops.push(pdfLine(`Subtotal : $${inv.subtotal.toFixed(2)}`, 380, y));
   y -= 15;
-  ops.push(line(`Shipping : $${inv.shipping.toFixed(2)}`, 380, y));
+  ops.push(pdfLine(`Shipping : $${inv.shipping.toFixed(2)}`, 380, y));
   y -= 15;
-  ops.push(line(`Grand Total: $${inv.amount.toFixed(2)}`, 380, y, 13));
+  ops.push(pdfLine(`Grand Total: $${inv.amount.toFixed(2)}`, 380, y, 13));
   y -= 28;
-  ops.push(line("Status: PAID", 50, y, 11));
+  ops.push(pdfLine("Status: PAID", 50, y, 11));
   y -= 30;
-  ops.push(line("Thank you for shopping at Lumiere!", 160, y, 10));
+  ops.push(pdfLine("Thank you for shopping at Lumiere!", 160, y, 10));
 
   return ops;
 }
 
 function buildMultiPagePdf(invoices) {
   const N = invoices.length;
-  // Object layout:
-  //  1       Catalog
-  //  2       Pages
-  //  3..2+N  Page descriptors
-  //  3+N..2+2N  Content streams
-  //  3+2N    Font
   const fontObj = 3 + 2 * N;
 
   const pageContents = invoices.map((inv) => invoicePageLines(inv).join("\n"));
-
   const kidRefs = Array.from({ length: N }, (_, i) => `${3 + i} 0 R`).join(" ");
 
   const objects = [
     `1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj`,
     `2 0 obj << /Type /Pages /Kids [${kidRefs}] /Count ${N} >> endobj`,
-    ...Array.from({ length: N }, (_, i) =>
-      `${3 + i} 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 ${fontObj} 0 R >> >> /Contents ${3 + N + i} 0 R >> endobj`
+    ...Array.from(
+      { length: N },
+      (_, i) =>
+        `${3 + i} 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 ${fontObj} 0 R >> >> /Contents ${3 + N + i} 0 R >> endobj`
     ),
-    ...pageContents.map((content, i) =>
-      `${3 + N + i} 0 obj << /Length ${content.length} >> stream\n${content}\nendstream endobj`
+    ...pageContents.map(
+      (content, i) =>
+        `${3 + N + i} 0 obj << /Length ${content.length} >> stream\n${content}\nendstream endobj`
     ),
     `${fontObj} 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >> endobj`,
   ];
@@ -295,7 +184,7 @@ function buildMultiPagePdf(invoices) {
   return bytes;
 }
 
-function downloadPdf(invoices, filename) {
+function downloadAllAsPdf(invoices, filename) {
   const bytes = buildMultiPagePdf(invoices);
   const blob = new Blob([bytes], { type: "application/pdf" });
   const url = URL.createObjectURL(blob);
@@ -348,8 +237,6 @@ function buildInvoiceHtml(inv) {
           <div class="inv-doc__party-label">Bill To</div>
           <div class="inv-doc__party-name">${inv.customerName}</div>
           <div>${inv.customerEmail}</div>
-          <div>${inv.customerPhone}</div>
-          <div>${inv.shippingAddress}</div>
         </div>
       </div>
 
@@ -429,45 +316,58 @@ const PRINT_STYLES = `
 function openPrintWindow(invoices) {
   const win = window.open("", "_blank", "width=900,height=700");
   if (!win) return;
-  win.document.write(`<!DOCTYPE html><html><head><title>Lumière – Invoices</title><style>${PRINT_STYLES}</style></head><body>`);
+  win.document.write(
+    `<!DOCTYPE html><html><head><title>Lumière – Invoices</title><style>${PRINT_STYLES}</style></head><body>`
+  );
   for (const inv of invoices) {
     win.document.write(buildInvoiceHtml(inv));
   }
   win.document.write("</body></html>");
   win.document.close();
   win.focus();
-  setTimeout(() => { win.print(); }, 400);
+  setTimeout(() => {
+    win.print();
+  }, 400);
 }
 
 /* ─── Component ──────────────────────────────────────────────────────────── */
 
 export default function InvoicesPage() {
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [downloadingId, setDownloadingId] = useState(null);
+
   const [search, setSearch] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
-  const filtered = useMemo(() => {
-    let list = MOCK_INVOICES;
+  const fetchInvoices = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const raw = await getInvoices({ from: fromDate || undefined, to: toDate || undefined });
+      setInvoices(raw.map(shapeInvoice));
+    } catch (err) {
+      setError("Failed to load invoices. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, [fromDate, toDate]);
 
-    if (fromDate) {
-      const f = new Date(fromDate);
-      list = list.filter((inv) => new Date(inv.createdAt) >= f);
-    }
-    if (toDate) {
-      const t = new Date(toDate);
-      t.setHours(23, 59, 59, 999);
-      list = list.filter((inv) => new Date(inv.createdAt) <= t);
-    }
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      list = list.filter(
-        (inv) =>
-          inv.customerName.toLowerCase().includes(q) ||
-          inv.invoiceNumber.toLowerCase().includes(q)
-      );
-    }
-    return list;
-  }, [search, fromDate, toDate]);
+  useEffect(() => {
+    fetchInvoices();
+  }, [fetchInvoices]);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return invoices;
+    const q = search.trim().toLowerCase();
+    return invoices.filter(
+      (inv) =>
+        inv.customerName.toLowerCase().includes(q) ||
+        inv.invoiceNumber.toLowerCase().includes(q)
+    );
+  }, [invoices, search]);
 
   const totalRevenue = filtered.reduce((sum, inv) => sum + inv.amount, 0);
   const hasFilters = search || fromDate || toDate;
@@ -476,6 +376,17 @@ export default function InvoicesPage() {
     setSearch("");
     setFromDate("");
     setToDate("");
+  };
+
+  const handleDownloadPdf = async (inv) => {
+    setDownloadingId(inv.id);
+    try {
+      await downloadInvoicePdf(inv.id, inv.fileName);
+    } catch {
+      alert("Could not download the PDF. The file may not exist on the server.");
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   return (
@@ -500,7 +411,7 @@ export default function InvoicesPage() {
             </button>
             <button
               className="inv-action-btn inv-action-btn--primary"
-              onClick={() => downloadPdf(filtered, "lumiere-invoices.pdf")}
+              onClick={() => downloadAllAsPdf(filtered, "lumiere-invoices.pdf")}
               disabled={filtered.length === 0}
               title="Download all visible invoices as a single PDF"
             >
@@ -514,12 +425,12 @@ export default function InvoicesPage() {
         <section className="inv-summary-row">
           <div className="inv-summary-card inv-summary-card--count">
             <p className="inv-summary-card__label">Total Invoices</p>
-            <h2 className="inv-summary-card__value">{filtered.length}</h2>
+            <h2 className="inv-summary-card__value">{loading ? "—" : filtered.length}</h2>
             <p className="inv-summary-card__sub">{hasFilters ? "matching filters" : "all time"}</p>
           </div>
           <div className="inv-summary-card inv-summary-card--revenue">
             <p className="inv-summary-card__label">Total Revenue</p>
-            <h2 className="inv-summary-card__value">{fmt(totalRevenue)}</h2>
+            <h2 className="inv-summary-card__value">{loading ? "—" : fmt(totalRevenue)}</h2>
             <p className="inv-summary-card__sub">{hasFilters ? "matching filters" : "all time"}</p>
           </div>
         </section>
@@ -536,29 +447,62 @@ export default function InvoicesPage() {
               onChange={(e) => setSearch(e.target.value)}
             />
             {search && (
-              <button className="inv-search-clear" onClick={() => setSearch("")} aria-label="Clear">×</button>
+              <button
+                className="inv-search-clear"
+                onClick={() => setSearch("")}
+                aria-label="Clear"
+              >
+                ×
+              </button>
             )}
           </div>
 
           <div className="inv-date-range">
             <label className="inv-date-label">From</label>
-            <input type="date" className="inv-date-input" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+            <input
+              type="date"
+              className="inv-date-input"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+            />
             <label className="inv-date-label">To</label>
-            <input type="date" className="inv-date-input" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+            <input
+              type="date"
+              className="inv-date-input"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+            />
             {hasFilters && (
-              <button className="inv-clear-btn" onClick={handleClearFilters}>Clear filters</button>
+              <button className="inv-clear-btn" onClick={handleClearFilters}>
+                Clear filters
+              </button>
             )}
           </div>
         </section>
 
         {/* ── Table ── */}
         <section className="inv-table-card">
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div className="inv-state">
+              <Loader size={36} strokeWidth={1.5} className="inv-spinner" />
+              <p>Loading invoices…</p>
+            </div>
+          ) : error ? (
+            <div className="inv-state">
+              <FileText size={44} strokeWidth={1.2} />
+              <p>{error}</p>
+              <button className="inv-retry-btn" onClick={fetchInvoices}>
+                Retry
+              </button>
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="inv-state">
               <FileText size={44} strokeWidth={1.2} />
               <p>No invoices found{hasFilters ? " for the selected filters" : ""}.</p>
               {hasFilters && (
-                <button className="inv-retry-btn" onClick={handleClearFilters}>Clear filters</button>
+                <button className="inv-retry-btn" onClick={handleClearFilters}>
+                  Clear filters
+                </button>
               )}
             </div>
           ) : (
@@ -582,7 +526,9 @@ export default function InvoicesPage() {
                     </td>
                     <td>
                       <div className="inv-customer">{inv.customerName}</div>
-                      <div className="inv-customer-email">{inv.customerEmail}</div>
+                      {inv.customerEmail && (
+                        <div className="inv-customer-email">{inv.customerEmail}</div>
+                      )}
                     </td>
                     <td className="inv-cell-date">{fmtDate(inv.createdAt)}</td>
                     <td className="inv-col-num">{inv.items.length}</td>
@@ -601,10 +547,15 @@ export default function InvoicesPage() {
                         </button>
                         <button
                           className="inv-row-btn inv-row-btn--primary"
-                          onClick={() => downloadPdf([inv], `${inv.invoiceNumber}.pdf`)}
+                          onClick={() => handleDownloadPdf(inv)}
+                          disabled={downloadingId === inv.id}
                           title={`Download ${inv.invoiceNumber} as PDF`}
                         >
-                          <Download size={14} />
+                          {downloadingId === inv.id ? (
+                            <Loader size={14} className="inv-spinner" />
+                          ) : (
+                            <Download size={14} />
+                          )}
                           PDF
                         </button>
                       </div>
@@ -615,7 +566,9 @@ export default function InvoicesPage() {
               <tfoot>
                 <tr className="inv-total-row">
                   <td colSpan={4}>
-                    <strong>{filtered.length} invoice{filtered.length !== 1 ? "s" : ""}</strong>
+                    <strong>
+                      {filtered.length} invoice{filtered.length !== 1 ? "s" : ""}
+                    </strong>
                   </td>
                   <td className="inv-col-num inv-amount">
                     <strong>{fmt(totalRevenue)}</strong>
