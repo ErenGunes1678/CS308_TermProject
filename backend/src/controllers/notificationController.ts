@@ -150,6 +150,25 @@ export const getNotifications = async (req: AuthRequest, res: Response): Promise
             }
         }
 
+        // ── Price drops ────────────────────────────────────────────────────
+        const priceDrops = await db.price_drop_notifications.findAll({
+            where: { user_id: userId },
+            include: [{ model: db.products, as: "product", attributes: ["id", "name"] }],
+        });
+
+        for (const drop of priceDrops) {
+            const productName = drop.product?.name || "a product";
+            notifications.push({
+                id: `price-drop-${drop.id}`,
+                type: "price_drop",
+                icon: "🏷️",
+                title: "Price drop on your wishlist!",
+                body: `"${productName}" dropped from $${Number(drop.old_price).toFixed(2)} to $${Number(drop.new_price).toFixed(2)}.`,
+                createdAt: (drop as any).createdAt,
+                link: `/product/${drop.product?.id}`,
+            });
+        }
+
         // Sort newest first
         notifications.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 

@@ -124,9 +124,10 @@ const Navbar = () => {
   const managerNavLinks = (() => {
     if (user?.role === 'sales_manager') {
       return [
-        { name: 'Invoices', path: '/admin/sales-manager/invoices' },
         { name: 'Revenue', path: '/admin/sales-manager/revenue' },
-        { name: 'Pricing & Discounts', path: '/admin/sales-manager/pricing' },
+        { name: 'Invoices', path: '/admin/sales-manager/invoices' },
+        { name: 'Pricing', path: '/admin/sales-manager/pricing' },
+        { name: 'Discounts', path: '/admin/sales-manager/discounts' },
         { name: 'Refund Requests', path: '/admin/sales-manager/refunds' },
       ];
     }

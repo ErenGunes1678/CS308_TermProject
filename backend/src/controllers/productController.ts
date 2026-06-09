@@ -3,8 +3,8 @@ import { Op } from "sequelize";
 import db from "../entities";
 import { mapProductForFrontend } from "../utils/productMapper";
 
-const Product = db["products"];
-const Category = db["categories"];
+const Product = db.products;
+const Category = db.categories;
 
 const categoryExists = async (slug?: string) => {
     if (!slug) return false;
@@ -114,10 +114,30 @@ export const updateProductPrice = async (req: Request, res: Response) => {
             });
         }
 
+        const oldPrice = Number(product.get("price"));
+
         await product.update({
             price: nextPrice,
             ...(original_price !== undefined && { original_price })
         });
+
+        if (nextPrice < oldPrice) {
+            const wishlistEntries = await db.wishlists.findAll({
+                where: { product_id: id },
+                attributes: ["user_id"],
+            });
+
+            await Promise.all(
+                wishlistEntries.map((entry: any) =>
+                    db.price_drop_notifications.create({
+                        user_id: entry.user_id,
+                        product_id: id,
+                        old_price: oldPrice,
+                        new_price: nextPrice,
+                    })
+                )
+            );
+        }
 
         return res.status(200).json({
             message: "Product price updated successfully",

@@ -560,6 +560,109 @@
   color: var(--color-gray-600);
 }
 
+/* Pricing & Discounts scale alignment */
+
+.product-inventory-panel {
+  padding: 1.25rem;
+}
+
+.product-inventory-summary {
+  padding-bottom: 1rem;
+}
+
+.product-inventory-summary h2 {
+  font-size: 1.45rem;
+}
+
+.product-inventory-summary__counts span,
+.product-inventory-mode-switch button,
+.product-inventory-filter-chips button {
+  min-height: 32px;
+  font-size: 0.78rem;
+}
+
+.product-inventory-mode-switch {
+  border-radius: 14px;
+  background: var(--color-white);
+}
+
+.product-inventory-mode-switch button {
+  border-radius: 10px;
+}
+
+.product-inventory-sidebar,
+.product-inventory-form,
+.product-inventory-card,
+.inv-form,
+.inv-table {
+  border-radius: 14px;
+}
+
+.product-inventory-sidebar,
+.product-inventory-form,
+.product-inventory-sidebar--manage,
+.product-inventory-form--manage,
+.inv-form {
+  padding: 1rem;
+}
+
+.product-inventory-category-form input,
+.product-inventory-form input,
+.product-inventory-form select,
+.product-inventory-form textarea,
+.product-inventory-toolbar input,
+.product-inventory-sidebar--manage .product-inventory-category-form input {
+  min-height: 38px;
+  border-radius: 9px;
+  padding: 0 0.7rem;
+  font-size: 0.86rem;
+}
+
+.product-inventory-form textarea {
+  min-height: 72px;
+  padding-top: 0.55rem;
+}
+
+.product-inventory-category-form button,
+.product-inventory-form__submit,
+.product-inventory-sidebar--manage .product-inventory-category-form button,
+.inv-form__submit {
+  min-height: 38px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+}
+
+.product-inventory-sidebar--manage .product-inventory-categories > button,
+.product-inventory-sidebar--manage .product-inventory-category-row > button:first-child {
+  min-height: 38px;
+  padding: 0.58rem 0.68rem;
+  font-size: 0.86rem;
+}
+
+.inv-table__head,
+.inv-table__row {
+  padding: 0.7rem 1rem;
+}
+
+.inv-row__product img {
+  width: 44px;
+  height: 44px;
+}
+
+.inv-row__product span {
+  font-size: 0.9rem;
+}
+
+.inv-row__brand,
+.inv-row__stock {
+  font-size: 0.86rem;
+}
+
+.inv-row__icon-btn {
+  width: 30px;
+  height: 30px;
+}
+
 /* ── Compact add/edit form ── */
 .inv-form {
   border: 1px solid rgba(226, 232, 240, 0.95);

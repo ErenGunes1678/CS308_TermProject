@@ -383,3 +383,35 @@
   color: var(--color-gray-400);
   font-style: normal;
 }
+
+/* Pricing & Discounts scale alignment */
+
+.refunds-panel {
+  padding: 1.25rem;
+}
+
+.refunds-summary {
+  padding-bottom: 1rem;
+}
+
+.refunds-summary__title {
+  font-size: 1.45rem;
+}
+
+.refund-card:hover {
+  transform: none;
+}
+
+.refund-card__body {
+  border-radius: 10px;
+}
+
+.refund-card__button {
+  min-height: 38px;
+  padding: 0 1rem;
+  font-size: 0.82rem;
+}
+
+.refund-card__button--approve {
+  box-shadow: none;
+}

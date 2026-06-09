@@ -303,3 +303,90 @@
     justify-content: stretch;
   }
 }
+
+/* Pricing & Discounts scale alignment */
+
+.comment-moderation-panel {
+  border-radius: 18px;
+  padding: 1.25rem;
+}
+
+.comment-moderation-panel__header {
+  padding-bottom: 1rem;
+}
+
+.comment-moderation-panel__title {
+  font-size: 1.45rem;
+}
+
+.comment-moderation-panel__badge {
+  min-height: 32px;
+  min-width: auto;
+  padding: 0 0.8rem;
+  font-size: 0.82rem;
+}
+
+.comment-moderation-state {
+  margin-top: 1rem;
+  padding: 1.6rem 1.2rem;
+  border-radius: 14px;
+}
+
+.comment-moderation-list {
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.comment-card {
+  border-radius: 14px;
+  padding: 1rem;
+}
+
+.comment-card:hover {
+  transform: none;
+}
+
+.comment-card__product-tag {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.78rem;
+}
+
+.comment-card__date,
+.comment-card__meta {
+  font-size: 0.82rem;
+}
+
+.comment-card__header,
+.comment-card__body {
+  margin-top: 0.75rem;
+}
+
+.comment-card__title {
+  font-size: 1rem;
+}
+
+.comment-card__rating {
+  min-width: 72px;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+}
+
+.comment-card__rating-value {
+  font-size: 1.2rem;
+}
+
+.comment-card__body {
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.comment-card__actions {
+  margin-top: 0.9rem;
+}
+
+.comment-card__button {
+  min-width: 112px;
+  min-height: 38px;
+  padding: 0 1rem;
+  font-size: 0.82rem;
+}

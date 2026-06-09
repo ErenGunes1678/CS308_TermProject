@@ -140,3 +140,50 @@
   }
 
 }
+
+/* Pricing & Discounts scale alignment */
+
+.product-manager-panel {
+  padding: 1.25rem;
+}
+
+.product-manager-panel__header {
+  padding-bottom: 1rem;
+}
+
+.product-manager-panel__title {
+  font-size: 1.45rem;
+}
+
+.product-manager-panel__role {
+  min-height: 32px;
+  padding: 0 0.8rem;
+  font-size: 0.78rem;
+}
+
+.product-manager-task-grid {
+  gap: 0.75rem;
+}
+
+.product-manager-task-card {
+  min-height: 132px;
+  padding: 1rem;
+  border-radius: 14px;
+}
+
+.product-manager-task-card:hover {
+  transform: none;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.product-manager-task-card h3 {
+  font-size: 0.95rem;
+}
+
+.product-manager-task-card p {
+  font-size: 0.86rem;
+}
+
+.product-manager-task-card__action {
+  font-size: 0.86rem;
+}
