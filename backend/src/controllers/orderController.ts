@@ -48,7 +48,7 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
     const t = await sequelize.transaction();
 
     try {
-        const { shippingAddress, payment } = req.body ?? {};
+        const { shippingAddress, payment, discount_code } = req.body ?? {};
 
         const requiredAddressFields = [
             "firstName",
@@ -103,8 +103,50 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
             subtotal += parseFloat(product.price) * item.quantity;
         }
 
-        const shipping = subtotal > 0 && subtotal < FREE_SHIPPING_MINIMUM ? SHIPPING_COST : 0;
-        const totalAmount = formatMoney(subtotal + shipping);
+        let shipping = subtotal > 0 && subtotal < FREE_SHIPPING_MINIMUM ? SHIPPING_COST : 0;
+        let discountAmount = 0;
+
+        if (discount_code) {
+            const discountCode = await db.discount_codes.findOne({
+                where: { code: String(discount_code).toUpperCase() },
+                transaction: t,
+            });
+
+            if (!discountCode) {
+                await t.rollback();
+                res.status(400).json({ message: "Discount code not found." });
+                return;
+            }
+            if (!discountCode.is_active) {
+                await t.rollback();
+                res.status(400).json({ message: "This discount code is not active." });
+                return;
+            }
+            if (new Date(discountCode.expiry_date) <= new Date()) {
+                await t.rollback();
+                res.status(400).json({ message: "This discount code has expired." });
+                return;
+            }
+            if (discountCode.min_order !== null && subtotal < Number(discountCode.min_order)) {
+                await t.rollback();
+                res.status(400).json({
+                    message: `This code requires a minimum order of $${Number(discountCode.min_order).toFixed(2)}.`,
+                });
+                return;
+            }
+
+            if (discountCode.type === "free_shipping") {
+                shipping = 0;
+            } else if (discountCode.type === "percentage") {
+                discountAmount = formatMoney((subtotal + shipping) * Number(discountCode.value) / 100);
+            } else if (discountCode.type === "fixed") {
+                discountAmount = formatMoney(Math.min(Number(discountCode.value), subtotal + shipping));
+            }
+
+            await discountCode.increment("uses_count", { transaction: t });
+        }
+
+        const totalAmount = formatMoney(subtotal + shipping - discountAmount);
         const bankConfirmation = confirmMockBankPayment(totalAmount, payment.method);
 
         // Create order using allowed status values only
@@ -171,6 +213,7 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
             })),
             subtotal: formatMoney(subtotal),
             shipping: formatMoney(shipping),
+            discount: formatMoney(discountAmount),
             total: totalAmount,
         };
 
