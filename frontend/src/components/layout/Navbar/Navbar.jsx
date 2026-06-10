@@ -142,6 +142,14 @@ const Navbar = () => {
 
     return [];
   })();
+
+  const adminPanelPath =
+  user?.role === 'sales_manager'
+    ? '/admin/sales-manager/revenue'
+    : user?.role === 'product_manager'
+      ? '/admin/product-manager/deliveries'
+      : '/admin';
+
   const navLinks = isManager ? managerNavLinks : categoryNavLinks;
 
   const isNavLinkActive = (path) => {
@@ -287,71 +295,129 @@ const Navbar = () => {
             </button>
 
             {userMenuOpen && (
-              <div className="navbar__dropdown">
-                {isAuthenticated ? (
-                  <>
-                    {!isManager && (
-                      <div className="navbar__dropdown-header">
-                        <span className="navbar__dropdown-avatar">{userInitial}</span>
-                        <div>
-                          <p className="navbar__dropdown-name">{user?.name || 'User'}</p>
-                          <p className="navbar__dropdown-email">{user?.email}</p>
-                          <p className="navbar__dropdown-role">{ROLE_LABELS[user?.role] || 'Customer'}</p>
-                        </div>
-                      </div>
-                    )}
-                    {!isManager && <hr className="navbar__dropdown-divider" />}
-                    {user?.role === 'customer' && (
-                      <Link to="/customer" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                        My Account
-                      </Link>
-                    )}
-                    {user?.role === 'customer' && (
-                      <Link to="/customer/orders" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="18" rx="2" /><path d="m9 12 2 2 4-4" /></svg>
-                        My Orders
-                      </Link>
-                    )}
-                    {user?.role === 'customer' && (
-                      <Link to="/customer/notifications" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>
-                        Notifications
-                      </Link>
-                    )}
-                    {user?.role === 'customer' && (
-                      <Link to="/wishlist" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l7.78-7.78a5.5 5.5 0 0 0 1.06-8.84z" /></svg>
-                        Wishlist
-                        {discountNotifications.length > 0 && (
-                          <span className="navbar__item-badge">{discountBadgeCount}</span>
-                        )}
-                      </Link>
-                    )}
-                    {!isManager && <hr className="navbar__dropdown-divider" />}
-                    <button
-                      className="navbar__dropdown-item navbar__dropdown-item--logout"
-                      onClick={handleLogout}
-                    >
-                      Logout
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <Link to="/login" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
-                      Login
-                    </Link>
-                    <Link to="/register" className="navbar__dropdown-item" onClick={() => setUserMenuOpen(false)}>
-                      Create Account
-                    </Link>
-                  </>
-                )}
-              </div>
-            )}
+  <div className="navbar__dropdown">
+    {isAuthenticated ? (
+      <>
+        <div className="navbar__dropdown-header">
+          <span className="navbar__dropdown-avatar">{userInitial}</span>
+
+          <div>
+            <p className="navbar__dropdown-name">{user?.name || 'User'}</p>
+            <p className="navbar__dropdown-email">{user?.email}</p>
+            <p className="navbar__dropdown-role">
+              {ROLE_LABELS[user?.role] || 'Customer'}
+            </p>
           </div>
         </div>
-      </div>
+
+        <hr className="navbar__dropdown-divider" />
+
+        {isManager ? (
+          <>
+            <Link
+              to="/account"
+              className="navbar__dropdown-item"
+              onClick={() => setUserMenuOpen(false)}
+            >
+              My Account
+            </Link>
+
+            <Link
+              to="/customer/orders"
+              className="navbar__dropdown-item"
+              onClick={() => setUserMenuOpen(false)}
+            >
+              My Orders
+            </Link>
+
+            <Link
+              to={adminPanelPath}
+              className="navbar__dropdown-item"
+              onClick={() => setUserMenuOpen(false)}
+            >
+              Admin Panel
+            </Link>
+          </>
+        ) : (
+          <>
+            <Link
+              to="/account"
+              className="navbar__dropdown-item"
+              onClick={() => setUserMenuOpen(false)}
+            >
+              My Account
+            </Link>
+
+            <Link
+              to="/customer/orders"
+              className="navbar__dropdown-item"
+              onClick={() => setUserMenuOpen(false)}
+            >
+              My Orders
+            </Link>
+
+            <Link
+              to="/customer/notifications"
+              className="navbar__dropdown-item"
+              onClick={() => setUserMenuOpen(false)}
+            >
+              Notifications
+            </Link>
+
+            <Link
+              to="/wishlist"
+              className="navbar__dropdown-item"
+              onClick={() => setUserMenuOpen(false)}
+            >
+              Wishlist
+
+              {discountNotifications.length > 0 && (
+                <span className="navbar__item-badge">
+                  {discountBadgeCount}
+                </span>
+              )}
+            </Link>
+          </>
+        )}
+
+        <hr className="navbar__dropdown-divider" />
+
+        <button
+          type="button"
+          className="navbar__dropdown-item navbar__dropdown-item--logout"
+          onClick={handleLogout}
+        >
+          Logout
+        </button>
+      </>
+    ) : (
+      <>
+        <Link
+          to="/login"
+          className="navbar__dropdown-item"
+          onClick={() => setUserMenuOpen(false)}
+        >
+          Login
+        </Link>
+
+        <Link
+          to="/register"
+          className="navbar__dropdown-item"
+          onClick={() => setUserMenuOpen(false)}
+        >
+          Create Account
+        </Link>
+      </>
+    )}
+  </div>
+
+)}
+          </div>
+        </div>
+              </div>
+
     </nav>
+
   );
 };
 

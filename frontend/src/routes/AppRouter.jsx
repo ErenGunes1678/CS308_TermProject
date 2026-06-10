@@ -83,16 +83,9 @@ const AccountRedirect = () => {
     return <Navigate to="/login" replace />;
   }
 
-  if (user.role === 'product_manager') {
-    return <Navigate to="/admin/product-manager/deliveries" replace />;
-  }
-
-  if (user.role === 'sales_manager') {
-    return <Navigate to="/admin/sales-manager/revenue" replace />;
-  }
-
   return <ProfilePage />;
 };
+
 
 const AppRouter = () => {
   return (
