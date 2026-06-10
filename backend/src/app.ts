@@ -15,6 +15,7 @@ import notificationRoutes from "./routes/notificationRoutes";
 import revenueRoutes from "./routes/revenueRoutes";
 import wishlistRoutes from "./routes/wishlistRoutes";
 import discountRoutes from "./routes/discountRoutes";
+import invoiceRoutes from "./routes/invoiceRoutes";
 import { seedDefaultCategories, seedMockProducts, seedMockUsers } from "./seeders/mock_db_data"; // Mock data seeding function
 
 const app = express();
@@ -56,6 +57,7 @@ app.use("/notifications", notificationRoutes);
 app.use("/revenue", revenueRoutes);
 app.use("/wishlist", wishlistRoutes);
 app.use("/discount", discountRoutes);
+app.use("/invoices", invoiceRoutes);
 
 // Sync Sequelize models then start server (only when run directly, not imported by tests)
 if (require.main === module) {
