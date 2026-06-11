@@ -346,27 +346,25 @@ export default function InvoicesPage() {
     setLoading(true);
     setError(null);
     try {
-      const raw = await getInvoices({ from: fromDate || undefined, to: toDate || undefined });
+      const raw = await getInvoices({
+        from: fromDate || undefined,
+        to: toDate || undefined,
+        q: search.trim() || undefined,
+      });
       setInvoices(raw.map(shapeInvoice));
     } catch (err) {
       setError("Failed to load invoices. Please try again.");
     } finally {
       setLoading(false);
     }
-  }, [fromDate, toDate]);
+  }, [fromDate, search, toDate]);
 
   useEffect(() => {
     fetchInvoices();
   }, [fetchInvoices]);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return invoices;
-    const q = search.trim().toLowerCase();
-    return invoices.filter(
-      (inv) =>
-        inv.customerName.toLowerCase().includes(q) ||
-        inv.invoiceNumber.toLowerCase().includes(q)
-    );
+    return invoices;
   }, [invoices, search]);
 
   const totalRevenue = filtered.reduce((sum, inv) => sum + inv.amount, 0);

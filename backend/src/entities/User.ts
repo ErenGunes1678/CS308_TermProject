@@ -20,6 +20,14 @@ module.exports = (sequelize: Sequelize) => {
             type: DataTypes.STRING,
             allowNull: false,
         },
+        tax_id: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        phone: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
         role: {
             type: DataTypes.ENUM("customer", "sales_manager", "product_manager"),
             allowNull: false,

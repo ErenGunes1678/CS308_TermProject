@@ -131,6 +131,7 @@ export default function OrderSuccessPage() {
               <p>{invoice.customerName}</p>
               <p>{invoice.customerEmail}</p>
               <p>{invoice.customerPhone}</p>
+              <p>Tax ID: {invoice.customerTaxId}</p>
             </div>
             <div className="invoice-panel">
               <p className="success-review-label">SHIPPING ADDRESS</p>

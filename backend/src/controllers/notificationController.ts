@@ -190,7 +190,7 @@ export const getNotifications = async (req: AuthRequest, res: Response): Promise
 export const markNotificationsSeen = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const userId = req.userId!;
-        const notificationIds = Array.isArray(req.body.notificationIds)
+        const notificationIds: string[] = Array.isArray(req.body.notificationIds)
             ? req.body.notificationIds.filter(Boolean)
             : [];
 

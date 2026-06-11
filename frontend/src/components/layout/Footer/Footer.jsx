@@ -5,26 +5,6 @@ import './Footer.css';
 const Footer = () => {
   return (
     <footer className="footer">
-      {/* Newsletter CTA */}
-      <div className="footer__cta">
-        <div className="container footer__cta-inner">
-          <h2 className="footer__cta-title">Join the Beauty Club</h2>
-          <p className="footer__cta-text">
-            Get 15% off your first order + exclusive beauty tips & early access to new launches
-          </p>
-          <div className="footer__cta-form">
-            <input
-              type="email"
-              placeholder="Your email address"
-              className="footer__cta-input"
-            />
-            <button className="footer__cta-btn">
-              Subscribe <span>&rarr;</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Footer Content */}
       <div className="footer__main">
         <div className="container footer__grid">

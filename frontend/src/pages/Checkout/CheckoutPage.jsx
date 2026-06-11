@@ -1,9 +1,19 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { useCart } from "../../hooks/useCart";
+import { createAddress, getAddresses } from "../../services/addressService";
 import { placeOrder } from "../../services/orderService";
 import "./CheckoutPage.css";
+
+const sortAddresses = (addressList = []) =>
+  [...addressList].sort((a, b) => {
+    if (Boolean(a.isDefault) !== Boolean(b.isDefault)) {
+      return a.isDefault ? -1 : 1;
+    }
+
+    return Number(a.id || 0) - Number(b.id || 0);
+  });
 
 function CheckoutSteps({ step }) {
   return (
@@ -30,35 +40,38 @@ function CheckoutSteps({ step }) {
   );
 }
 
-function AddressStep({ addressData, fieldErrors, onAddressChange, onNext }) {
+function AddressStep({ addressData, fieldErrors, savedAddresses, saveAccountInfo, onAddressChange, onSavedAddressChange, onSaveAccountInfoChange, onNext }) {
   return (
     <div className="checkout-card">
       <h2>Shipping Address</h2>
-      <div className="form-grid two-cols">
-        <div>
-          <label>First Name</label>
-          <input
-            className={fieldErrors.firstName ? "checkout-input checkout-input--error" : "checkout-input"}
-            name="firstName"
-            value={addressData.firstName}
-            onChange={onAddressChange}
-            placeholder="John"
-            aria-invalid={Boolean(fieldErrors.firstName)}
-          />
-          {fieldErrors.firstName ? <p className="checkout-field-error">{fieldErrors.firstName}</p> : null}
+      {savedAddresses.length > 0 ? (
+        <div className="form-group">
+          <label>Saved Delivery Address</label>
+          <select
+            className="checkout-input"
+            value={addressData.addressId}
+            onChange={(event) => onSavedAddressChange(event.target.value)}
+          >
+            <option value="">Enter a new address</option>
+            {savedAddresses.map((address) => (
+              <option key={address.id} value={address.id}>
+                {address.label} - {address.street}, {address.city}
+              </option>
+            ))}
+          </select>
         </div>
-        <div>
-          <label>Last Name</label>
-          <input
-            className={fieldErrors.lastName ? "checkout-input checkout-input--error" : "checkout-input"}
-            name="lastName"
-            value={addressData.lastName}
-            onChange={onAddressChange}
-            placeholder="Doe"
-            aria-invalid={Boolean(fieldErrors.lastName)}
-          />
-          {fieldErrors.lastName ? <p className="checkout-field-error">{fieldErrors.lastName}</p> : null}
-        </div>
+      ) : null}
+      <div className="form-group">
+        <label>Name</label>
+        <input
+          className={fieldErrors.name ? "checkout-input checkout-input--error" : "checkout-input"}
+          name="name"
+          value={addressData.name}
+          onChange={onAddressChange}
+          placeholder="John Doe"
+          aria-invalid={Boolean(fieldErrors.name)}
+        />
+        {fieldErrors.name ? <p className="checkout-field-error">{fieldErrors.name}</p> : null}
       </div>
       <div className="form-group">
         <label>Email</label>
@@ -74,6 +87,18 @@ function AddressStep({ addressData, fieldErrors, onAddressChange, onNext }) {
       </div>
       <div className="form-grid two-cols">
         <div>
+          <label>Tax ID</label>
+          <input
+            className={fieldErrors.taxId ? "checkout-input checkout-input--error" : "checkout-input"}
+            name="taxId"
+            value={addressData.taxId}
+            onChange={onAddressChange}
+            placeholder="Tax identification number"
+            aria-invalid={Boolean(fieldErrors.taxId)}
+          />
+          {fieldErrors.taxId ? <p className="checkout-field-error">{fieldErrors.taxId}</p> : null}
+        </div>
+        <div>
           <label>Phone</label>
           <input
             className={fieldErrors.phone ? "checkout-input checkout-input--error" : "checkout-input"}
@@ -85,22 +110,16 @@ function AddressStep({ addressData, fieldErrors, onAddressChange, onNext }) {
           />
           {fieldErrors.phone ? <p className="checkout-field-error">{fieldErrors.phone}</p> : null}
         </div>
-        <div>
-          <label>Country</label>
-          <select
-            className={fieldErrors.country ? "checkout-input checkout-input--error" : "checkout-input"}
-            name="country"
-            value={addressData.country}
-            onChange={onAddressChange}
-            aria-invalid={Boolean(fieldErrors.country)}
-          >
-            <option>United States</option>
-            <option>Turkey</option>
-            <option>Germany</option>
-            <option>United Kingdom</option>
-          </select>
-          {fieldErrors.country ? <p className="checkout-field-error">{fieldErrors.country}</p> : null}
-        </div>
+      </div>
+      <div className="checkout-account-info-actions">
+        <label className="checkout-save-profile">
+          <input
+            type="checkbox"
+            checked={saveAccountInfo}
+            onChange={(event) => onSaveAccountInfoChange(event.target.checked)}
+          />
+          Save tax ID and this delivery address
+        </label>
       </div>
       <div className="form-group">
         <label>Street Address</label>
@@ -140,17 +159,31 @@ function AddressStep({ addressData, fieldErrors, onAddressChange, onNext }) {
           {fieldErrors.state ? <p className="checkout-field-error">{fieldErrors.state}</p> : null}
         </div>
       </div>
-      <div className="form-group small-input">
-        <label>ZIP / Postal Code</label>
-        <input
-          className={fieldErrors.zip ? "checkout-input checkout-input--error" : "checkout-input"}
-          name="zip"
-          value={addressData.zip}
-          onChange={onAddressChange}
-          placeholder="10001"
-          aria-invalid={Boolean(fieldErrors.zip)}
-        />
-        {fieldErrors.zip ? <p className="checkout-field-error">{fieldErrors.zip}</p> : null}
+      <div className="form-grid two-cols">
+        <div>
+          <label>ZIP / Postal Code</label>
+          <input
+            className={fieldErrors.zip ? "checkout-input checkout-input--error" : "checkout-input"}
+            name="zip"
+            value={addressData.zip}
+            onChange={onAddressChange}
+            placeholder="10001"
+            aria-invalid={Boolean(fieldErrors.zip)}
+          />
+          {fieldErrors.zip ? <p className="checkout-field-error">{fieldErrors.zip}</p> : null}
+        </div>
+        <div>
+          <label>Country</label>
+          <input
+            className={fieldErrors.country ? "checkout-input checkout-input--error" : "checkout-input"}
+            name="country"
+            value={addressData.country}
+            onChange={onAddressChange}
+            placeholder="United States"
+            aria-invalid={Boolean(fieldErrors.country)}
+          />
+          {fieldErrors.country ? <p className="checkout-field-error">{fieldErrors.country}</p> : null}
+        </div>
       </div>
       <div className="checkout-actions single">
         <button className="checkout-primary-btn" onClick={onNext}>Continue →</button>
@@ -235,17 +268,19 @@ function PaymentStep({ paymentMethod, paymentData, fieldErrors, onPaymentMethodC
   );
 }
 
-function ReviewStep({ addressData, paymentLabel, cartItems, onBack, onPlaceOrder, isSubmitting }) {
+function ReviewStep({ addressData, paymentLabel, cartItems, saveAccountInfo, onBack, onPlaceOrder, isSubmitting }) {
   return (
     <div className="checkout-card">
       <h2>Review Your Order</h2>
       <div className="review-box">
         <p className="checkout-review-label">SHIPPING TO</p>
-        <p>{addressData.firstName} {addressData.lastName}</p>
+        <p>{addressData.name}</p>
         <p>{addressData.street}</p>
         <p>{addressData.city}, {addressData.state} {addressData.zip}</p>
         <p>{addressData.country}</p>
         <p>{addressData.email}</p>
+        <p>Tax ID: {addressData.taxId}</p>
+        {saveAccountInfo ? <p>Your tax ID and this delivery address will be saved.</p> : null}
       </div>
       <div className="review-box">
         <p className="checkout-review-label">PAYMENT</p>
@@ -309,18 +344,19 @@ function CheckoutSummary({ cartItems, subtotal, shipping, total }) {
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, updateProfile } = useAuth();
   const { cartItems, subtotal, shipping, total, clearCart } = useCart();
 
   const [step, setStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState("card");
 
   const [addressData, setAddressData] = useState({
-    firstName: user?.firstName || user?.name?.split(" ")[0] || "",
-    lastName: user?.lastName || user?.name?.split(" ").slice(1).join(" ") || "",
+    addressId: "",
+    name: user?.name || "",
     email: user?.email || "",
-    phone: "",
-    country: "United States",
+    taxId: user?.taxId || "",
+    phone: user?.phone || "",
+    country: "",
     street: "",
     city: "",
     state: "",
@@ -333,6 +369,8 @@ export default function CheckoutPage() {
     expiry: "",
     cvc: "",
   });
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [saveAccountInfo, setSaveAccountInfo] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -355,6 +393,7 @@ export default function CheckoutPage() {
     const { name, value } = e.target;
     setAddressData((prev) => ({
       ...prev,
+      ...(name !== "taxId" && name !== "phone" && { addressId: "" }),
       [name]: value,
     }));
     setFieldErrors((prev) => {
@@ -377,9 +416,9 @@ export default function CheckoutPage() {
 
   const validateStep1 = () => {
     const requiredFields = {
-      firstName: "First name is required.",
-      lastName: "Last name is required.",
+      name: "Name is required.",
       email: "Email is required.",
+      taxId: "Tax ID is required.",
       phone: "Phone is required.",
       country: "Country is required.",
       street: "Street address is required.",
@@ -437,11 +476,109 @@ export default function CheckoutPage() {
     setStep((prev) => prev - 1);
   };
 
+  useEffect(() => {
+    if (!user?.phone) return;
+
+    setAddressData((prev) => ({
+      ...prev,
+      phone: prev.phone || user.phone,
+    }));
+  }, [user?.phone]);
+
+  useEffect(() => {
+    if (!user?.name) return;
+
+    setAddressData((prev) => ({
+      ...prev,
+      name: prev.name || user.name,
+    }));
+  }, [user?.name]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadAddresses = async () => {
+      try {
+        const addresses = await getAddresses();
+        if (!isMounted) return;
+
+        const nextAddresses = sortAddresses(Array.isArray(addresses) ? addresses : []);
+        setSavedAddresses(nextAddresses);
+
+        const defaultAddress = nextAddresses.find((address) => address.isDefault);
+        if (defaultAddress) {
+          applySavedAddress(defaultAddress);
+        }
+      } catch {
+        if (isMounted) {
+          setSavedAddresses([]);
+        }
+      }
+    };
+
+    loadAddresses();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const applySavedAddress = (address) => {
+    setAddressData((prev) => ({
+      ...prev,
+      addressId: String(address.id),
+      street: address.street || "",
+      city: address.city || "",
+      state: address.state || "",
+      zip: address.zip || "",
+      country: address.country || "",
+    }));
+  };
+
+  const handleSavedAddressChange = (addressId) => {
+    const selectedAddress = savedAddresses.find((address) => String(address.id) === String(addressId));
+
+    if (!selectedAddress) {
+      setAddressData((prev) => ({
+        ...prev,
+        addressId: "",
+        street: "",
+        city: "",
+        state: "",
+        zip: "",
+        country: "",
+      }));
+      return;
+    }
+
+    applySavedAddress(selectedAddress);
+  };
+
   const handlePlaceOrder = async () => {
     setIsSubmitting(true);
     setSubmitError("");
 
     try {
+      if (saveAccountInfo) {
+        await updateProfile({
+          taxId: addressData.taxId,
+        });
+
+        if (!addressData.addressId) {
+          const newAddress = await createAddress({
+            label: "Delivery",
+            street: addressData.street,
+            city: addressData.city,
+            state: addressData.state,
+            zip: addressData.zip,
+            country: addressData.country,
+            isDefault: savedAddresses.length === 0,
+          });
+          setSavedAddresses((current) => sortAddresses([...current, newAddress]));
+          setAddressData((current) => ({ ...current, addressId: String(newAddress.id) }));
+        }
+      }
+
       const checkoutPayload = {
         shippingAddress: addressData,
         payment: {
@@ -487,7 +624,11 @@ export default function CheckoutPage() {
             <AddressStep
               addressData={addressData}
               fieldErrors={fieldErrors}
+              savedAddresses={savedAddresses}
+              saveAccountInfo={saveAccountInfo}
               onAddressChange={handleAddressChange}
+              onSavedAddressChange={handleSavedAddressChange}
+              onSaveAccountInfoChange={setSaveAccountInfo}
               onNext={goToNextStep}
             />
           )}
@@ -509,6 +650,7 @@ export default function CheckoutPage() {
               addressData={addressData}
               paymentLabel={paymentLabel}
               cartItems={cartItems}
+              saveAccountInfo={saveAccountInfo}
               onBack={goToPrevStep}
               onPlaceOrder={handlePlaceOrder}
               isSubmitting={isSubmitting}

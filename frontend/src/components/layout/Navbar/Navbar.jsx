@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import { useCart } from '../../../hooks/useCart';
 import { useWishlist } from '../../../hooks/useWishlist';
+import { getCategories } from '../../../services/categoryService';
 import NotificationBell from './NotificationBell';
 import './Navbar.css';
 
@@ -12,11 +13,38 @@ const ROLE_LABELS = {
   sales_manager: 'Sales Manager',
 };
 
+const formatCategoryLabel = (value = '') =>
+  value
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+
+const normalizeSlug = (value = '') =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+const getCategorySlug = (category) => category?.slug || normalizeSlug(category?.name || '');
+
+const getCategoryPath = (category) => `/category/${encodeURIComponent(getCategorySlug(category))}`;
+
+const getSubcategoryPath = (category, subcategoryName) =>
+  `${getCategoryPath(category)}?sub=${encodeURIComponent(normalizeSlug(subcategoryName))}`;
+
+const getCategoryKey = (category) => getCategorySlug(category);
+
 const Navbar = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
+  const [activeCategoryKey, setActiveCategoryKey] = useState(null);
+  const [backendCategories, setBackendCategories] = useState([]);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef(null);
+  const categoryMenuRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
@@ -40,6 +68,44 @@ const Navbar = () => {
     setUserMenuOpen(false);
     navigate('/login');
   };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadCategories = async () => {
+      try {
+        const categories = await getCategories();
+        if (!isMounted) return;
+
+        setBackendCategories(Array.isArray(categories) ? categories : []);
+        setActiveCategoryKey((currentKey) => currentKey ?? getCategoryKey(categories?.[0]));
+      } catch {
+        if (isMounted) {
+          setBackendCategories([]);
+        }
+      }
+    };
+
+    loadCategories();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleDocumentClick = (event) => {
+      if (!categoryMenuRef.current?.contains(event.target)) {
+        setCategoryMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleDocumentClick);
+
+    return () => {
+      document.removeEventListener('mousedown', handleDocumentClick);
+    };
+  }, []);
 
   useEffect(() => {
     const currentQuery = new URLSearchParams(location.search).get('q') || '';
@@ -121,16 +187,12 @@ const Navbar = () => {
     return [];
   })();
 
-  const adminPanelPath =
-  user?.role === 'sales_manager'
-    ? '/admin/sales-manager/revenue'
-    : user?.role === 'product_manager'
-      ? '/admin/product-manager/deliveries'
-      : '/admin';
-
   const navLinks = isManager ? managerNavLinks : [];
 
   const isNavLinkActive = (path) => {
+    if (path === '/') {
+      return location.pathname === '/';
+    }
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
 
@@ -138,11 +200,88 @@ const Navbar = () => {
     <nav className="navbar">
       <div className="navbar__inner container">
         {/* Logo */}
-        <Link to="/" className="navbar__logo">
-          <span className="navbar__logo-icon">L</span>
-          <span className="navbar__logo-text">Lumière</span>
-          <span className="navbar__logo-dot">.</span>
-        </Link>
+        <div className="navbar__logo-wrapper" ref={categoryMenuRef}>
+          {isManager ? (
+            <Link to="/" className="navbar__logo">
+              <span className="navbar__logo-icon">L</span>
+              <span className="navbar__logo-text">Lumière</span>
+              <span className="navbar__logo-dot">.</span>
+            </Link>
+          ) : (
+            <>
+              <button
+                type="button"
+                className={`navbar__logo navbar__logo--button ${categoryMenuOpen ? 'navbar__logo--open' : ''}`}
+                onClick={() => setCategoryMenuOpen((isOpen) => !isOpen)}
+                aria-haspopup="menu"
+                aria-expanded={categoryMenuOpen}
+              >
+                <span className="navbar__logo-icon">L</span>
+                <span className="navbar__logo-text">Lumière</span>
+                <span className="navbar__logo-dot">.</span>
+                <svg className="navbar__logo-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+
+              {categoryMenuOpen && (
+                <div className="navbar__category-menu" role="menu">
+                  <div className="navbar__category-main">
+                    <Link
+                      to="/products"
+                      className="navbar__category-all"
+                      onClick={() => setCategoryMenuOpen(false)}
+                    >
+                      All Products
+                    </Link>
+                    {backendCategories.map((category) => (
+                      <button
+                        key={getCategoryKey(category)}
+                        type="button"
+                        className={`navbar__category-main-btn ${activeCategoryKey === getCategoryKey(category) ? 'navbar__category-main-btn--active' : ''}`}
+                        onClick={() => setActiveCategoryKey(getCategoryKey(category))}
+                      >
+                        {formatCategoryLabel(category.name)}
+                        <span className="navbar__category-main-arrow">›</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="navbar__subcategory-panel">
+                    {backendCategories
+                      .filter((category) => getCategoryKey(category) === activeCategoryKey)
+                      .map((category) => (
+                        <div key={getCategoryKey(category)}>
+                          <Link
+                            to={getCategoryPath(category)}
+                            className="navbar__subcategory-title"
+                            onClick={() => setCategoryMenuOpen(false)}
+                          >
+                            View all {formatCategoryLabel(category.name)}
+                          </Link>
+                          <div className="navbar__subcategory-list">
+                            {(category.subcategories || []).map((subcategory) => (
+                              <Link
+                                key={subcategory}
+                                to={getSubcategoryPath(category, subcategory)}
+                                className="navbar__subcategory-link"
+                                onClick={() => setCategoryMenuOpen(false)}
+                              >
+                                {formatCategoryLabel(subcategory)}
+                              </Link>
+                            ))}
+                            {!category.subcategories?.length && (
+                              <span className="navbar__subcategory-empty">No subcategories yet</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
 
         {/* Nav Links */}
         <ul className="navbar__links">
@@ -290,73 +429,45 @@ const Navbar = () => {
 
         <hr className="navbar__dropdown-divider" />
 
-        {isManager ? (
-          <>
-            <Link
-              to="/account"
-              className="navbar__dropdown-item"
-              onClick={() => setUserMenuOpen(false)}
-            >
-              My Account
-            </Link>
+        <>
+          <Link
+            to="/account"
+            className="navbar__dropdown-item"
+            onClick={() => setUserMenuOpen(false)}
+          >
+            My Account
+          </Link>
 
-            <Link
-              to="/customer/orders"
-              className="navbar__dropdown-item"
-              onClick={() => setUserMenuOpen(false)}
-            >
-              My Orders
-            </Link>
+          <Link
+            to="/customer/orders"
+            className="navbar__dropdown-item"
+            onClick={() => setUserMenuOpen(false)}
+          >
+            My Orders
+          </Link>
 
-            <Link
-              to={adminPanelPath}
-              className="navbar__dropdown-item"
-              onClick={() => setUserMenuOpen(false)}
-            >
-              Admin Panel
-            </Link>
-          </>
-        ) : (
-          <>
-            <Link
-              to="/account"
-              className="navbar__dropdown-item"
-              onClick={() => setUserMenuOpen(false)}
-            >
-              My Account
-            </Link>
+          <Link
+            to="/customer/notifications"
+            className="navbar__dropdown-item"
+            onClick={() => setUserMenuOpen(false)}
+          >
+            Notifications
+          </Link>
 
-            <Link
-              to="/customer/orders"
-              className="navbar__dropdown-item"
-              onClick={() => setUserMenuOpen(false)}
-            >
-              My Orders
-            </Link>
+          <Link
+            to="/wishlist"
+            className="navbar__dropdown-item"
+            onClick={() => setUserMenuOpen(false)}
+          >
+            Wishlist
 
-            <Link
-              to="/customer/notifications"
-              className="navbar__dropdown-item"
-              onClick={() => setUserMenuOpen(false)}
-            >
-              Notifications
-            </Link>
-
-            <Link
-              to="/wishlist"
-              className="navbar__dropdown-item"
-              onClick={() => setUserMenuOpen(false)}
-            >
-              Wishlist
-
-              {discountNotifications.length > 0 && (
-                <span className="navbar__item-badge">
-                  {discountBadgeCount}
-                </span>
-              )}
-            </Link>
-          </>
-        )}
+            {discountNotifications.length > 0 && (
+              <span className="navbar__item-badge">
+                {discountBadgeCount}
+              </span>
+            )}
+          </Link>
+        </>
 
         <hr className="navbar__dropdown-divider" />
 

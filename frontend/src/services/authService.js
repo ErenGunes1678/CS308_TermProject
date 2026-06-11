@@ -24,6 +24,11 @@ export const registerUser = async ({ name, email, password }) => {
   return data;
 };
 
+export const updateCurrentUser = async (payload) => {
+  const { data } = await api.patch("/auth/me", payload);
+  return data;
+};
+
 export const logoutUser = async () => {
   await api.post("/auth/logout");
 };

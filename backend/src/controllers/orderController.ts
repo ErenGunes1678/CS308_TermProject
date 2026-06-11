@@ -26,13 +26,19 @@ const isWithinReturnWindow = (createdAt: string | Date): boolean => {
 
 const buildAddressLabel = (shippingAddress: any): string =>
     [
-        `${shippingAddress.firstName} ${shippingAddress.lastName}`.trim(),
+        getShippingCustomerName(shippingAddress),
         shippingAddress.street,
         `${shippingAddress.city}, ${shippingAddress.state} ${shippingAddress.zip}`.trim(),
         shippingAddress.country,
     ]
         .filter(Boolean)
         .join(", ");
+
+const getShippingCustomerName = (shippingAddress: any): string =>
+    String(
+        shippingAddress?.name ||
+        `${shippingAddress?.firstName || ""} ${shippingAddress?.lastName || ""}`.trim()
+    ).trim();
 
 const confirmMockBankPayment = (amount: number, paymentMethod: string) => ({
     approved: true,
@@ -51,9 +57,8 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
         const { shippingAddress, payment, discount_code } = req.body ?? {};
 
         const requiredAddressFields = [
-            "firstName",
-            "lastName",
             "email",
+            "taxId",
             "phone",
             "country",
             "street",
@@ -65,6 +70,12 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
         if (!shippingAddress || !payment?.method) {
             await t.rollback();
             res.status(400).json({ message: "Shipping address and payment details are required." });
+            return;
+        }
+
+        if (!getShippingCustomerName(shippingAddress)) {
+            await t.rollback();
+            res.status(400).json({ message: "Missing required field: name" });
             return;
         }
 
@@ -198,11 +209,10 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
             issuedAt: new Date().toISOString(),
             orderId: populatedOrder.id,
             status: populatedOrder.status,
-            customerName: shippingAddress.firstName && shippingAddress.lastName
-                ? `${shippingAddress.firstName} ${shippingAddress.lastName}`
-                : populatedOrder.user?.name || "N/A",
+            customerName: getShippingCustomerName(shippingAddress) || populatedOrder.user?.name || "N/A",
             customerEmail: shippingAddress.email || populatedOrder.user?.email || "N/A",
             customerPhone: shippingAddress.phone || "N/A",
+            customerTaxId: shippingAddress.taxId || "N/A",
             shippingAddress: buildAddressLabel(shippingAddress),
             items: populatedOrder.items.map((item: any) => ({
                 productId: item.product_id,

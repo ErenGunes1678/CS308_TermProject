@@ -4,6 +4,7 @@ import {
   loginUser,
   logoutUser,
   registerUser,
+  updateCurrentUser,
 } from "../services/authService";
 
 export const AuthContext = createContext(null);
@@ -56,6 +57,12 @@ export function AuthProvider({ children }) {
     return data;
   };
 
+  const updateProfile = async (payload) => {
+    const data = await updateCurrentUser(payload);
+    setUser(data.user || null);
+    return data;
+  };
+
   const logout = async () => {
     try {
       await logoutUser();
@@ -73,6 +80,7 @@ export function AuthProvider({ children }) {
       isAuthenticated: Boolean(user),
       login,
       register,
+      updateProfile,
       logout,
     }),
     [user, isLoading]

@@ -10,12 +10,12 @@
 
 .orders-hero {
     position: relative;
-    height: 220px;
+    height: 180px;
     display: flex;
     align-items: flex-end;
     background: var(--gradient-account-hero);
     overflow: hidden;
-    margin-bottom: 2.5rem;
+    margin-bottom: 2rem;
 }
 
 .orders-hero__overlay {
@@ -37,10 +37,10 @@
     background: rgba(255, 255, 255, 0.08);
 }
 
-.orders-hero__bubble--1 { width: 120px; height: 120px; top: -20px; right: 10%; animation: orders-bubble-float 6s ease-in-out infinite; }
-.orders-hero__bubble--2 { width: 80px; height: 80px; top: 40%; right: 5%; animation: orders-bubble-float 8s ease-in-out infinite 1s; }
-.orders-hero__bubble--3 { width: 60px; height: 60px; bottom: -10px; right: 18%; animation: orders-bubble-float 7s ease-in-out infinite 2s; }
-.orders-hero__bubble--4 { width: 40px; height: 40px; top: 10px; right: 25%; animation: orders-bubble-float 5s ease-in-out infinite 0.5s; }
+.orders-hero__bubble--1 { width: 100px; height: 100px; top: -10px; right: 10%; animation: orders-bubble-float 6s ease-in-out infinite; }
+.orders-hero__bubble--2 { width: 70px; height: 70px; top: 40%; right: 5%; animation: orders-bubble-float 8s ease-in-out infinite 1s; }
+.orders-hero__bubble--3 { width: 48px; height: 48px; bottom: -8px; right: 18%; animation: orders-bubble-float 7s ease-in-out infinite 2s; }
+.orders-hero__bubble--4 { width: 34px; height: 34px; top: 10px; right: 25%; animation: orders-bubble-float 5s ease-in-out infinite 0.5s; }
 
 @keyframes orders-bubble-float {
     0%, 100% { transform: translateY(0) scale(1); }
@@ -50,18 +50,18 @@
 .orders-hero__content {
     position: relative;
     z-index: 2;
-    padding-bottom: 2.5rem;
+    padding-bottom: 1.6rem;
 }
 
 .orders-hero .section-label { color: rgba(255, 255, 255, 0.7); }
 
 .orders-hero__title {
     font-family: var(--font-display);
-    font-size: 3rem;
+    font-size: 2.2rem;
     font-weight: 700;
     font-style: italic;
     color: var(--color-white);
-    margin: 0.25rem 0 0.5rem;
+    margin: 0.25rem 0 0.4rem;
     line-height: 1.1;
 }
 

@@ -16,14 +16,14 @@
 
 .products-hero {
     position: relative;
-    height: 180px;
+    height: 150px;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
     background: url('https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9') center/cover no-repeat;
     overflow: hidden;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
 }
 
 .products-hero__overlay {
@@ -42,7 +42,7 @@
 
 .products-hero__title {
     font-family: var(--font-display);
-    font-size: 2.5rem;
+    font-size: 2rem;
     font-weight: 700;
     color: var(--color-white);
     font-style: italic;

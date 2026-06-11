@@ -1,7 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { useWishlist } from "../../hooks/useWishlist";
+import {
+  createAddress,
+  deleteAddress,
+  getAddresses,
+  setDefaultAddress,
+  updateAddress,
+} from "../../services/addressService";
 import "./ProfilePage.css";
 
 /* ── Inline SVG icons ────────────────────────────────────── */
@@ -97,12 +104,21 @@ const icons = {
   ),
 };
 
+const sortAddresses = (addressList = []) =>
+  [...addressList].sort((a, b) => {
+    if (Boolean(a.isDefault) !== Boolean(b.isDefault)) {
+      return a.isDefault ? -1 : 1;
+    }
+
+    return Number(a.id || 0) - Number(b.id || 0);
+  });
+
 /* ── Edit Profile Modal ──────────────────────────────────── */
 const EditProfileModal = ({ user, onClose, onSave }) => {
   const [form, setForm] = useState({
     name: user?.name || "",
-    phone: user?.phone || "",
-    dateOfBirth: user?.dateOfBirth || "",
+    taxId: user?.taxId || "",
+    phone: user?.phone || ""
   });
 
   const handleChange = (e) => {
@@ -132,13 +148,17 @@ const EditProfileModal = ({ user, onClose, onSave }) => {
             Email Address
             <input type="email" value={user?.email || ""} disabled className="profile-modal__disabled" />
           </label>
+          {user?.role === "customer" && (
+            <>
+              <label className="profile-modal__label">
+                Tax ID
+                <input type="text" name="taxId" value={form.taxId} onChange={handleChange} placeholder="Tax identification number" />
+              </label>
+            </>
+          )}
           <label className="profile-modal__label">
             Phone Number
             <input type="tel" name="phone" value={form.phone} onChange={handleChange} placeholder="+1 (555) 123-4567" />
-          </label>
-          <label className="profile-modal__label">
-            Date of Birth
-            <input type="date" name="dateOfBirth" value={form.dateOfBirth} onChange={handleChange} />
           </label>
           <div className="profile-modal__actions">
             <button type="button" className="profile-modal__cancel" onClick={onClose}>Cancel</button>
@@ -221,7 +241,6 @@ const AddressModal = ({ address, onClose, onSave }) => {
     state: address?.state || "",
     zip: address?.zip || "",
     country: address?.country || "",
-    phone: address?.phone || "",
   });
 
   const handleChange = (e) => {
@@ -269,10 +288,6 @@ const AddressModal = ({ address, onClose, onSave }) => {
               <input type="text" name="country" value={form.country} onChange={handleChange} placeholder="United States" required />
             </label>
           </div>
-          <label className="profile-modal__label">
-            Phone Number
-            <input type="tel" name="phone" value={form.phone} onChange={handleChange} placeholder="+1 (555) 123-4567" />
-          </label>
           <div className="profile-modal__actions">
             <button type="button" className="profile-modal__cancel" onClick={onClose}>Cancel</button>
             <button type="submit" className="profile-modal__save">{address ? "Save Changes" : "Add Address"}</button>
@@ -285,7 +300,7 @@ const AddressModal = ({ address, onClose, onSave }) => {
 
 /* ── Main ProfilePage ────────────────────────────────────── */
 function ProfilePage() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, updateProfile } = useAuth();
   const { discountNotifications, clearDiscountNotifications } = useWishlist();
   const navigate = useNavigate();
   const [showEditModal, setShowEditModal] = useState(false);
@@ -295,29 +310,39 @@ function ProfilePage() {
 
   // Local state for profile details (would come from API in production)
   const [profileData, setProfileData] = useState({
-    phone: "",
     dateOfBirth: "",
   });
 
-  // Local state for saved cards
-  const [cards, setCards] = useState([
-    { id: 1, last4: "4242", brand: "visa", holderName: "User", expiry: "12/28", isDefault: true },
-  ]);
+  const [cards, setCards] = useState([]);
+  const [addresses, setAddresses] = useState([]);
 
-  // Local state for saved addresses
-  const [addresses, setAddresses] = useState([
-    {
-      id: 1,
-      label: "Home",
-      street: "123 Beauty Lane, Apt 4B",
-      city: "New York",
-      state: "NY",
-      zip: "10001",
-      country: "United States",
-      phone: "+1 (555) 123-4567",
-      isDefault: true,
-    },
-  ]);
+  useEffect(() => {
+    if (!user || user.role !== "customer") {
+      setAddresses([]);
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadAddresses = async () => {
+      try {
+        const nextAddresses = await getAddresses();
+        if (isMounted) {
+          setAddresses(sortAddresses(Array.isArray(nextAddresses) ? nextAddresses : []));
+        }
+      } catch {
+        if (isMounted) {
+          setAddresses([]);
+        }
+      }
+    };
+
+    loadAddresses();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   if (isLoading) {
     return null;
@@ -332,13 +357,23 @@ function ProfilePage() {
     user.email?.trim().charAt(0).toUpperCase() ||
     "U";
 
-  const handleSaveProfile = (formData) => {
-    setProfileData((prev) => ({
-      ...prev,
-      phone: formData.phone,
-      dateOfBirth: formData.dateOfBirth,
-    }));
-    setShowEditModal(false);
+  const handleSaveProfile = async (formData) => {
+    try {
+      await updateProfile({
+        name: formData.name,
+        phone: formData.phone,
+        ...(user.role === "customer" && {
+          taxId: formData.taxId,
+        }),
+      });
+      setProfileData((prev) => ({
+        ...prev,
+        dateOfBirth: formData.dateOfBirth,
+      }));
+      setShowEditModal(false);
+    } catch {
+      setShowEditModal(false);
+    }
   };
 
   const handleAddCard = (card) => {
@@ -359,29 +394,50 @@ function ProfilePage() {
     );
   };
 
-  const handleAddAddress = (addr) => {
-    if (addr.id) {
-      setAddresses((prev) =>
-        prev.map((a) => (a.id === addr.id ? { ...a, ...addr } : a))
-      );
-    } else {
-      setAddresses((prev) => [
-        ...prev,
-        { ...addr, id: Date.now(), isDefault: prev.length === 0 },
-      ]);
+  const handleAddAddress = async (addr) => {
+    try {
+      const savedAddress = addr.id
+        ? await updateAddress(addr.id, addr)
+        : await createAddress(addr);
+
+      setAddresses((current) => {
+        if (addr.id) {
+          return sortAddresses(current.map((item) => (item.id === savedAddress.id ? savedAddress : item)));
+        }
+
+        if (savedAddress.isDefault) {
+          return sortAddresses([savedAddress, ...current.map((item) => ({ ...item, isDefault: false }))]);
+        }
+
+        return sortAddresses([...current, savedAddress]);
+      });
+      setShowAddressModal(false);
+      setEditingAddress(null);
+    } catch {
+      setShowAddressModal(false);
+      setEditingAddress(null);
     }
-    setShowAddressModal(false);
-    setEditingAddress(null);
   };
 
-  const handleRemoveAddress = (addrId) => {
-    setAddresses((prev) => prev.filter((a) => a.id !== addrId));
+  const handleRemoveAddress = async (addrId) => {
+    try {
+      await deleteAddress(addrId);
+      const nextAddresses = await getAddresses();
+      setAddresses(sortAddresses(Array.isArray(nextAddresses) ? nextAddresses : []));
+    } catch {
+      // Keep the existing list when the backend rejects the delete.
+    }
   };
 
-  const handleSetDefaultAddress = (addrId) => {
-    setAddresses((prev) =>
-      prev.map((a) => ({ ...a, isDefault: a.id === addrId }))
-    );
+  const handleSetDefaultAddress = async (addrId) => {
+    try {
+      await setDefaultAddress(addrId);
+      setAddresses((prev) =>
+        sortAddresses(prev.map((a) => ({ ...a, isDefault: a.id === addrId })))
+      );
+    } catch {
+      // Leave UI unchanged if default update fails.
+    }
   };
 
   const formatDateOfBirth = (dateStr) => {
@@ -527,15 +583,19 @@ function ProfilePage() {
                 <span className="profile-detail__label">Email Address</span>
                 <span className="profile-detail__value">{user.email}</span>
               </div>
+              {user.role === "customer" && (
+                <>
+                  <div className="profile-detail">
+                    <span className="profile-detail__icon">{icons.creditCard}</span>
+                    <span className="profile-detail__label">Tax ID</span>
+                    <span className="profile-detail__value">{user.taxId || "Not set"}</span>
+                  </div>
+                </>
+              )}
               <div className="profile-detail">
                 <span className="profile-detail__icon">{icons.phone}</span>
                 <span className="profile-detail__label">Phone Number</span>
-                <span className="profile-detail__value">{profileData.phone || "Not set"}</span>
-              </div>
-              <div className="profile-detail">
-                <span className="profile-detail__icon">{icons.calendar}</span>
-                <span className="profile-detail__label">Date of Birth</span>
-                <span className="profile-detail__value">{formatDateOfBirth(profileData.dateOfBirth)}</span>
+                <span className="profile-detail__value">{user.phone || "Not set"}</span>
               </div>
             </div>
           </section>
@@ -574,135 +634,147 @@ function ProfilePage() {
           </section>
         </div>
 
-        {/* ── Payment Methods ───────────────────────────── */}
-        <section className="profile-card profile-card--full" id="payment-methods-section">
-          <div className="profile-card__header">
-            <h2 className="profile-card__title">Payment Methods</h2>
-            <button className="profile-card__edit profile-card__edit--add" onClick={() => setShowAddCard(true)}>
-              {icons.plus}
-              <span>Add New Card</span>
-            </button>
-          </div>
-          <div className="profile-card__body">
-            {cards.length === 0 ? (
-              <div className="payment-empty">
-                <span className="payment-empty__icon">{icons.creditCard}</span>
-                <p>No saved payment methods</p>
-                <button className="payment-empty__add" onClick={() => setShowAddCard(true)}>
-                  Add a Card
-                </button>
-              </div>
-            ) : (
-              <div className="payment-list">
-                {cards.map((card) => (
-                  <div key={card.id} className={`payment-card ${card.isDefault ? "payment-card--default" : ""}`}>
-                    <div className="payment-card__brand">
-                      {card.brand === "visa" ? icons.visa : icons.mastercard}
-                    </div>
-                    <div className="payment-card__info">
-                      <span className="payment-card__number">•••• •••• •••• {card.last4}</span>
-                      <span className="payment-card__expiry">Expires {card.expiry}</span>
-                    </div>
-                    {card.isDefault && (
-                      <span className="payment-card__badge">Default</span>
-                    )}
-                    <div className="payment-card__actions">
-                      {!card.isDefault && (
-                        <button
-                          className="payment-card__action payment-card__action--default"
-                          onClick={() => handleSetDefault(card.id)}
-                        >
-                          Set Default
-                        </button>
+        <div className="profile-grid profile-grid--account-management">
+          {/* ── Payment Methods ───────────────────────────── */}
+          <section className="profile-card" id="payment-methods-section">
+            <div className="profile-card__header">
+              <h2 className="profile-card__title">Payment Methods</h2>
+              <button className="profile-card__edit profile-card__edit--add" onClick={() => setShowAddCard(true)}>
+                {icons.plus}
+                <span>Add Card</span>
+              </button>
+            </div>
+            <div className="profile-card__body">
+              {cards.length === 0 ? (
+                <div className="payment-empty">
+                  <span className="payment-empty__icon">{icons.creditCard}</span>
+                  <p>No saved payment methods</p>
+                  <button className="payment-empty__add" onClick={() => setShowAddCard(true)}>
+                    Add a Card
+                  </button>
+                </div>
+              ) : (
+                <div className="payment-list">
+                  {cards.map((card) => (
+                    <div key={card.id} className={`payment-card ${card.isDefault ? "payment-card--default" : ""}`}>
+                      <div className="payment-card__brand">
+                        {card.brand === "visa" ? icons.visa : icons.mastercard}
+                      </div>
+                      <div className="payment-card__info">
+                        <span className="payment-card__number">•••• {card.last4}</span>
+                        <span className="payment-card__expiry">Expires {card.expiry}</span>
+                      </div>
+                      {card.isDefault && (
+                        <span className="payment-card__badge">Default</span>
                       )}
-                      <button
-                        className="payment-card__action payment-card__action--remove"
-                        onClick={() => handleRemoveCard(card.id)}
-                      >
-                        {icons.trash}
-                        <span>Remove</span>
-                      </button>
+                      <div className="payment-card__actions">
+                        {!card.isDefault && (
+                          <button
+                            className="payment-card__action payment-card__action--default"
+                            onClick={() => handleSetDefault(card.id)}
+                          >
+                            Set Default
+                          </button>
+                        )}
+                        <button
+                          className="payment-card__action payment-card__action--remove"
+                          onClick={() => handleRemoveCard(card.id)}
+                        >
+                          {icons.trash}
+                          <span>Remove</span>
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
 
-        {/* ── Delivery Addresses ─────────────────────────── */}
-        <section className="profile-card profile-card--full" id="delivery-addresses-section">
-          <div className="profile-card__header">
-            <h2 className="profile-card__title">Delivery Addresses</h2>
-            <button
-              className="profile-card__edit profile-card__edit--add"
-              onClick={() => { setEditingAddress(null); setShowAddressModal(true); }}
-            >
-              {icons.plus}
-              <span>Add New Address</span>
-            </button>
-          </div>
-          <div className="profile-card__body">
-            {addresses.length === 0 ? (
-              <div className="payment-empty">
-                <span className="payment-empty__icon">{icons.mapPin}</span>
-                <p>No saved addresses</p>
-                <button className="payment-empty__add" onClick={() => { setEditingAddress(null); setShowAddressModal(true); }}>
-                  Add an Address
-                </button>
-              </div>
-            ) : (
-              <div className="address-list">
-                {addresses.map((addr) => (
-                  <div key={addr.id} className={`address-card ${addr.isDefault ? "address-card--default" : ""}`}>
-                    <div className="address-card__icon">
-                      {icons.mapPin}
-                    </div>
-                    <div className="address-card__info">
-                      <div className="address-card__top">
-                        <span className="address-card__label-name">{addr.label}</span>
-                        {addr.isDefault && (
-                          <span className="payment-card__badge">Default</span>
+          {/* ── Delivery Addresses ─────────────────────────── */}
+          <section className="profile-card" id="delivery-addresses-section">
+            <div className="profile-card__header">
+              <h2 className="profile-card__title">Delivery Addresses</h2>
+              <button
+                className="profile-card__edit profile-card__edit--add"
+                onClick={() => { setEditingAddress(null); setShowAddressModal(true); }}
+              >
+                {icons.plus}
+                <span>Add Address</span>
+              </button>
+            </div>
+            <div className="profile-card__body">
+              {addresses.length === 0 ? (
+                <div className="payment-empty">
+                  <span className="payment-empty__icon">{icons.mapPin}</span>
+                  <p>No saved addresses</p>
+                  <button className="payment-empty__add" onClick={() => { setEditingAddress(null); setShowAddressModal(true); }}>
+                    Add an Address
+                  </button>
+                </div>
+              ) : (
+                <div className="address-list">
+                  {addresses.map((addr) => (
+                    <div key={addr.id} className={`address-card ${addr.isDefault ? "address-card--default" : ""}`}>
+                      <div className="address-card__icon">
+                        {icons.mapPin}
+                      </div>
+                      <div className="address-card__info">
+                        <div className="address-card__top">
+                          <span className="address-card__label-name">{addr.label}</span>
+                          {addr.isDefault && (
+                            <span className="payment-card__badge">Default</span>
+                          )}
+                        </div>
+                        <span className="address-card__street">{addr.street}</span>
+                        <span className="address-card__city">
+                          {addr.city}{addr.state ? `, ${addr.state}` : ""} {addr.zip}, {addr.country}
+                        </span>
+                        {addr.phone && (
+                          <span className="address-card__phone">{addr.phone}</span>
                         )}
                       </div>
+<<<<<<< HEAD
                       <span className="address-card__street">{addr.street}</span>
                       <span className="address-card__city">
                         {addr.city}{addr.state ? `, ${addr.state}` : ""} {addr.zip}, {addr.country}
                       </span>
-                      {addr.phone && (
-                        <span className="address-card__phone">{addr.phone}</span>
-                      )}
                     </div>
                     <div className="address-card__actions">
                       {!addr.isDefault && (
+=======
+                      <div className="address-card__actions">
+                        {!addr.isDefault && (
+                          <button
+                            className="payment-card__action payment-card__action--default"
+                            onClick={() => handleSetDefaultAddress(addr.id)}
+                          >
+                            Set Default
+                          </button>
+                        )}
+>>>>>>> be3691029072239559fbce7d0027144f648808d2
                         <button
                           className="payment-card__action payment-card__action--default"
-                          onClick={() => handleSetDefaultAddress(addr.id)}
+                          onClick={() => { setEditingAddress(addr); setShowAddressModal(true); }}
                         >
-                          Set Default
+                          {icons.edit}
+                          <span>Edit</span>
                         </button>
-                      )}
-                      <button
-                        className="payment-card__action payment-card__action--default"
-                        onClick={() => { setEditingAddress(addr); setShowAddressModal(true); }}
-                      >
-                        {icons.edit}
-                        <span>Edit</span>
-                      </button>
-                      <button
-                        className="payment-card__action payment-card__action--remove"
-                        onClick={() => handleRemoveAddress(addr.id)}
-                      >
-                        {icons.trash}
-                        <span>Remove</span>
-                      </button>
+                        <button
+                          className="payment-card__action payment-card__action--remove"
+                          onClick={() => handleRemoveAddress(addr.id)}
+                        >
+                          {icons.trash}
+                          <span>Remove</span>
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
       </div>
 
       {/* ── Modals ──────────────────────────────────────── */}

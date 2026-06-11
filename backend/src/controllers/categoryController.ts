@@ -4,15 +4,83 @@ import db, { sequelize } from "../entities";
 const Category = db["categories"];
 const Product = db["products"];
 
+const normalizeSlug = (value: string): string =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+const formatCategoryName = (value: string): string =>
+  normalizeSlug(value)
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+
 export const getCategories = async (_req: Request, res: Response) => {
   try {
     const categories = await Category.findAll({
       order: [["name", "ASC"]],
     });
+    const products = await Product.findAll({
+      attributes: ["category", "subcategory"],
+    });
+
+    const subcategoriesByCategory = new Map<string, Set<string>>();
+    products.forEach((product: any) => {
+      const category = normalizeSlug(String(product.get("category") || ""));
+      const subcategory = String(product.get("subcategory") || "").trim();
+
+      if (!category || !subcategory) {
+        return;
+      }
+
+      if (!subcategoriesByCategory.has(category)) {
+        subcategoriesByCategory.set(category, new Set());
+      }
+
+      subcategoriesByCategory.get(category)?.add(subcategory);
+    });
+
+    const categoriesBySlug = new Map<string, any>();
+    categories.forEach((category: any) => {
+      const plainCategory = category.get({ plain: true });
+      const slug = normalizeSlug(plainCategory.name);
+
+      if (!slug || categoriesBySlug.has(slug)) {
+        return;
+      }
+
+      categoriesBySlug.set(slug, {
+        ...plainCategory,
+        name: formatCategoryName(plainCategory.name),
+        slug,
+      });
+    });
+
+    subcategoriesByCategory.forEach((_subcategories, slug) => {
+      if (!categoriesBySlug.has(slug)) {
+        categoriesBySlug.set(slug, {
+          id: slug,
+          name: formatCategoryName(slug),
+          slug,
+        });
+      }
+    });
+
+    const categoriesWithSubcategories = Array.from(categoriesBySlug.values())
+      .map((category) => ({
+        ...category,
+        subcategories: Array.from(subcategoriesByCategory.get(category.slug) || []).sort((a, b) =>
+          a.localeCompare(b)
+        ),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
 
     return res.status(200).json({
       message: "Categories fetched successfully",
-      categories,
+      categories: categoriesWithSubcategories,
     });
   } catch (error) {
     console.error("Get categories error:", error);

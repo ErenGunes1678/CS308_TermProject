@@ -13,6 +13,7 @@ type InvoicePayload = {
     customerName: string;
     customerEmail: string;
     customerPhone: string;
+    customerTaxId: string;
     shippingAddress: string;
     items: InvoiceItem[];
     subtotal: number;
@@ -20,7 +21,8 @@ type InvoicePayload = {
     total: number;
 };
 
-// ISO-8859-9 (Turkish) byte positions for characters not in WinAnsiEncoding
+// ISO-8859-9 (Turkish) byte positions for characters not in WinAnsiEncoding.
+// The PDF font below maps these byte slots to Adobe glyph names.
 const TURKISH_CHAR_BYTES: Record<string, number> = {
     "Ğ": 0xD0, // Ğ
     "ğ": 0xF0, // ğ
@@ -56,7 +58,7 @@ const buildPdf = (lines: string[]): Buffer => {
         "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",
         "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj",
         "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj",
-        "4 0 obj << /Type /Font /Subtype /TrueType /BaseFont /Arial /Encoding << /Type /Encoding /BaseEncoding /WinAnsiEncoding /Differences [208 /Gbreve 221 /Idotaccent /Scedilla 240 /gbreve 253 /dotlessi /scedilla] >> >> endobj",
+        "4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding << /Type /Encoding /BaseEncoding /WinAnsiEncoding /Differences [208 /Gbreve 221 /Idotaccent /Scedilla 240 /gbreve 253 /dotlessi /scedilla] >> >> endobj",
         `5 0 obj << /Length ${Buffer.byteLength(content, "latin1")} >> stream\n${content}\nendstream endobj`,
     ];
 
@@ -102,6 +104,8 @@ export const createInvoicePdfBuffer = (invoice: InvoicePayload): Buffer => {
     lines.push(toPdfLine(invoice.customerEmail, 50, y));
     y -= 18;
     lines.push(toPdfLine(invoice.customerPhone, 50, y));
+    y -= 18;
+    lines.push(toPdfLine(`Tax ID: ${invoice.customerTaxId}`, 50, y));
     y -= 18;
     lines.push(toPdfLine(invoice.shippingAddress, 50, y));
     y -= 32;

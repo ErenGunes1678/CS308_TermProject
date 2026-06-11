@@ -457,18 +457,21 @@ const rawUsers = [
     email: "elif.customer@gmail.com",
     password: "123456",
     role: "customer",
+    tax_id: "12345678901",
   },
   {
     name: "Elif Product",
     email: "elif.product@gmail.com",
     password: "123456",
     role: "product_manager",
+    tax_id: null,
   },
   {
     name: "Elif Sales",
     email: "elif.sales@gmail.com",
     password: "123456",
     role: "sales_manager",
+    tax_id: null,
   },
 ];
 
@@ -480,6 +483,7 @@ export async function seedMockUsers() {
     email: user.email,
     password_hash: hashedPassword,
     role: user.role,
+    tax_id: user.role === "customer" ? user.tax_id : null,
   }));
 
   const emails = mockUsers.map((u) => u.email);

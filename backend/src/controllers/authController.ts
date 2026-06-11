@@ -10,12 +10,21 @@ import {
     signAuthToken,
 } from "../utils/auth";
 
-const toSafeUser = (user: any) => ({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-});
+const toSafeUser = (user: any) => {
+    const safeUser: any = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+    };
+
+    if (user.role === "customer") {
+        safeUser.taxId = user.tax_id;
+    }
+
+    return safeUser;
+};
 
 export const register = async (req: Request, res: Response) => {
     try {
@@ -38,7 +47,12 @@ export const register = async (req: Request, res: Response) => {
 
         const password_hash = await bcrypt.hash(password, 10);
 
-        const user = await db.users.create({ name, email, password_hash });
+        const user = await db.users.create({
+            name,
+            email,
+            password_hash,
+            role: "customer",
+        });
 
         // Merge guest cart into user cart on login
         if (sessionId) {
@@ -57,6 +71,46 @@ export const register = async (req: Request, res: Response) => {
     } catch (error) {
         console.error("Register error:", error);
         return res.status(500).json({ message: "Server error during registration" });
+    }
+};
+
+export const updateCurrentUser = async (req: AuthRequest, res: Response) => {
+    try {
+        const user = await db.users.findByPk(req.userId);
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const updates: any = {};
+
+        if (req.body?.name !== undefined) {
+            const name = String(req.body.name).trim();
+            if (!name) {
+                return res.status(400).json({ message: "Name cannot be empty" });
+            }
+            updates.name = name;
+        }
+
+        if (req.body?.phone !== undefined) {
+            updates.phone = String(req.body.phone || "").trim() || null;
+        }
+
+        if (user.role === "customer") {
+            if (req.body?.taxId !== undefined || req.body?.tax_id !== undefined) {
+                updates.tax_id = String(req.body.taxId ?? req.body.tax_id ?? "").trim() || null;
+            }
+        }
+
+        await user.update(updates);
+
+        return res.status(200).json({
+            message: "User updated successfully",
+            user: toSafeUser(user),
+        });
+    } catch (error) {
+        console.error("Update current user error:", error);
+        return res.status(500).json({ message: "Server error while updating user" });
     }
 };
 

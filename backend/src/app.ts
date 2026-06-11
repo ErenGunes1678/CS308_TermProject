@@ -5,6 +5,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import { sequelize } from "./entities";
 import authRoutes from "./routes/authRoutes";
+import addressRoutes from "./routes/addressRoutes";
 import productRoutes from "./routes/productRoutes";
 import cartRoutes from "./routes/cartRoutes";
 import orderRoutes from "./routes/orderRoutes";
@@ -48,6 +49,7 @@ app.use(cors({
 }));
 
 app.use("/auth", authRoutes);
+app.use("/addresses", addressRoutes);
 app.use("/product", productRoutes);
 app.use("/cart", cartRoutes);
 app.use("/order", orderRoutes);
