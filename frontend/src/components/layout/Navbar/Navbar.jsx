@@ -4,6 +4,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { useCart } from '../../../hooks/useCart';
 import { useWishlist } from '../../../hooks/useWishlist';
 import { getCategories } from '../../../services/categoryService';
+import { getProducts } from '../../../services/productService';
 import NotificationBell from './NotificationBell';
 import './Navbar.css';
 
@@ -20,12 +21,66 @@ const formatCategoryLabel = (value = '') =>
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
 
+const normalizeCategoryKey = (value = '') =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+const preferCategoryName = (currentName = '', nextName = '') => {
+  if (!currentName) return nextName;
+  if (!nextName) return currentName;
+
+  const currentLooksSlugged = /[-_]/.test(currentName);
+  const nextLooksSlugged = /[-_]/.test(nextName);
+  if (currentLooksSlugged && !nextLooksSlugged) return nextName;
+
+  return currentName;
+};
+
+const buildCustomerCategories = (categories = [], products = []) => {
+  const grouped = new Map();
+
+  const ensureCategory = (name) => {
+    const key = normalizeCategoryKey(name);
+    if (!key) return null;
+
+    const existing = grouped.get(key);
+    if (existing) {
+      existing.name = preferCategoryName(existing.name, name);
+      return existing;
+    }
+
+    const category = { key, name, subcategories: new Set() };
+    grouped.set(key, category);
+    return category;
+  };
+
+  categories.forEach((category) => ensureCategory(category.name));
+
+  products.forEach((product) => {
+    const category = ensureCategory(product.category);
+    if (category && product.subcategory) {
+      category.subcategories.add(product.subcategory);
+    }
+  });
+
+  return Array.from(grouped.values())
+    .map((category) => ({
+      key: category.key,
+      name: formatCategoryLabel(category.name),
+      subcategories: Array.from(category.subcategories).sort((a, b) => a.localeCompare(b)),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+};
+
 const getCategoryPath = (category) => `/category/${encodeURIComponent(category?.name || '')}`;
 
 const getSubcategoryPath = (category, subcategoryName) =>
   `${getCategoryPath(category)}?sub=${encodeURIComponent(subcategoryName)}`;
 
-const getCategoryKey = (category) => String(category?.id ?? category?.name ?? '');
+const getCategoryKey = (category) => String(category?.key ?? category?.id ?? category?.name ?? '');
 
 const Navbar = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -65,11 +120,19 @@ const Navbar = () => {
 
     const loadCategories = async () => {
       try {
-        const categories = await getCategories();
+        const [categories, products] = await Promise.all([
+          getCategories(),
+          getProducts(),
+        ]);
         if (!isMounted) return;
 
-        setBackendCategories(Array.isArray(categories) ? categories : []);
-        setActiveCategoryKey((currentKey) => currentKey ?? getCategoryKey(categories?.[0]));
+        const customerCategories = buildCustomerCategories(
+          Array.isArray(categories) ? categories : [],
+          Array.isArray(products) ? products : []
+        );
+
+        setBackendCategories(customerCategories);
+        setActiveCategoryKey((currentKey) => currentKey ?? getCategoryKey(customerCategories?.[0]));
       } catch {
         if (isMounted) {
           setBackendCategories([]);
