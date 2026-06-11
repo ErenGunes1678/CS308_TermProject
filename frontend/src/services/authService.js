@@ -37,3 +37,8 @@ export const getCurrentUser = async () => {
   const { data } = await api.get("/auth/me");
   return data;
 };
+
+export const changePassword = async ({ currentPassword, newPassword }) => {
+  const { data } = await api.patch("/auth/change-password", { currentPassword, newPassword });
+  return data;
+};

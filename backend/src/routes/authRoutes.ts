@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { register, login, logout, getCurrentUser, updateCurrentUser } from "../controllers/authController";
+import { register, login, logout, getCurrentUser, updateCurrentUser, changePassword } from "../controllers/authController";
 import { requireAuth } from "../middleware/authMiddleware";
 
 const router = Router();
@@ -9,5 +9,6 @@ router.post("/login", login);
 router.post("/logout", logout);
 router.get("/me", requireAuth, getCurrentUser);
 router.patch("/me", requireAuth, updateCurrentUser);
+router.patch("/change-password", requireAuth, changePassword);
 
 export default router;
