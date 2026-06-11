@@ -14,6 +14,7 @@ export default function DiscountsPage() {
   const [productMessage, setProductMessage] = useState("");
   const [productError, setProductError] = useState("");
   const [isApplyingProductDiscount, setIsApplyingProductDiscount] = useState(false);
+  const [isRemovingProductDiscount, setIsRemovingProductDiscount] = useState(false);
   const [isRefreshingProducts, setIsRefreshingProducts] = useState(false);
 
   const selectedProductIdSet = useMemo(
@@ -49,6 +50,11 @@ export default function DiscountsPage() {
   const selectedProducts = useMemo(
     () => products.filter((product) => selectedProductIdSet.has(product.id)),
     [products, selectedProductIdSet]
+  );
+
+  const selectedDiscountedProducts = useMemo(
+    () => selectedProducts.filter((product) => Number(product.discount) > 0 && Number(product.originalPrice) > 0),
+    [selectedProducts]
   );
 
   useEffect(() => {
@@ -145,6 +151,51 @@ export default function DiscountsPage() {
     }
   };
 
+  const removeProductDiscounts = async (productsToUpdate) => {
+    setProductMessage("");
+    setProductError("");
+
+    const discountedToUpdate = productsToUpdate.filter(
+      (product) => Number(product.discount) > 0 && Number(product.originalPrice) > 0
+    );
+
+    if (!discountedToUpdate.length) {
+      setProductError("Select at least one discounted product.");
+      return;
+    }
+
+    try {
+      setIsRemovingProductDiscount(true);
+      const updatedProducts = await Promise.all(
+        discountedToUpdate.map((product) =>
+          updateProductPrice(product.id, {
+            price: Number(product.originalPrice),
+            original_price: null,
+          })
+        )
+      );
+
+      const updatedById = new Map(updatedProducts.map((product) => [product.id, product]));
+      setProducts((current) => current.map((product) => updatedById.get(product.id) || product));
+      setProductMessage(`Discount removed from ${updatedProducts.length} product${updatedProducts.length === 1 ? "" : "s"}.`);
+      setSelectedProductIds((current) =>
+        current.filter((id) => !updatedById.has(id))
+      );
+    } catch (error) {
+      setProductError(error?.response?.data?.message || "Unable to remove product discount right now.");
+    } finally {
+      setIsRemovingProductDiscount(false);
+    }
+  };
+
+  const handleRemoveSelectedDiscounts = () => {
+    removeProductDiscounts(selectedDiscountedProducts);
+  };
+
+  const handleRemoveAllDiscounts = () => {
+    removeProductDiscounts(discountedProducts);
+  };
+
   /* stat cards */
   return (
     <div className="admin-page disc-page">
@@ -173,6 +224,16 @@ export default function DiscountsPage() {
               >
                 {isRefreshingProducts ? "Refreshing..." : "Refresh products"}
               </button>
+              {discountedProducts.length > 0 && (
+                <button
+                  type="button"
+                  className="disc-meta-danger"
+                  onClick={handleRemoveAllDiscounts}
+                  disabled={isRemovingProductDiscount}
+                >
+                  {isRemovingProductDiscount ? "Removing..." : "Remove all discounts"}
+                </button>
+              )}
             </div>
           </div>
 
@@ -202,7 +263,7 @@ export default function DiscountsPage() {
               type="button"
               className="disc-btn disc-btn--primary"
               onClick={handleApplyProductDiscount}
-              disabled={isApplyingProductDiscount}
+              disabled={isApplyingProductDiscount || isRemovingProductDiscount}
             >
               <Check size={16} />
               {isApplyingProductDiscount ? "Applying..." : "Apply Discount"}
@@ -226,6 +287,16 @@ export default function DiscountsPage() {
               <button type="button" className="disc-clear-products" onClick={clearProductSelection}>
                 Clear
               </button>
+              {selectedDiscountedProducts.length > 0 && (
+                <button
+                  type="button"
+                  className="disc-remove-selected"
+                  onClick={handleRemoveSelectedDiscounts}
+                  disabled={isRemovingProductDiscount}
+                >
+                  {isRemovingProductDiscount ? "Removing..." : "Remove selected discount"}
+                </button>
+              )}
             </div>
           )}
 

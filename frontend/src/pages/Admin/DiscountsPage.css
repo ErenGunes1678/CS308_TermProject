@@ -168,6 +168,17 @@
   color: #e11d48;
 }
 
+.disc-product-card__meta .disc-meta-danger {
+  border-color: #fecdd3;
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.disc-product-card__meta .disc-meta-danger:hover {
+  background: #ffe4e6;
+  color: #9f1239;
+}
+
 .disc-product-card__meta button:disabled {
   cursor: not-allowed;
   opacity: 0.65;
@@ -288,6 +299,21 @@
   border-color: #e5e7eb;
   background: #fff;
   color: #64748b;
+}
+
+.disc-selected-products .disc-remove-selected {
+  border-color: #fecdd3;
+  background: #fff;
+  color: #be123c;
+}
+
+.disc-selected-products .disc-remove-selected:hover {
+  background: #fff1f2;
+}
+
+.disc-selected-products button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .disc-product-success {
