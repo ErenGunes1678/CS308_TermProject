@@ -348,12 +348,14 @@ const ProductsPage = () => {
 
         // Filter by category
         if (category) {
-            visibleProducts = visibleProducts.filter((p) => p.category === category);
+            visibleProducts = visibleProducts.filter((p) => normalizeSlug(p.category) === normalizeSlug(category));
         }
 
         // Filter by navbar subcategory query, e.g. ?sub=lipstick
         if (selectedSubcategory) {
-            visibleProducts = visibleProducts.filter((p) => p.subcategory === selectedSubcategory);
+            visibleProducts = visibleProducts.filter(
+                (p) => normalizeSlug(p.subcategory) === normalizeSlug(selectedSubcategory)
+            );
         }
 
         // Filter by price range
