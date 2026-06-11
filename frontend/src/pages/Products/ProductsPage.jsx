@@ -226,7 +226,7 @@ function ProductsEmptyState() {
 }
 
 const ProductsPage = () => {
-    const { slug } = useParams(); // e.g. "makeup", "skincare", etc.
+    const { category } = useParams(); // e.g. "makeup", "skincare", etc.
     const [searchParams] = useSearchParams();
     const selectedSubcategory = searchParams.get('sub');
     const [products, setProducts] = useState([]);
@@ -245,10 +245,10 @@ const ProductsPage = () => {
     const [priceOpen, setPriceOpen] = useState(true);
     const [brandOpen, setBrandOpen] = useState(true);
 
-    const categoryInfo = slug ? CATEGORY_INFO[slug] : null;
+    const categoryInfo = category ? CATEGORY_INFO[category] : null;
     const subcategoryInfo =
-        slug && selectedSubcategory
-            ? SUBCATEGORY_INFO[slug]?.[selectedSubcategory]
+        category && selectedSubcategory
+            ? SUBCATEGORY_INFO[category]?.[selectedSubcategory]
             : null;
     const heroInfo = subcategoryInfo || categoryInfo;
     const brands = useMemo(
@@ -347,8 +347,8 @@ const ProductsPage = () => {
         let visibleProducts = [...products];
 
         // Filter by category
-        if (slug) {
-            visibleProducts = visibleProducts.filter((p) => p.category === slug);
+        if (category) {
+            visibleProducts = visibleProducts.filter((p) => p.category === category);
         }
 
         // Filter by navbar subcategory query, e.g. ?sub=lipstick
@@ -388,7 +388,7 @@ const ProductsPage = () => {
         }
 
         return visibleProducts;
-    }, [products, slug, selectedSubcategory, appliedPriceRange, appliedBrands, sortBy]);
+    }, [products, category, selectedSubcategory, appliedPriceRange, appliedBrands, sortBy]);
 
     const handleBrandToggle = (brand) => {
         setSelectedBrands((prev) =>

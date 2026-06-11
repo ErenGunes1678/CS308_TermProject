@@ -24,7 +24,6 @@ const mapApiProductToDetails = (apiProduct) => {
     return {
         ...apiProduct,
         category: CATEGORY_LABELS[apiProduct.category] || apiProduct.category || 'Products',
-        categorySlug: apiProduct.category || 'products',
         price: Number(apiProduct.price ?? 0),
         originalPrice:
             apiProduct.originalPrice === null || apiProduct.originalPrice === undefined
@@ -90,7 +89,7 @@ function ProductBreadcrumb({ product }) {
             <div className="container pdp-breadcrumb__inner">
                 <Link to="/">Home</Link>
                 <span className="pdp-breadcrumb__sep">&rsaquo;</span>
-                <Link to={`/category/${product.categorySlug}`}>{product.category}</Link>
+                <Link to={`/category/${encodeURIComponent(product.category)}`}>{product.category}</Link>
                 <span className="pdp-breadcrumb__sep">&rsaquo;</span>
                 <span className="pdp-breadcrumb__current">{product.name}</span>
             </div>
@@ -124,7 +123,7 @@ function ProductInfo({ product, writtenReviewCount, quantity, isOutOfStock, isLo
 
     return (
         <div className="pdp-info">
-            <Link to={`/category/${product.categorySlug}`} className="pdp-info__brand">{product.brand}</Link>
+            <Link to={`/category/${encodeURIComponent(product.category)}`} className="pdp-info__brand">{product.brand}</Link>
             <h1 className="pdp-info__name">{product.name}</h1>
             <div className="pdp-info__rating">
                 <div className="pdp-info__stars"><StarRating rating={product.rating} /></div>

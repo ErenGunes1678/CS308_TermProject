@@ -81,7 +81,7 @@ const ProductInventoryPage = () => {
           setCategories(Array.isArray(nextCategories) ? nextCategories : []);
           setForm((current) => ({
             ...current,
-            category: current.category || nextCategories[0]?.slug || '',
+            category: current.category || nextCategories[0]?.name || '',
           }));
         }
       } catch (error) {
@@ -160,7 +160,7 @@ const ProductInventoryPage = () => {
     setEditingProduct(null);
     setForm({
       ...emptyForm,
-      category: categories[0]?.slug || '',
+      category: categories[0]?.name || '',
     });
   };
 
@@ -194,7 +194,12 @@ const ProductInventoryPage = () => {
         return [savedProduct, ...current];
       });
       setMessage(editingProduct ? 'Product updated.' : 'Product added.');
-      resetForm();
+      if (editingProduct) {
+        setEditingProduct(savedProduct);
+        setForm(toForm(savedProduct));
+      } else {
+        resetForm();
+      }
     } catch (error) {
       setErrorMessage(error?.response?.data?.message || 'Unable to save product.');
     } finally {
@@ -239,21 +244,36 @@ const ProductInventoryPage = () => {
       const category = await createCategory({ name: categoryName });
       setCategories((current) => [...current, category].sort((a, b) => a.name.localeCompare(b.name)));
       setCategoryName('');
-      setForm((current) => ({ ...current, category: current.category || category.slug }));
+      setForm((current) => ({ ...current, category: current.category || category.name }));
       setMessage('Category added.');
     } catch (error) {
       setErrorMessage(error?.response?.data?.message || 'Unable to add category.');
     }
   };
 
-  const handleDeleteCategory = async (slug) => {
+  const handleDeleteCategory = async (id) => {
+    const categoryToDelete = categories.find((category) => category.id === id);
+    if (!categoryToDelete) {
+      return;
+    }
+
+    const productCount = categoryUsage[categoryToDelete.name] || 0;
+    const confirmMessage = productCount > 0
+      ? `Deleting category "${categoryToDelete.name}" will also delete ${productCount} product${productCount === 1 ? '' : 's'} in this category. Are you sure?`
+      : `Delete category "${categoryToDelete.name}"?`;
+
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
     try {
       setErrorMessage('');
-      await deleteCategory(slug);
-      setCategories((current) => current.filter((category) => category.slug !== slug));
-      if (selectedCategory === slug) setSelectedCategory('all');
-      if (form.category === slug) {
-        setForm((current) => ({ ...current, category: categories.find((category) => category.slug !== slug)?.slug || '' }));
+      await deleteCategory(id);
+      setCategories((current) => current.filter((category) => category.id !== id));
+      setProducts((current) => current.filter((product) => product.category !== categoryToDelete.name));
+      if (categoryToDelete.name && selectedCategory === categoryToDelete.name) setSelectedCategory('all');
+      if (form.category === categoryToDelete.name) {
+        setForm((current) => ({ ...current, category: categories.find((category) => category.id !== id)?.name || '' }));
       }
       setMessage('Category removed.');
     } catch (error) {
@@ -325,20 +345,19 @@ const ProductInventoryPage = () => {
                   </form>
                   <div className="product-inventory-categories">
                     {categories.map((category) => (
-                      <div key={category.slug} className="product-inventory-category-row">
+                      <div key={category.id} className="product-inventory-category-row">
                         <button
                           type="button"
-                          className={selectedCategory === category.slug ? 'is-active' : ''}
-                          onClick={() => setSelectedCategory(category.slug)}
+                          className={selectedCategory === category.name ? 'is-active' : ''}
+                          onClick={() => setSelectedCategory(category.name)}
                         >
-                          {category.name} <span>{categoryUsage[category.slug] || 0}</span>
+                          {category.name} <span>{categoryUsage[category.name] || 0}</span>
                         </button>
                         <button
                           type="button"
                           className="product-inventory-category-row__delete"
-                          onClick={() => handleDeleteCategory(category.slug)}
-                          disabled={(categoryUsage[category.slug] || 0) > 0}
-                          title={(categoryUsage[category.slug] || 0) > 0 ? 'Remove products first' : 'Delete category'}
+                          onClick={() => handleDeleteCategory(category.id)}
+                          title="Delete category"
                         >
                           Delete
                         </button>
@@ -356,7 +375,7 @@ const ProductInventoryPage = () => {
                     </div>
                     <div className="inv-form__header-actions">
                       {editingProduct ? <button type="button" className="inv-form__cancel" onClick={resetForm}>Cancel</button> : null}
-                      <button className="inv-form__submit" type="submit" disabled={isSaving || categories.length === 0}>
+                      <button className="inv-form__submit" type="submit" disabled={isSaving || (!editingProduct && categories.length === 0)}>
                         {isSaving ? 'Saving…' : editingProduct ? 'Save changes' : 'Add product'}
                       </button>
                     </div>
@@ -364,13 +383,8 @@ const ProductInventoryPage = () => {
                   <div className="inv-form__grid">
                     <label className="inv-form__field inv-form__field--2">Name<input name="name" value={form.name} onChange={handleFormChange} required /></label>
                     <label className="inv-form__field">Brand<input name="brand" value={form.brand} onChange={handleFormChange} required /></label>
-                    <label className="inv-form__field">Category
-                      <select name="category" value={form.category} onChange={handleFormChange} required>
-                        <option value="">Select</option>
-                        {categories.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
-                      </select>
-                    </label>
-                    <label className="inv-form__field">Subcategory<input name="subcategory" value={form.subcategory} onChange={handleFormChange} required /></label>
+                    <label className="inv-form__field">Category<input name="category" value={form.category} onChange={handleFormChange} required disabled={Boolean(editingProduct)} /></label>
+                    <label className="inv-form__field">Subcategory<input name="subcategory" value={form.subcategory} onChange={handleFormChange} required disabled={Boolean(editingProduct)} /></label>
                     <label className="inv-form__field">Model<input name="model" value={form.model} onChange={handleFormChange} required /></label>
                     <label className="inv-form__field">Serial #<input name="serial_number" value={form.serial_number} onChange={handleFormChange} required /></label>
                     <label className="inv-form__field">Stock<input name="quantity_in_stock" type="number" min="0" value={form.quantity_in_stock} onChange={handleFormChange} required /></label>
@@ -431,10 +445,10 @@ const ProductInventoryPage = () => {
                   </button>
                   {categories.map((category) => (
                     <button
-                      key={category.slug}
+                      key={category.id}
                       type="button"
-                      className={selectedCategory === category.slug ? 'is-active' : ''}
-                      onClick={() => setSelectedCategory(category.slug)}
+                      className={selectedCategory === category.name ? 'is-active' : ''}
+                      onClick={() => setSelectedCategory(category.name)}
                     >
                       {category.name}
                     </button>

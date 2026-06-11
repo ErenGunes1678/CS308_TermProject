@@ -17,7 +17,7 @@ import revenueRoutes from "./routes/revenueRoutes";
 import wishlistRoutes from "./routes/wishlistRoutes";
 import discountRoutes from "./routes/discountRoutes";
 import invoiceRoutes from "./routes/invoiceRoutes";
-import { seedDefaultCategories, seedMockProducts, seedMockUsers } from "./seeders/mock_db_data"; // Mock data seeding function
+import { seedMockCategories, seedMockProducts, seedMockUsers } from "./seeders/mock_db_data"; // Mock data seeding function
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -73,7 +73,7 @@ if (require.main === module) {
       return sequelize.sync({alter: true});
     })
     .then(() => {
-      seedDefaultCategories();
+      seedMockCategories();
       seedMockProducts();
       seedMockUsers();
       console.log("Database synced successfully");

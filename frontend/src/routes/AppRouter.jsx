@@ -104,7 +104,7 @@ const AppRouter = () => {
           <Route path="/customer/orders" element={<RoleRoute allowedRoles={['customer']}><OrdersPage /></RoleRoute>} />
           <Route path="/customer/notifications" element={<RoleRoute allowedRoles={['customer']}><NotificationsPage /></RoleRoute>} />
           <Route path="/products" element={<ProductsPage />} />
-          <Route path="/category/:slug" element={<ProductsPage />} />
+          <Route path="/category/:category" element={<ProductsPage />} />
           <Route path="/product/:id" element={<ProductDetailsPage />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/profile" element={<AccountRedirect />} />

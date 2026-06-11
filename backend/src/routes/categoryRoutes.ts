@@ -1,5 +1,5 @@
 import { NextFunction, Response, Router } from "express";
-import { addCategory, getCategories, removeCategory } from "../controllers/categoryController";
+import { addCategory, getCategories, removeCategory, updateCategory } from "../controllers/categoryController";
 import db from "../entities";
 import { AuthRequest, requireAuth } from "../middleware/authMiddleware";
 
@@ -18,6 +18,7 @@ const requireProductManager = async (req: AuthRequest, res: Response, next: Next
 
 router.get("/", getCategories);
 router.post("/", requireAuth, requireProductManager, addCategory);
-router.delete("/:slug", requireAuth, requireProductManager, removeCategory);
+router.patch("/:id", requireAuth, requireProductManager, updateCategory);
+router.delete("/:id", requireAuth, requireProductManager, removeCategory);
 
 export default router;

@@ -99,29 +99,6 @@ const Navbar = () => {
     setSearchOpen(true);
   };
 
-  const categoryNavLinks = [
-    {
-      name: 'Makeup',
-      path: '/category/makeup',
-      subcategories: ['Lipstick', 'Foundation', 'Eyeshadow', 'Mascara', 'Blush'],
-    },
-    {
-      name: 'Skincare',
-      path: '/category/skincare',
-      subcategories: ['Moisturizers', 'Serums', 'Cleansers', 'Sunscreen', 'Face Masks'],
-    },
-    {
-      name: 'Haircare',
-      path: '/category/haircare',
-      subcategories: ['Shampoo', 'Conditioner', 'Hair Oil', 'Styling', 'Treatments'],
-    },
-    {
-      name: 'Men Care',
-      path: '/category/men-care',
-      subcategories: ['Beard Care', 'Face Wash', 'Moisturizer', 'Grooming Kits'],
-    },
-  ];
-
   const managerNavLinks = (() => {
     if (user?.role === 'sales_manager') {
       return [
@@ -151,7 +128,7 @@ const Navbar = () => {
       ? '/admin/product-manager/deliveries'
       : '/admin';
 
-  const navLinks = isManager ? managerNavLinks : categoryNavLinks;
+  const navLinks = isManager ? managerNavLinks : [];
 
   const isNavLinkActive = (path) => {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
