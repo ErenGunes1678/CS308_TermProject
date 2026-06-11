@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../context/NotificationContext';
-import { getSeenIds } from '../../services/notificationService';
 import './NotificationsPage.css';
 
 const TYPE_COLOR = {
@@ -25,7 +24,7 @@ const formatAge = (iso) => {
 const NotificationsPage = () => {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
-  const { notifications, markRead, markAllRead } = useNotifications();
+  const { notifications, seenIds, markRead, markAllRead } = useNotifications();
   const [, forceUpdate] = useState(0);
   const [filter, setFilter] = useState('all');
 
@@ -43,10 +42,9 @@ const NotificationsPage = () => {
     forceUpdate((n) => n + 1);
   };
 
-  const currentSeenIds = getSeenIds(user?.id);
-  const unreadCount = notifications.filter((n) => !currentSeenIds.has(n.id)).length;
+  const unreadCount = notifications.filter((n) => !seenIds.has(n.id)).length;
   const visible = filter === 'unread'
-    ? notifications.filter((n) => !currentSeenIds.has(n.id))
+    ? notifications.filter((n) => !seenIds.has(n.id))
     : notifications;
 
   return (
@@ -95,7 +93,7 @@ const NotificationsPage = () => {
         ) : (
           <div className="notif-page__list">
             {visible.map((notif) => {
-              const unread = !currentSeenIds.has(notif.id);
+              const unread = !seenIds.has(notif.id);
               const colors = TYPE_COLOR[notif.type] || TYPE_COLOR.order;
               return (
                 <div

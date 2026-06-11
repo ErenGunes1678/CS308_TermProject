@@ -1,28 +1,16 @@
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Tag, Trash2, Plus, X, Check } from "lucide-react";
+import { getDiscountCodes, createDiscountCode, toggleDiscountCode, deleteDiscountCode } from "../../services/discountService";
 import "./DiscountsPage.css";
 
-/* ─── seed data ─────────────────────────────────────────────────────────── */
+/* ─── discount data ─────────────────────────────────────────────────────── */
 
-const SEED = [
-  { id: 1, code: "BEAUTY15",  type: "percentage",    value: 15,  minOrder: 50,  uses: 234, expires: "2026-06-30", active: true  },
-  { id: 2, code: "SKINCARE20", type: "percentage",   value: 20,  minOrder: 80,  uses: 89,  expires: "2026-07-15", active: true  },
-  { id: 3, code: "FREESHIP",  type: "free_shipping", value: null, minOrder: null, uses: 512, expires: "2026-05-31", active: false },
-  { id: 4, code: "NEWUSER10", type: "fixed",         value: 10,  minOrder: 30,  uses: 156, expires: "2026-12-31", active: true  },
-  { id: 5, code: "SUMMER25",  type: "percentage",    value: 25,  minOrder: 100, uses: 0,   expires: "2026-09-01", active: false },
-];
-
-function loadCodes() {
+async function loadCodes() {
   try {
-    const raw = localStorage.getItem("lumiere_discounts");
-    return raw ? JSON.parse(raw) : SEED;
+    return await getDiscountCodes();
   } catch {
-    return SEED;
+    return [];
   }
-}
-
-function saveCodes(codes) {
-  localStorage.setItem("lumiere_discounts", JSON.stringify(codes));
 }
 
 /* ─── helpers ────────────────────────────────────────────────────────────── */
@@ -68,33 +56,67 @@ const EMPTY_FORM = { code: "", type: "percentage", value: "", minOrder: "", expi
 /* ─── component ──────────────────────────────────────────────────────────── */
 
 export default function DiscountsPage() {
-  const [codes, setCodes]           = useState(loadCodes);
+  const [codes, setCodes]           = useState([]);
   const [showForm, setShowForm]     = useState(false);
   const [form, setForm]             = useState(EMPTY_FORM);
   const [formError, setFormError]   = useState("");
   const [deleteId, setDeleteId]     = useState(null);
+  const [isLoading, setIsLoading]   = useState(true);
 
   const stats = useMemo(() => computeStats(codes), [codes]);
 
-  /* persist on every write */
-  const persist = (next) => { setCodes(next); saveCodes(next); };
+  useEffect(() => {
+    let isMounted = true;
 
-  /* toggle active */
-  const handleToggle = (id) => {
-    persist(codes.map((c) => (c.id === id ? { ...c, active: !c.active } : c)));
+    const fetchCodes = async () => {
+      try {
+        const nextCodes = await loadCodes();
+        if (!isMounted) return;
+        setCodes(nextCodes);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchCodes();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const persist = (next) => setCodes(next);
+
+  const handleToggle = async (id) => {
+    try {
+      const updatedCode = await toggleDiscountCode(id);
+      setCodes((currentCodes) =>
+        currentCodes.map((c) => (c.id === updatedCode.id ? updatedCode : c))
+      );
+    } catch (error) {
+      console.error("Could not toggle discount code", error);
+    }
   };
 
   /* delete */
-  const handleDelete = (id) => {
-    persist(codes.filter((c) => c.id !== id));
-    setDeleteId(null);
+  const handleDelete = async (id) => {
+    try {
+      await deleteDiscountCode(id);
+      setCodes((currentCodes) => currentCodes.filter((c) => c.id !== id));
+    } catch (error) {
+      console.error("Could not delete discount code", error);
+    } finally {
+      setDeleteId(null);
+    }
   };
 
   /* form field change */
   const setField = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
   /* submit */
-  const handleCreate = () => {
+  const handleCreate = async () => {
     setFormError("");
     const codeStr = form.code.trim().toUpperCase();
     if (!codeStr) { setFormError("Code is required."); return; }
@@ -106,22 +128,21 @@ export default function DiscountsPage() {
     }
     if (!form.expires) { setFormError("Expiry date is required."); return; }
 
-    const next = [
-      ...codes,
-      {
-        id:       Date.now(),
-        code:     codeStr,
-        type:     form.type,
-        value:    form.type === "free_shipping" ? null : Number(form.value),
-        minOrder: form.minOrder ? Number(form.minOrder) : null,
-        uses:     0,
-        expires:  form.expires,
-        active:   true,
-      },
-    ];
-    persist(next);
-    setForm(EMPTY_FORM);
-    setShowForm(false);
+    try {
+      const created = await createDiscountCode({
+        code: codeStr,
+        type: form.type,
+        value: form.type === "free_shipping" ? null : Number(form.value),
+        min_order: form.minOrder ? Number(form.minOrder) : null,
+        expiry_date: form.expires,
+      });
+
+      setCodes((currentCodes) => [created, ...currentCodes]);
+      setForm(EMPTY_FORM);
+      setShowForm(false);
+    } catch (error) {
+      setFormError(error?.response?.data?.message || "Unable to create discount code right now.");
+    }
   };
 
   const handleCancel = () => { setForm(EMPTY_FORM); setFormError(""); setShowForm(false); };

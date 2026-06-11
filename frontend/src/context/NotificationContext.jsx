@@ -3,7 +3,6 @@ import { useAuth } from '../hooks/useAuth';
 import {
   countUnseen,
   getNotifications,
-  getSeenIds,
   markAllSeen,
   markSeen,
   NOTIFICATIONS_INVALIDATED_EVENT,
@@ -18,15 +17,13 @@ const NotificationContext = createContext(null);
 export const NotificationProvider = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
   const [notifications, setNotifications] = useState([]);
+  const [seenIds, setSeenIds] = useState(new Set());
   const [unseenCount, setUnseenCount] = useState(0);
   const [toasts, setToasts] = useState([]);
   const isFetchingRef = useRef(false);
-  const userIdRef = useRef(null);
   const knownIdsRef = useRef(null); // null = first load, Set after that
 
   const isCustomer = isAuthenticated && user?.role === 'customer';
-
-  useEffect(() => { userIdRef.current = user?.id ?? null; }, [user?.id]);
 
   const dismissToast = useCallback((toastId) => {
     setToasts((prev) => prev.filter((t) => t.toastId !== toastId));
@@ -44,7 +41,7 @@ export const NotificationProvider = ({ children }) => {
     try {
       const data = await getNotifications();
       const notifs = data.notifications || [];
-      const uid = userIdRef.current;
+      const backendSeenIds = new Set(Array.isArray(data.seenIds) ? data.seenIds : []);
 
       // Detect genuinely new notifications (not on first load)
       if (knownIdsRef.current !== null) {
@@ -63,7 +60,8 @@ export const NotificationProvider = ({ children }) => {
 
       knownIdsRef.current = new Set(notifs.map((n) => n.id));
       setNotifications(notifs);
-      setUnseenCount(uid ? countUnseen(uid, notifs) : 0);
+      setSeenIds(backendSeenIds);
+      setUnseenCount(countUnseen(backendSeenIds, notifs));
     } catch {
       // silent
     } finally {
@@ -104,25 +102,28 @@ export const NotificationProvider = ({ children }) => {
     return () => window.removeEventListener(NOTIFICATIONS_INVALIDATED_EVENT, doFetch);
   }, [doFetch]);
 
-  const markRead = useCallback((id) => {
-    const uid = userIdRef.current;
-    if (!uid) return;
-    markSeen(uid, id);
-    setUnseenCount((c) => Math.max(0, c - 1));
+  const markRead = useCallback(async (id) => {
+    try {
+      const nextSeenIds = await markSeen(id);
+      setSeenIds(nextSeenIds);
+      setUnseenCount((count) => Math.max(0, count - 1));
+    } catch {
+      // ignore failed marking for now
+    }
   }, []);
 
-  const markAllRead = useCallback(() => {
-    const uid = userIdRef.current;
-    if (!uid) return;
-    setNotifications((prev) => {
-      markAllSeen(uid, prev);
-      return prev;
-    });
-    setUnseenCount(0);
-  }, []);
+  const markAllRead = useCallback(async () => {
+    try {
+      const nextSeenIds = await markAllSeen(notifications);
+      setSeenIds(nextSeenIds);
+      setUnseenCount(0);
+    } catch {
+      // ignore failed marking for now
+    }
+  }, [notifications]);
 
   return (
-    <NotificationContext.Provider value={{ notifications, unseenCount, toasts, dismissToast, showToast, refresh: doFetch, markRead, markAllRead }}>
+    <NotificationContext.Provider value={{ notifications, seenIds, unseenCount, toasts, dismissToast, showToast, refresh: doFetch, markRead, markAllRead }}>
       {children}
     </NotificationContext.Provider>
   );

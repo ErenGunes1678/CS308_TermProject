@@ -1,37 +1,12 @@
 import { createContext, useEffect, useMemo, useState } from "react";
+import { useAuth } from "../hooks/useAuth";
+import {
+  getWishlistItems,
+  addProductToWishlist,
+  removeProductFromWishlist,
+} from "../services/wishlistService";
 
 export const WishlistContext = createContext(null);
-
-const WISHLIST_STORAGE_KEY = "wishlistItems";
-const DISCOUNT_NOTIFICATION_KEY = "wishlistDiscountNotifications";
-
-const readStoredWishlist = () => {
-  try {
-    const storedWishlist = localStorage.getItem(WISHLIST_STORAGE_KEY);
-    const parsedWishlist = storedWishlist ? JSON.parse(storedWishlist) : [];
-    return Array.isArray(parsedWishlist) ? parsedWishlist : [];
-  } catch {
-    return [];
-  }
-};
-
-const saveStoredWishlist = (wishlistItems) => {
-  localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(wishlistItems));
-};
-
-const readStoredDiscountNotifications = () => {
-  try {
-    const storedNotifications = localStorage.getItem(DISCOUNT_NOTIFICATION_KEY);
-    const parsedNotifications = storedNotifications ? JSON.parse(storedNotifications) : [];
-    return Array.isArray(parsedNotifications) ? parsedNotifications : [];
-  } catch {
-    return [];
-  }
-};
-
-const saveStoredDiscountNotifications = (notifications) => {
-  localStorage.setItem(DISCOUNT_NOTIFICATION_KEY, JSON.stringify(notifications));
-};
 
 const getProductImage = (product) =>
   product.image || product.images?.[0] || "";
@@ -45,30 +20,60 @@ const toWishlistItem = (product) => ({
 });
 
 export function WishlistProvider({ children }) {
-  const [wishlistItems, setWishlistItems] = useState(readStoredWishlist);
-  const [discountNotifications, setDiscountNotifications] = useState(readStoredDiscountNotifications);
+  const { isAuthenticated } = useAuth();
+  const [wishlistItems, setWishlistItems] = useState([]);
+  const [discountNotifications, setDiscountNotifications] = useState([]);
 
   useEffect(() => {
-    saveStoredWishlist(wishlistItems);
-  }, [wishlistItems]);
+    if (!isAuthenticated) {
+      setWishlistItems([]);
+      return;
+    }
 
-  useEffect(() => {
-    saveStoredDiscountNotifications(discountNotifications);
-  }, [discountNotifications]);
+    let isMounted = true;
+
+    const loadWishlist = async () => {
+      try {
+        const items = await getWishlistItems();
+        if (!isMounted) return;
+        setWishlistItems(items.map(toWishlistItem));
+      } catch {
+        if (isMounted) {
+          setWishlistItems([]);
+        }
+      }
+    };
+
+    loadWishlist();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated]);
 
   const isInWishlist = (productId) =>
     wishlistItems.some((item) => item.id === productId);
 
-  const toggleWishlist = (product) => {
-    setWishlistItems((currentItems) => {
-      const exists = currentItems.some((item) => item.id === product.id);
+  const toggleWishlist = async (product) => {
+    const exists = wishlistItems.some((item) => item.id === product.id);
 
+    try {
       if (exists) {
-        return currentItems.filter((item) => item.id !== product.id);
+        await removeProductFromWishlist(product.id);
+        setWishlistItems((currentItems) =>
+          currentItems.filter((item) => item.id !== product.id)
+        );
+        return;
       }
 
-      return [...currentItems, toWishlistItem(product)];
-    });
+      await addProductToWishlist(product.id);
+      setWishlistItems((currentItems) => [
+        ...currentItems,
+        toWishlistItem(product),
+      ]);
+    } catch (error) {
+      console.error("Wishlist update failed", error);
+    }
   };
 
   const addDiscountNotification = (notification) => {

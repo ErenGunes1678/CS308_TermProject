@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useNotifications } from '../../../context/NotificationContext';
-import { getSeenIds } from '../../../services/notificationService';
 import './NotificationBell.css';
 
 const TYPE_COLOR = {
@@ -21,7 +20,7 @@ const formatAge = (iso) => {
 };
 
 const NotificationBell = ({ userId }) => {
-  const { notifications, unseenCount, markRead } = useNotifications();
+  const { notifications, unseenCount, seenIds, markRead } = useNotifications();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const navigate = useNavigate();
@@ -32,10 +31,7 @@ const NotificationBell = ({ userId }) => {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const unread = notifications.filter((n) => {
-    const seen = getSeenIds(userId);
-    return !seen.has(n.id);
-  });
+  const unread = notifications.filter((n) => !seenIds.has(n.id));
 
   const handleClick = (notif) => {
     markRead(notif.id);

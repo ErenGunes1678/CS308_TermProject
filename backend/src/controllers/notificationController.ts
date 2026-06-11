@@ -169,12 +169,45 @@ export const getNotifications = async (req: AuthRequest, res: Response): Promise
             });
         }
 
+        // Load user seen notification IDs from backend state
+        const seenRecords = await db.notification_seen.findAll({
+            where: { user_id: userId },
+            attributes: ["notification_id"],
+        });
+
+        const seenIds = seenRecords.map((record: any) => record.notification_id);
+
         // Sort newest first
         notifications.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-        res.json({ notifications });
+        res.json({ notifications, seenIds });
     } catch (error) {
         console.error("Get notifications error:", error);
         res.status(500).json({ message: "Failed to fetch notifications." });
+    }
+};
+
+export const markNotificationsSeen = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const userId = req.userId!;
+        const notificationIds = Array.isArray(req.body.notificationIds)
+            ? req.body.notificationIds.filter(Boolean)
+            : [];
+
+        if (!notificationIds.length) {
+            res.status(400).json({ message: "notificationIds are required." });
+            return;
+        }
+
+        await Promise.all(notificationIds.map((notificationId) =>
+            db.notification_seen.findOrCreate({
+                where: { user_id: userId, notification_id: notificationId },
+            })
+        ));
+
+        res.json({ message: "Notifications marked as seen.", seenIds: notificationIds });
+    } catch (error) {
+        console.error("Mark notifications seen error:", error);
+        res.status(500).json({ message: "Failed to mark notifications as seen." });
     }
 };

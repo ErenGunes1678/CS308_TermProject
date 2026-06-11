@@ -4,31 +4,11 @@ import { useAuth } from "../../hooks/useAuth";
 import { createComment } from "../../services/commentService";
 import { getOrders } from "../../services/orderService";
 import { emitProductReviewUpdated } from "../../utils/reviewUpdates";
+import {
+  getHiddenReviewProductIds,
+  hideReviewProductId,
+} from "../../services/userPreferenceService";
 import "./DeliveredReviewPrompt.css";
-
-const buildStorageKey = (userId) => `review-prompt-hidden:${userId}`;
-
-const readHiddenProductIds = (userId) => {
-  if (!userId || typeof window === "undefined") {
-    return [];
-  }
-
-  try {
-    const raw = window.localStorage.getItem(buildStorageKey(userId));
-    const parsed = JSON.parse(raw || "[]");
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-};
-
-const writeHiddenProductIds = (userId, productIds) => {
-  if (!userId || typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem(buildStorageKey(userId), JSON.stringify(productIds));
-};
 
 const getDeliveredReviewCandidates = (orders) => {
   if (!Array.isArray(orders)) {
@@ -111,15 +91,18 @@ const DeliveredReviewPrompt = () => {
 
     const loadDeliveredOrders = async () => {
       try {
-        const data = await getOrders();
+        const [data, hiddenProductIds] = await Promise.all([
+          getOrders(),
+          getHiddenReviewProductIds(),
+        ]);
 
         if (!isMounted) {
           return;
         }
 
-        const hiddenProductIds = new Set(readHiddenProductIds(user.id).map(Number));
+        const hiddenIds = new Set(hiddenProductIds.map(Number));
         const deliveredProducts = getDeliveredReviewCandidates(data?.orders).filter(
-          (candidate) => !hiddenProductIds.has(candidate.productId)
+          (candidate) => !hiddenIds.has(candidate.productId)
         );
 
         setCandidates(deliveredProducts);
@@ -137,7 +120,7 @@ const DeliveredReviewPrompt = () => {
     return () => {
       isMounted = false;
     };
-  }, [isCustomer, isLoading, user?.id]);
+  }, [isCustomer, isLoading]);
 
   useEffect(() => {
     setActiveIndex((currentIndex) => {
@@ -180,12 +163,12 @@ const DeliveredReviewPrompt = () => {
     [candidates.length]
   );
 
-  const hidePromptForProduct = (productId) => {
-    const hiddenProductIds = Array.from(
-      new Set([...readHiddenProductIds(user?.id), Number(productId)])
-    );
-
-    writeHiddenProductIds(user?.id, hiddenProductIds);
+  const hidePromptForProduct = async (productId) => {
+    try {
+      await hideReviewProductId(productId);
+    } catch (error) {
+      console.error("Failed to save hidden review prompt state", error);
+    }
 
     setCandidates((currentCandidates) => {
       const currentIndex = currentCandidates.findIndex(

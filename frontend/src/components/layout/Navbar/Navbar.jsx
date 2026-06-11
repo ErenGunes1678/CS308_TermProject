@@ -26,9 +26,10 @@ const Navbar = () => {
   const cartBadgeCount = itemCount > 99 ? '99+' : itemCount;
   const discountBadgeCount = discountNotifications.length > 99 ? '99+' : discountNotifications.length;
   const isCustomer = !user || user.role === 'customer';
+  const isHaveAccountCustomer = isCustomer && user;
   const isManager = user?.role === 'product_manager' || user?.role === 'sales_manager';
   const canAccessCart = isCustomer;
-  const canAccessWishlist = isCustomer;
+  const canAccessWishlist = isHaveAccountCustomer;
   const userInitial =
     user?.name?.trim().charAt(0).toUpperCase() ||
     user?.email?.trim().charAt(0).toUpperCase() ||

@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { getProducts } from '../../services/productService';
+import { useWishlist } from '../../hooks/useWishlist';
 import { PRODUCT_REVIEW_UPDATED_EVENT } from '../../utils/reviewUpdates';
 import '../../styles/product-card.css';
 import './ProductsPage.css';
@@ -45,7 +46,7 @@ const SUBCATEGORY_INFO = {
 const normalizeSlug = (value = '') => value.toLowerCase().trim().replace(/\s+/g, '-');
 
 function ProductCard({ product }) {
-    const [isWishlisted, setIsWishlisted] = useState(product.wishlisted || false);
+    const { isInWishlist, toggleWishlist } = useWishlist();
     const { id, name, brand, price, originalPrice, rating, reviewCount, image, badge, discount, outOfStock, lowStock } = product;
     const badgeColors = { BEST: '#10B981', NEW: '#3B82F6', LIMITED: '#8B5CF6', SALE: '#EF4444' };
     const stars = [];
@@ -69,8 +70,8 @@ function ProductCard({ product }) {
                     {discount && <span className="product-card__badge product-card__badge--discount">-{discount}%</span>}
                     {outOfStock && <span className="product-card__badge product-card__badge--oos">OUT OF STOCK</span>}
                 </div>
-                <button className={`product-card__wishlist ${isWishlisted ? 'product-card__wishlist--active' : ''}`} onClick={(event) => { event.preventDefault(); setIsWishlisted(!isWishlisted); }} aria-label="Add to wishlist">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill={isWishlisted ? 'var(--color-primary)' : 'none'} stroke={isWishlisted ? 'var(--color-primary)' : 'currentColor'} strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
+                <button className={`product-card__wishlist ${isInWishlist(id) ? 'product-card__wishlist--active' : ''}`} onClick={(event) => { event.preventDefault(); toggleWishlist(product); }} aria-label="Add to wishlist">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill={isInWishlist(id) ? 'var(--color-primary)' : 'none'} stroke={isInWishlist(id) ? 'var(--color-primary)' : 'currentColor'} strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
                 </button>
                 {outOfStock && <div className="product-card__oos-overlay" />}
             </Link>
