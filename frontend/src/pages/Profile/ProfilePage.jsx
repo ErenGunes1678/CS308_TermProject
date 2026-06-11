@@ -691,90 +691,79 @@ function ProfilePage() {
             </div>
           </section>
 
-          {/* ── Delivery Addresses ─────────────────────────── */}
-          <section className="profile-card" id="delivery-addresses-section">
-            <div className="profile-card__header">
-              <h2 className="profile-card__title">Delivery Addresses</h2>
-              <button
-                className="profile-card__edit profile-card__edit--add"
-                onClick={() => { setEditingAddress(null); setShowAddressModal(true); }}
-              >
-                {icons.plus}
-                <span>Add Address</span>
-              </button>
-            </div>
-            <div className="profile-card__body">
-              {addresses.length === 0 ? (
-                <div className="payment-empty">
-                  <span className="payment-empty__icon">{icons.mapPin}</span>
-                  <p>No saved addresses</p>
-                  <button className="payment-empty__add" onClick={() => { setEditingAddress(null); setShowAddressModal(true); }}>
-                    Add an Address
-                  </button>
-                </div>
-              ) : (
-                <div className="address-list">
-                  {addresses.map((addr) => (
-                    <div key={addr.id} className={`address-card ${addr.isDefault ? "address-card--default" : ""}`}>
-                      <div className="address-card__icon">
-                        {icons.mapPin}
-                      </div>
-                      <div className="address-card__info">
-                        <div className="address-card__top">
-                          <span className="address-card__label-name">{addr.label}</span>
-                          {addr.isDefault && (
-                            <span className="payment-card__badge">Default</span>
-                          )}
-                        </div>
-                        <span className="address-card__street">{addr.street}</span>
-                        <span className="address-card__city">
-                          {addr.city}{addr.state ? `, ${addr.state}` : ""} {addr.zip}, {addr.country}
-                        </span>
-                        {addr.phone && (
-                          <span className="address-card__phone">{addr.phone}</span>
+        {/* ── Delivery Addresses ─────────────────────────── */}
+        <section className="profile-card profile-card--full" id="delivery-addresses-section">
+          <div className="profile-card__header">
+            <h2 className="profile-card__title">Delivery Addresses</h2>
+            <button
+              className="profile-card__edit profile-card__edit--add"
+              onClick={() => { setEditingAddress(null); setShowAddressModal(true); }}
+            >
+              {icons.plus}
+              <span>Add New Address</span>
+            </button>
+          </div>
+          <div className="profile-card__body">
+            {addresses.length === 0 ? (
+              <div className="payment-empty">
+                <span className="payment-empty__icon">{icons.mapPin}</span>
+                <p>No saved addresses</p>
+                <button className="payment-empty__add" onClick={() => { setEditingAddress(null); setShowAddressModal(true); }}>
+                  Add an Address
+                </button>
+              </div>
+            ) : (
+              <div className="address-list">
+                {addresses.map((addr) => (
+                  <div key={addr.id} className={`address-card ${addr.isDefault ? "address-card--default" : ""}`}>
+                    <div className="address-card__icon">
+                      {icons.mapPin}
+                    </div>
+                    <div className="address-card__info">
+                      <div className="address-card__top">
+                        <span className="address-card__label-name">{addr.label}</span>
+                        {addr.isDefault && (
+                          <span className="payment-card__badge">Default</span>
                         )}
                       </div>
-<<<<<<< HEAD
                       <span className="address-card__street">{addr.street}</span>
                       <span className="address-card__city">
                         {addr.city}{addr.state ? `, ${addr.state}` : ""} {addr.zip}, {addr.country}
                       </span>
+                      {addr.phone && (
+                        <span className="address-card__phone">{addr.phone}</span>
+                      )}
                     </div>
                     <div className="address-card__actions">
                       {!addr.isDefault && (
-=======
-                      <div className="address-card__actions">
-                        {!addr.isDefault && (
-                          <button
-                            className="payment-card__action payment-card__action--default"
-                            onClick={() => handleSetDefaultAddress(addr.id)}
-                          >
-                            Set Default
-                          </button>
-                        )}
->>>>>>> be3691029072239559fbce7d0027144f648808d2
                         <button
                           className="payment-card__action payment-card__action--default"
-                          onClick={() => { setEditingAddress(addr); setShowAddressModal(true); }}
+                          onClick={() => handleSetDefaultAddress(addr.id)}
                         >
-                          {icons.edit}
-                          <span>Edit</span>
+                          Set Default
                         </button>
-                        <button
-                          className="payment-card__action payment-card__action--remove"
-                          onClick={() => handleRemoveAddress(addr.id)}
-                        >
-                          {icons.trash}
-                          <span>Remove</span>
-                        </button>
-                      </div>
+                      )}
+                      <button
+                        className="payment-card__action payment-card__action--default"
+                        onClick={() => { setEditingAddress(addr); setShowAddressModal(true); }}
+                      >
+                        {icons.edit}
+                        <span>Edit</span>
+                      </button>
+                      <button
+                        className="payment-card__action payment-card__action--remove"
+                        onClick={() => handleRemoveAddress(addr.id)}
+                      >
+                        {icons.trash}
+                        <span>Remove</span>
+                      </button>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </section>
-        </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
       </div>
 
       {/* ── Modals ──────────────────────────────────────── */}
