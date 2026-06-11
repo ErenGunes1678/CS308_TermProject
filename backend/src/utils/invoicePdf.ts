@@ -18,6 +18,7 @@ type InvoicePayload = {
     items: InvoiceItem[];
     subtotal: number;
     shipping: number;
+    discount?: number;
     total: number;
 };
 
@@ -130,6 +131,11 @@ export const createInvoicePdfBuffer = (invoice: InvoicePayload): Buffer => {
     lines.push(toPdfLine(`Subtotal: $${invoice.subtotal.toFixed(2)}`, 380, y));
     y -= 18;
     lines.push(toPdfLine(`Shipping: $${invoice.shipping.toFixed(2)}`, 380, y));
+    y -= 18;
+    if (invoice.discount && Number(invoice.discount) > 0) {
+        y -= 18;
+        lines.push(toPdfLine(`Discount: -$${Number(invoice.discount).toFixed(2)}`, 380, y));
+    }
     y -= 18;
     lines.push(toPdfLine(`Grand Total: $${invoice.total.toFixed(2)}`, 380, y, 14));
     y -= 36;
