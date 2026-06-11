@@ -20,21 +20,12 @@ const formatCategoryLabel = (value = '') =>
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
 
-const normalizeSlug = (value = '') =>
-  value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-
-const getCategorySlug = (category) => category?.slug || normalizeSlug(category?.name || '');
-
-const getCategoryPath = (category) => `/category/${encodeURIComponent(getCategorySlug(category))}`;
+const getCategoryPath = (category) => `/category/${encodeURIComponent(category?.name || '')}`;
 
 const getSubcategoryPath = (category, subcategoryName) =>
-  `${getCategoryPath(category)}?sub=${encodeURIComponent(normalizeSlug(subcategoryName))}`;
+  `${getCategoryPath(category)}?sub=${encodeURIComponent(subcategoryName)}`;
 
-const getCategoryKey = (category) => getCategorySlug(category);
+const getCategoryKey = (category) => String(category?.id ?? category?.name ?? '');
 
 const Navbar = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -427,47 +418,49 @@ const Navbar = () => {
           </div>
         </div>
 
-        <hr className="navbar__dropdown-divider" />
+        {isCustomer && (
+          <>
+            <hr className="navbar__dropdown-divider" />
 
-        <>
-          <Link
-            to="/account"
-            className="navbar__dropdown-item"
-            onClick={() => setUserMenuOpen(false)}
-          >
-            My Account
-          </Link>
+            <Link
+              to="/account"
+              className="navbar__dropdown-item"
+              onClick={() => setUserMenuOpen(false)}
+            >
+              My Account
+            </Link>
 
-          <Link
-            to="/customer/orders"
-            className="navbar__dropdown-item"
-            onClick={() => setUserMenuOpen(false)}
-          >
-            My Orders
-          </Link>
+            <Link
+              to="/customer/orders"
+              className="navbar__dropdown-item"
+              onClick={() => setUserMenuOpen(false)}
+            >
+              My Orders
+            </Link>
 
-          <Link
-            to="/customer/notifications"
-            className="navbar__dropdown-item"
-            onClick={() => setUserMenuOpen(false)}
-          >
-            Notifications
-          </Link>
+            <Link
+              to="/customer/notifications"
+              className="navbar__dropdown-item"
+              onClick={() => setUserMenuOpen(false)}
+            >
+              Notifications
+            </Link>
 
-          <Link
-            to="/wishlist"
-            className="navbar__dropdown-item"
-            onClick={() => setUserMenuOpen(false)}
-          >
-            Wishlist
+            <Link
+              to="/wishlist"
+              className="navbar__dropdown-item"
+              onClick={() => setUserMenuOpen(false)}
+            >
+              Wishlist
 
-            {discountNotifications.length > 0 && (
-              <span className="navbar__item-badge">
-                {discountBadgeCount}
-              </span>
-            )}
-          </Link>
-        </>
+              {discountNotifications.length > 0 && (
+                <span className="navbar__item-badge">
+                  {discountBadgeCount}
+                </span>
+              )}
+            </Link>
+          </>
+        )}
 
         <hr className="navbar__dropdown-divider" />
 

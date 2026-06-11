@@ -162,7 +162,23 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
 
         // Create order using allowed status values only
         const order = await db.orders.create(
-            { user_id: userId, total_amount: totalAmount, status: bankConfirmation.approved ? "processing" : "cancelled" },
+            {
+                user_id: userId,
+                total_amount: totalAmount,
+                status: bankConfirmation.approved ? "processing" : "cancelled",
+                delivery_address: {
+                    name: getShippingCustomerName(shippingAddress),
+                    email: shippingAddress.email,
+                    phone: shippingAddress.phone,
+                    taxId: shippingAddress.taxId,
+                    street: shippingAddress.street,
+                    city: shippingAddress.city,
+                    state: shippingAddress.state,
+                    zip: shippingAddress.zip,
+                    country: shippingAddress.country,
+                    label: buildAddressLabel(shippingAddress),
+                },
+            },
             { transaction: t }
         );
 
@@ -317,6 +333,11 @@ export const getAllOrders = async (req: AuthRequest, res: Response): Promise<voi
                         { model: db.products, as: "product" },
                         { model: db.refund_requests, as: "refundRequest" },
                     ],
+                },
+                {
+                    model: db.invoices,
+                    as: "invoice",
+                    attributes: ["id", "invoice_number", "file_name", "amount", "createdAt"],
                 },
             ],
             order: [["createdAt", "DESC"]],

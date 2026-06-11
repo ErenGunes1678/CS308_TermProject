@@ -136,8 +136,8 @@
     64px
     92px
     126px
-    minmax(132px, auto);
-  gap: 0.75rem;
+    minmax(300px, 1.2fr);
+  gap: 1rem;
   align-items: center;
 }
 
@@ -227,7 +227,10 @@
 
 .admin-order-row__actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.55rem;
 }
 
 .admin-order-row__action {
@@ -235,8 +238,8 @@
   align-items: center;
   justify-content: center;
   min-height: 34px;
-  min-width: 132px;
-  padding: 0 0.9rem;
+  min-width: 128px;
+  padding: 0 1rem;
   border-radius: 999px;
   background: var(--gradient-primary);
   color: var(--color-white);
@@ -280,7 +283,7 @@
 
 .admin-order-detail {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 70px 84px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 0.75rem;
   align-items: center;
   padding: 0.55rem 0.7rem;
@@ -295,6 +298,14 @@
   overflow: hidden;
   color: var(--color-gray-800);
   font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-order-detail__address {
+  grid-column: 1 / -1;
+  min-width: 0;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -595,7 +606,7 @@
 
 .admin-order-row__action {
   min-height: 34px;
-  padding: 0 0.9rem;
+  padding: 0 1rem;
   font-size: 0.82rem;
   box-shadow: none;
 }

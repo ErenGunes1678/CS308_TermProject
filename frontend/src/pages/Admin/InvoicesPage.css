@@ -285,18 +285,18 @@
 
 /* ── TABLE ───────────────────────────────────────────────────────────────── */
 
-.inv-table {
+.invoice-ledger-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
 }
 
-.inv-table thead tr {
+.invoice-ledger-table thead tr {
   border-bottom: 1px solid #f1f5f9;
   background: #fafbfc;
 }
 
-.inv-table th {
+.invoice-ledger-table th {
   padding: 0.9rem 1.3rem;
   text-align: left;
   font-size: 0.74rem;
@@ -307,7 +307,7 @@
   white-space: nowrap;
 }
 
-.inv-table td {
+.invoice-ledger-table td {
   padding: 0.95rem 1.3rem;
   color: #334155;
   font-weight: 600;
@@ -373,7 +373,9 @@
 .inv-row-actions {
   display: inline-flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.45rem;
+  width: 100%;
 }
 
 .inv-row-btn {
@@ -440,8 +442,8 @@
   .inv-hero-actions { width: 100%; }
   .inv-action-btn { flex: 1; justify-content: center; }
 
-  .inv-table th,
-  .inv-table td { padding: 0.75rem 0.75rem; }
+  .invoice-ledger-table th,
+  .invoice-ledger-table td { padding: 0.75rem 0.75rem; }
 
   .inv-customer-email,
   .inv-cell-date { display: none; }
@@ -537,30 +539,57 @@
   border: 1px solid var(--color-gray-200);
   border-radius: 18px;
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
 }
 
-.inv-table {
+.invoice-ledger-table {
   font-size: 0.86rem;
+  inline-size: 100%;
+  width: 100%;
+  min-width: 100%;
+  table-layout: fixed;
 }
 
-.inv-table th {
-  padding: 0.7rem 1rem;
+.invoice-ledger-table thead,
+.invoice-ledger-table tbody,
+.invoice-ledger-table tfoot {
+  width: 100%;
+}
+
+.inv-col-invoice { width: 14%; }
+.inv-col-customer { width: 24%; }
+.inv-col-date { width: 13%; }
+.inv-col-items { width: 8%; }
+.inv-col-amount { width: 12%; }
+.inv-col-paid { width: 12%; }
+.inv-col-actions-col { width: 17%; }
+
+.invoice-ledger-table th {
+  padding: 0.7rem 0.8rem;
   color: var(--color-gray-500);
   font-size: 0.68rem;
 }
 
-.inv-table td {
-  padding: 0.85rem 1rem;
+.invoice-ledger-table td {
+  padding: 0.85rem 0.8rem;
   color: var(--color-gray-700);
+  min-width: 0;
 }
 
 .inv-number {
   font-size: 0.78rem;
+  display: inline-flex;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .inv-customer {
   color: var(--color-gray-800);
   font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .inv-customer-email,
@@ -568,10 +597,17 @@
   font-size: 0.78rem;
 }
 
+.inv-customer-email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .inv-row-btn {
   height: 32px;
+  padding: 0 0.65rem;
   border-radius: 999px;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
 }
 
 .inv-state {
