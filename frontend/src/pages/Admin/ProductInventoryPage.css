@@ -308,6 +308,26 @@
   min-width: 0;
 }
 
+.product-inventory-list-shell {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.product-inventory-list-shell.has-edit-panel {
+  grid-template-columns: minmax(0, 1fr) 320px;
+  align-items: start;
+}
+
+.product-inventory-edit-panel {
+  position: sticky;
+  top: calc(var(--navbar-height, 72px) + 1rem);
+  align-self: start;
+}
+
+.product-inventory-edit-panel .inv-form {
+  margin: 0;
+}
+
 .product-inventory-form__header {
   display: flex;
   justify-content: space-between;

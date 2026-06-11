@@ -504,7 +504,16 @@ export default function InvoicesPage() {
               )}
             </div>
           ) : (
-            <table className="inv-table">
+            <table className="invoice-ledger-table">
+              <colgroup>
+                <col className="inv-col-invoice" />
+                <col className="inv-col-customer" />
+                <col className="inv-col-date" />
+                <col className="inv-col-items" />
+                <col className="inv-col-amount" />
+                <col className="inv-col-paid" />
+                <col className="inv-col-actions-col" />
+              </colgroup>
               <thead>
                 <tr>
                   <th>Invoice</th>
@@ -568,10 +577,9 @@ export default function InvoicesPage() {
                       {filtered.length} invoice{filtered.length !== 1 ? "s" : ""}
                     </strong>
                   </td>
-                  <td className="inv-col-num inv-amount">
+                  <td colSpan={3} className="inv-col-num inv-amount">
                     <strong>{fmt(totalRevenue)}</strong>
                   </td>
-                  <td colSpan={2} />
                 </tr>
               </tfoot>
             </table>

@@ -245,10 +245,10 @@ const ProductsPage = () => {
     const [priceOpen, setPriceOpen] = useState(true);
     const [brandOpen, setBrandOpen] = useState(true);
 
-    const categoryInfo = category ? CATEGORY_INFO[category] : null;
+    const categoryInfo = category ? CATEGORY_INFO[normalizeSlug(category)] : null;
     const subcategoryInfo =
         category && selectedSubcategory
-            ? SUBCATEGORY_INFO[category]?.[selectedSubcategory]
+            ? SUBCATEGORY_INFO[normalizeSlug(category)]?.[normalizeSlug(selectedSubcategory)]
             : null;
     const heroInfo = subcategoryInfo || categoryInfo;
     const brands = useMemo(
@@ -348,14 +348,12 @@ const ProductsPage = () => {
 
         // Filter by category
         if (category) {
-            visibleProducts = visibleProducts.filter((p) => normalizeSlug(p.category) === normalizeSlug(category));
+            visibleProducts = visibleProducts.filter((p) => p.category === category);
         }
 
         // Filter by navbar subcategory query, e.g. ?sub=lipstick
         if (selectedSubcategory) {
-            visibleProducts = visibleProducts.filter(
-                (p) => normalizeSlug(p.subcategory) === normalizeSlug(selectedSubcategory)
-            );
+            visibleProducts = visibleProducts.filter((p) => p.subcategory === selectedSubcategory);
         }
 
         // Filter by price range

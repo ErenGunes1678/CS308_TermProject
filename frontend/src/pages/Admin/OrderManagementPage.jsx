@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { getAllOrders, updateOrderStatus } from '../../services/orderService';
+import { downloadInvoicePdf } from '../../services/invoiceService';
 import './OrderManagementPage.css';
 
 const STATUS_LABELS = {
@@ -69,7 +70,18 @@ const getQuantitySummary = (items = []) => {
   return `${totalQuantity} ${totalQuantity === 1 ? 'item' : 'items'}`;
 };
 
-const OrderRow = ({ order, onAction, isUpdating }) => {
+const formatDeliveryAddress = (address) => {
+  if (!address) return 'No delivery address saved';
+  if (typeof address === 'string') return address;
+  return address.label || [
+    address.name,
+    address.street,
+    [address.city, address.state, address.zip].filter(Boolean).join(', '),
+    address.country,
+  ].filter(Boolean).join(' • ');
+};
+
+const OrderRow = ({ order, onAction, onDownloadInvoice, isUpdating, isDownloadingInvoice }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const next = nextStatus[order.status];
   const actionLabel = getNextActionLabel(order.status);
@@ -97,13 +109,13 @@ const OrderRow = ({ order, onAction, isUpdating }) => {
         <div className="admin-order-row__cell admin-order-row__products">
           <span className="admin-order-row__label">Products</span>
           <strong>{getProductSummary(order.items)}</strong>
-          {order.items.length > 2 ? (
+          {canToggleDetails ? (
             <button
               type="button"
               className="admin-order-row__details-btn"
               onClick={() => setIsExpanded((current) => !current)}
             >
-              {isExpanded ? 'Hide details' : 'View details'}
+              {isExpanded ? 'Hide details' : 'View delivery details'}
             </button>
           ) : null}
         </div>
@@ -124,6 +136,17 @@ const OrderRow = ({ order, onAction, isUpdating }) => {
         </div>
 
         <div className="admin-order-row__actions">
+          {order.invoice ? (
+            <button
+              type="button"
+              className="admin-order-row__action admin-order-row__action--secondary"
+              onClick={() => onDownloadInvoice(order)}
+              disabled={isDownloadingInvoice}
+            >
+              {isDownloadingInvoice ? 'Downloading...' : 'Invoice PDF'}
+            </button>
+          ) : null}
+
           {actionLabel ? (
             <button
               type="button"
@@ -151,9 +174,14 @@ const OrderRow = ({ order, onAction, isUpdating }) => {
         <div className="admin-order-row__details">
           {order.items.map((item) => (
             <div key={item.id} className="admin-order-detail">
-              <span>{item.product?.name || `Product #${item.product_id}`}</span>
+              <span>Delivery #{order.id}-{item.id}</span>
+              <span>Customer #{order.user?.id || order.user_id}</span>
+              <span>Product #{item.product_id}</span>
               <span>Qty {item.quantity}</span>
-              <span>${Number(item.unit_price || 0).toFixed(2)}</span>
+              <span>${(Number(item.unit_price || 0) * Number(item.quantity || 0)).toFixed(2)}</span>
+              <span>{STATUS_LABELS[order.status]}</span>
+              <span>{order.invoice?.invoice_number || 'No invoice yet'}</span>
+              <span className="admin-order-detail__address">{formatDeliveryAddress(order.delivery_address)}</span>
             </div>
           ))}
         </div>
@@ -169,6 +197,7 @@ const OrderManagementPage = () => {
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
+  const [downloadingInvoiceId, setDownloadingInvoiceId] = useState(null);
   const [activeStatus, setActiveStatus] = useState('all');
 
   const isAdmin = user?.role === 'product_manager';
@@ -230,6 +259,20 @@ const OrderManagementPage = () => {
       setErrorMessage(error?.response?.data?.message || 'Unable to update order status.');
     } finally {
       setUpdatingOrderId(null);
+    }
+  };
+
+  const handleDownloadInvoice = async (order) => {
+    if (!order.invoice) return;
+
+    try {
+      setDownloadingInvoiceId(order.invoice.id);
+      setErrorMessage('');
+      await downloadInvoicePdf(order.invoice.id, order.invoice.file_name);
+    } catch (error) {
+      setErrorMessage(error?.response?.data?.message || 'Unable to download invoice PDF.');
+    } finally {
+      setDownloadingInvoiceId(null);
     }
   };
 
@@ -322,7 +365,9 @@ const OrderManagementPage = () => {
                   key={order.id}
                   order={order}
                   onAction={handleStatusUpdate}
+                  onDownloadInvoice={handleDownloadInvoice}
                   isUpdating={updatingOrderId === order.id}
+                  isDownloadingInvoice={downloadingInvoiceId === order.invoice?.id}
                 />
               ))}
             </div>

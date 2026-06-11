@@ -20,6 +20,10 @@ module.exports = (sequelize: Sequelize) => {
             allowNull: false,
             defaultValue: "processing",
         },
+        delivery_address: {
+            type: DataTypes.JSONB,
+            allowNull: true,
+        },
     }, {
         tableName: "orders",
         timestamps: true,
@@ -28,6 +32,7 @@ module.exports = (sequelize: Sequelize) => {
     (Order as any).associate = (db: any) => {
         Order.belongsTo(db.users, { foreignKey: "user_id", as: "user" });
         Order.hasMany(db.order_items, { foreignKey: "order_id", as: "items" });
+        Order.hasOne(db.invoices, { foreignKey: "order_id", as: "invoice" });
     };
 
     return Order;

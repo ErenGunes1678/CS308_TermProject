@@ -5,18 +5,18 @@ import db from "../entities";
 
 const router = Router();
 
-const requireSalesManager = async (req: AuthRequest, res: Response, next: NextFunction) => {
+const requireInvoiceAccess = async (req: AuthRequest, res: Response, next: NextFunction) => {
     const user = await db.users.findByPk(req.userId);
 
-    if (!user || user.role !== "sales_manager") {
-        res.status(403).json({ message: "Sales manager access required." });
+    if (!user || !["sales_manager", "product_manager"].includes(user.role)) {
+        res.status(403).json({ message: "Invoice access required." });
         return;
     }
 
     next();
 };
 
-router.get("/", requireAuth, requireSalesManager, getAllInvoices);
-router.get("/:id/download", requireAuth, requireSalesManager, downloadInvoicePdf);
+router.get("/", requireAuth, requireInvoiceAccess, getAllInvoices);
+router.get("/:id/download", requireAuth, requireInvoiceAccess, downloadInvoicePdf);
 
 export default router;
