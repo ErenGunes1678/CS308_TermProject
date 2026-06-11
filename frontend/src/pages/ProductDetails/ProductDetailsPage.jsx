@@ -87,7 +87,7 @@ function ProductBreadcrumb({ product }) {
     return (
         <div className="pdp-breadcrumb">
             <div className="container pdp-breadcrumb__inner">
-                <Link to="/">Home</Link>
+                <Link to="/">Products</Link>
                 <span className="pdp-breadcrumb__sep">&rsaquo;</span>
                 <Link to={`/category/${encodeURIComponent(product.category)}`}>{product.category}</Link>
                 <span className="pdp-breadcrumb__sep">&rsaquo;</span>

@@ -116,7 +116,7 @@ function WishlistPage() {
   return (
     <div className="wishlist-container">
       <div className="wishlist-breadcrumb">
-        Home <span>›</span> Wishlist
+        Products <span>›</span> Wishlist
       </div>
 
       <div className="wishlist-heading">

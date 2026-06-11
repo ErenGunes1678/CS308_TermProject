@@ -171,7 +171,7 @@ export default function OrderSuccessPage() {
               Payment approved at {formatInvoiceDate(bankConfirmation.confirmedAt)} by{" "}
               {bankConfirmation.provider}.
             </p>
-            <Link to="/" className="invoice-link">Return to home</Link>
+            <Link to="/" className="invoice-link">Return to products</Link>
           </div>
         </section>
       </div>

@@ -476,7 +476,7 @@ export default function CheckoutPage() {
   return (
     <div className="checkout-page">
       <div className="checkout-breadcrumb">
-        Home <span>›</span> Cart <span>›</span> <strong>Checkout</strong>
+        Products <span>›</span> Cart <span>›</span> <strong>Checkout</strong>
       </div>
 
       <CheckoutSteps step={step} />

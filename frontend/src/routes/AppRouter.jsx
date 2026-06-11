@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from '../components/layout/MainLayout';
 import ScrollToTop from '../components/layout/ScrollToTop';
 import { useAuth } from '../hooks/useAuth';
-import HomePage from '../pages/Home/HomePage';
 import LoginPage from '../pages/Login/LoginPage';
 import ProfilePage from '../pages/Profile/ProfilePage';
 import ProductsPage from '../pages/Products/ProductsPage';
@@ -98,7 +97,7 @@ const AppRouter = () => {
           element={<Navigate to="/login?mode=register" replace />}
         />
         <Route element={<MainLayout />}>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<ProductsPage />} />
           <Route path="/account" element={<AccountRedirect />} />
           <Route path="/customer" element={<RoleRoute allowedRoles={['customer']}><ProfilePage /></RoleRoute>} />
           <Route path="/customer/orders" element={<RoleRoute allowedRoles={['customer']}><OrdersPage /></RoleRoute>} />

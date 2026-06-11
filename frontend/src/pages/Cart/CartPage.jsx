@@ -78,7 +78,7 @@ export default function CartPage() {
   return (
     <div className="cart-container">
       <div className="breadcrumb">
-        Home <span>›</span> Shopping Bag
+        Products <span>›</span> Shopping Bag
       </div>
 
       <h1 className="cart-title">Shopping Bag</h1>

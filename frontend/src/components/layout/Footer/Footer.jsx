@@ -51,10 +51,7 @@ const Footer = () => {
           <div className="footer__col">
             <h4 className="footer__col-title">SHOP</h4>
             <ul className="footer__col-links">
-              <li><Link to="/category/makeup">Makeup</Link></li>
-              <li><Link to="/category/skincare">Skincare</Link></li>
-              <li><Link to="/category/haircare">Haircare</Link></li>
-              <li><Link to="/category/men-care">Men Care</Link></li>
+              <li><Link to="/">All Products</Link></li>
               <li><Link to="/products?sort=best-sellers">Best Sellers</Link></li>
               <li><Link to="/products?sort=new">New Arrivals</Link></li>
             </ul>
