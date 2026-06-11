@@ -201,24 +201,24 @@ const RefundRequestsPage = () => {
         </button>
       </div>
 
-      <main className="container refunds-panel">
-        <div className="refunds-summary">
-          <div className="refunds-summary__tabs" role="tablist" aria-label="Refund request status">
-            {Object.entries(STATUS_LABELS).map(([status, label]) => (
-              <button
-                key={status}
-                type="button"
-                role="tab"
-                aria-selected={activeStatus === status}
-                className={`refunds-summary__tab refunds-summary__tab--${status} ${activeStatus === status ? 'is-active' : ''}`}
-                onClick={() => setActiveStatus(status)}
-              >
-                {label}: {counts[status] || 0}
-              </button>
-            ))}
-          </div>
+      <div className="container refunds-status-bar">
+        <div className="refunds-summary__tabs" role="tablist" aria-label="Refund request status">
+          {Object.entries(STATUS_LABELS).map(([status, label]) => (
+            <button
+              key={status}
+              type="button"
+              role="tab"
+              aria-selected={activeStatus === status}
+              className={`refunds-summary__tab refunds-summary__tab--${status} ${activeStatus === status ? 'is-active' : ''}`}
+              onClick={() => setActiveStatus(status)}
+            >
+              {label}: {counts[status] || 0}
+            </button>
+          ))}
         </div>
+      </div>
 
+      <main className="container refunds-panel">
         {errorMessage ? <div className="refunds-alert">{errorMessage}</div> : null}
 
         {isPageLoading ? (

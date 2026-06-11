@@ -80,15 +80,26 @@ function ProductCard({ product }) {
 
 export default function HomePage() {
   const [categories, setCategories] = useState([]);
-  const [newArrivals, setNewArrivals] = useState([]);
+  const [onSale, setOnSale] = useState([]);
+  const [topRated, setTopRated] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([getCategories(), getProducts()])
       .then(([cats, products]) => {
         setCategories(cats);
-        const sorted = [...products].sort((a, b) => b.id - a.id);
-        setNewArrivals(sorted.slice(0, 8));
+
+        const saleProducts = products
+          .filter((product) => Number(product.discount) > 0)
+          .sort((a, b) => Number(b.discount) - Number(a.discount))
+          .slice(0, 8);
+
+        const ratedProducts = [...products]
+          .sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0))
+          .slice(0, 8);
+
+        setOnSale(saleProducts);
+        setTopRated(ratedProducts);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -166,10 +177,10 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* New Arrivals */}
+      {/* On Sale */}
       <section className="home__section home__section--muted">
         <div className="home__section-header">
-          <h2>New Arrivals</h2>
+          <h2>On Sale</h2>
           <Link to="/products" className="home__see-all">See all →</Link>
         </div>
         {loading ? (
@@ -178,7 +189,26 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="home__products-scroll">
-            {newArrivals.map((product) => (
+            {onSale.length > 0 ? onSale.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            )) : <p>No sale products available right now.</p>}
+          </div>
+        )}
+      </section>
+
+      {/* Top Rated */}
+      <section className="home__section">
+        <div className="home__section-header">
+          <h2>Top Rated</h2>
+          <Link to="/products" className="home__see-all">See all →</Link>
+        </div>
+        {loading ? (
+          <div className="home__products-scroll">
+            {[...Array(4)].map((_, i) => <div key={i} className="home__product-skeleton" />)}
+          </div>
+        ) : (
+          <div className="home__products-scroll">
+            {topRated.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>

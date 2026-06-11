@@ -51,6 +51,8 @@
   --section-spacing: 3.25rem;
   --page-headboard-height: 150px;
   --page-headboard-height-mobile: 124px;
+  --admin-task-headboard-height: 112px;
+  --admin-task-headboard-height-mobile: 96px;
 
   /* Borders */
   --radius-sm: 6px;
@@ -331,6 +333,83 @@ input {
   font-size: 0.98rem !important;
   font-weight: 500 !important;
   line-height: 1.5 !important;
+}
+
+/* Sales manager task headers */
+.pricing-page .admin-page-header,
+.refunds-page .admin-page-header,
+.disc-hero,
+.invoices-hero,
+.revenue-hero {
+  min-height: var(--admin-task-headboard-height) !important;
+  margin-top: 0 !important;
+  margin-bottom: 1rem !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  align-items: center !important;
+}
+
+.pricing-page .admin-page-header__title,
+.refunds-page .admin-page-header__title,
+.disc-hero h1,
+.invoices-hero h1,
+.revenue-hero h1 {
+  margin: 0.18rem 0 0 !important;
+  color: var(--color-gray-800) !important;
+  font-family: var(--font-body) !important;
+  font-size: 1.55rem !important;
+  font-style: normal !important;
+  font-weight: 850 !important;
+  letter-spacing: 0 !important;
+  line-height: 1.15 !important;
+}
+
+.pricing-page .admin-page-header__eyebrow,
+.refunds-page .admin-page-header__eyebrow,
+.disc-hero .admin-label,
+.invoices-hero .admin-label,
+.revenue-hero .admin-label {
+  margin: 0 0 0.25rem !important;
+  color: var(--color-primary) !important;
+  font-size: 0.68rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.14em !important;
+  line-height: 1.2 !important;
+  text-transform: uppercase !important;
+}
+
+.disc-new-btn,
+.inv-action-btn,
+.pricing-page .admin-page-header__back-btn,
+.refunds-page .admin-page-header__back-btn {
+  min-height: 38px !important;
+  height: 38px !important;
+  padding: 0 1rem !important;
+  border-radius: 999px !important;
+  font-size: 0.82rem !important;
+}
+
+.period-control {
+  min-height: 38px !important;
+}
+
+.revenue-container,
+.invoices-container,
+.disc-container {
+  width: min(var(--site-max-width, 1360px), calc(100% - 2rem)) !important;
+  margin: 1rem auto 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+@media (max-width: 640px) {
+  .pricing-page .admin-page-header,
+  .refunds-page .admin-page-header,
+  .disc-hero,
+  .invoices-hero,
+  .revenue-hero {
+    min-height: var(--admin-task-headboard-height-mobile) !important;
+  }
 }
 
 @media (max-width: 640px) {
