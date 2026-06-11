@@ -458,6 +458,7 @@ const rawUsers = [
     password: "123456",
     role: "customer",
     tax_id: "12345678901",
+    phone: "+1234567890",
   },
   {
     name: "Elif Product",
