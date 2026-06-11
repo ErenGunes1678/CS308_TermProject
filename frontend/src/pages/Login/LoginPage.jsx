@@ -75,6 +75,8 @@ function LoginPage() {
 
       if (role === "sales_manager") {
         navigate("/admin/sales-manager/revenue", { replace: true });
+      } else if (role === "product_manager") {
+        navigate("/admin/product-manager/deliveries", { replace: true });
       } else {
         navigate("/account", { replace: true });
       }

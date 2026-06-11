@@ -82,6 +82,10 @@ const AccountRedirect = () => {
     return <Navigate to="/login" replace />;
   }
 
+  if (user.role !== 'customer') {
+    return <Navigate to="/unauthorized" replace />;
+  }
+
   return <ProfilePage />;
 };
 

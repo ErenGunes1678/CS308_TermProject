@@ -49,6 +49,8 @@
   --container-max: 1360px;
   --container-padding: 1.25rem;
   --section-spacing: 3.25rem;
+  --page-headboard-height: 150px;
+  --page-headboard-height-mobile: 124px;
 
   /* Borders */
   --radius-sm: 6px;
@@ -174,8 +176,8 @@ input {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 2rem;
-  padding-bottom: 1.5rem;
+  padding-top: 1.25rem;
+  padding-bottom: 1rem;
   border-bottom: 1px solid var(--color-gray-200);
 }
 
@@ -189,7 +191,7 @@ input {
 }
 
 .admin-page-header__title {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: var(--color-gray-900, #111827);
   margin: 0;
@@ -214,4 +216,137 @@ input {
 .admin-page-header__back-btn:hover {
   border-color: var(--color-gray-400);
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+/* Shared page headboard sizing */
+.products-hero,
+.orders-hero,
+.account-hero {
+  height: var(--page-headboard-height) !important;
+  min-height: var(--page-headboard-height) !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.products-hero,
+.orders-hero,
+.account-hero {
+  display: flex;
+  align-items: center;
+}
+
+.products-hero,
+.orders-hero,
+.account-hero {
+  justify-content: center;
+}
+
+.products-hero__content,
+.orders-hero__content,
+.account-hero__content {
+  min-height: 100%;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.products-hero__content,
+.orders-hero__content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.products-hero__content {
+  align-items: center;
+}
+
+.orders-hero__content {
+  align-items: flex-start;
+}
+
+.account-hero__content {
+  display: flex;
+  align-items: center;
+}
+
+.orders-hero__content,
+.account-hero__content {
+  justify-content: flex-start;
+}
+
+.admin-page-header,
+.notif-page__header,
+.wishlist-heading,
+.disc-hero,
+.invoices-hero,
+.revenue-hero {
+  min-height: var(--page-headboard-height) !important;
+  margin-top: 0 !important;
+  margin-bottom: 1.5rem !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  display: flex;
+  align-items: center !important;
+}
+
+.admin-page-header,
+.notif-page__header,
+.wishlist-heading,
+.disc-hero,
+.invoices-hero,
+.revenue-hero {
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.disc-hero h1,
+.invoices-hero h1,
+.revenue-hero h1,
+.admin-page-header__title,
+.notif-page__title,
+.wishlist-title,
+.products-hero__title,
+.orders-hero__title,
+.account-hero__title {
+  line-height: 1.12;
+}
+
+/* Shared typography for non-white headboards */
+.products-hero__title,
+.orders-hero__title,
+.account-hero__title,
+.home__hero-title {
+  font-family: var(--font-display) !important;
+  font-size: clamp(1.9rem, 2.6vw, 2.25rem) !important;
+  font-style: italic !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+  line-height: 1.08 !important;
+}
+
+.products-hero__tagline,
+.orders-hero__tagline,
+.account-hero__email,
+.home__hero-sub {
+  font-family: var(--font-body) !important;
+  font-size: 0.98rem !important;
+  font-weight: 500 !important;
+  line-height: 1.5 !important;
+}
+
+@media (max-width: 640px) {
+  .products-hero,
+  .orders-hero,
+  .account-hero {
+    height: var(--page-headboard-height-mobile) !important;
+    min-height: var(--page-headboard-height-mobile) !important;
+  }
+
+  .admin-page-header,
+  .notif-page__header,
+  .wishlist-heading,
+  .disc-hero,
+  .invoices-hero,
+  .revenue-hero {
+    min-height: var(--page-headboard-height-mobile) !important;
+  }
 }
