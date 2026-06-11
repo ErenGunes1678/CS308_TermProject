@@ -370,11 +370,6 @@ export const cancelUserOrder = async (req: AuthRequest, res: Response): Promise<
             return;
         }
 
-        if (order.status !== "processing") {
-            res.status(400).json({ message: "Only processing orders can be cancelled." });
-            return;
-        }
-
         if (!userIsSalesManager) {
             res.status(403).json({ message: "Sales manager approval required to cancel this order." });
             return;
@@ -463,11 +458,6 @@ export const requestRefund = async (req: AuthRequest, res: Response): Promise<vo
 
         if (!orderItem) {
             res.status(404).json({ message: "Purchased product not found in your order history." });
-            return;
-        }
-
-        if (orderItem.order.status !== "delivered") {
-            res.status(400).json({ message: "Only delivered products can be returned." });
             return;
         }
 

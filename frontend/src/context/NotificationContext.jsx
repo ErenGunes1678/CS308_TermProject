@@ -48,7 +48,10 @@ export const NotificationProvider = ({ children }) => {
         const newOnes = notifs.filter((n) => !knownIdsRef.current.has(n.id));
         if (newOnes.length > 0) {
           setToasts((prev) => {
-            const toAdd = newOnes.map((n) => ({ ...n, toastId: `toast-${n.id}` }));
+            const visibleNotificationIds = new Set(prev.map((toast) => toast.id).filter(Boolean));
+            const toAdd = newOnes
+              .filter((n) => !visibleNotificationIds.has(n.id))
+              .map((n) => ({ ...n, toastId: `toast-${n.id}` }));
             return [...prev, ...toAdd];
           });
           // Auto-dismiss each toast after TOAST_DURATION_MS
