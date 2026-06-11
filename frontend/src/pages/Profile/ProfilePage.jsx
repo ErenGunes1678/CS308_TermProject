@@ -170,68 +170,6 @@ const EditProfileModal = ({ user, onClose, onSave }) => {
   );
 };
 
-/* ── Add Card Modal ──────────────────────────────────────── */
-const AddCardModal = ({ onClose, onSave }) => {
-  const [form, setForm] = useState({
-    cardNumber: "",
-    holderName: "",
-    expiry: "",
-  });
-
-  const handleChange = (e) => {
-    let { name, value } = e.target;
-    if (name === "cardNumber") {
-      value = value.replace(/\D/g, "").slice(0, 16);
-      value = value.replace(/(.{4})/g, "$1 ").trim();
-    }
-    if (name === "expiry") {
-      value = value.replace(/\D/g, "").slice(0, 4);
-      if (value.length > 2) value = value.slice(0, 2) + "/" + value.slice(2);
-    }
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const digits = form.cardNumber.replace(/\s/g, "");
-    onSave({
-      last4: digits.slice(-4),
-      brand: digits.startsWith("4") ? "visa" : "mastercard",
-      holderName: form.holderName,
-      expiry: form.expiry,
-    });
-  };
-
-  return (
-    <div className="profile-modal-overlay" onClick={onClose}>
-      <div className="profile-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="profile-modal__header">
-          <h2>Add Payment Card</h2>
-          <button className="profile-modal__close" onClick={onClose} aria-label="Close">&times;</button>
-        </div>
-        <form className="profile-modal__form" onSubmit={handleSubmit}>
-          <label className="profile-modal__label">
-            Card Number
-            <input type="text" name="cardNumber" value={form.cardNumber} onChange={handleChange} placeholder="1234 5678 9012 3456" required />
-          </label>
-          <label className="profile-modal__label">
-            Cardholder Name
-            <input type="text" name="holderName" value={form.holderName} onChange={handleChange} placeholder="John Doe" required />
-          </label>
-          <label className="profile-modal__label">
-            Expiry (MM/YY)
-            <input type="text" name="expiry" value={form.expiry} onChange={handleChange} placeholder="12/28" required />
-          </label>
-          <div className="profile-modal__actions">
-            <button type="button" className="profile-modal__cancel" onClick={onClose}>Cancel</button>
-            <button type="submit" className="profile-modal__save">Add Card</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
 /* ── Add/Edit Address Modal ───────────────────────────────── */
 const AddressModal = ({ address, onClose, onSave }) => {
   const [form, setForm] = useState({
@@ -304,7 +242,6 @@ function ProfilePage() {
   const { discountNotifications, clearDiscountNotifications } = useWishlist();
   const navigate = useNavigate();
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showAddCard, setShowAddCard] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
 
@@ -313,7 +250,6 @@ function ProfilePage() {
     dateOfBirth: "",
   });
 
-  const [cards, setCards] = useState([]);
   const [addresses, setAddresses] = useState([]);
 
   useEffect(() => {
@@ -374,24 +310,6 @@ function ProfilePage() {
     } catch {
       setShowEditModal(false);
     }
-  };
-
-  const handleAddCard = (card) => {
-    setCards((prev) => [
-      ...prev,
-      { ...card, id: Date.now(), isDefault: prev.length === 0 },
-    ]);
-    setShowAddCard(false);
-  };
-
-  const handleRemoveCard = (cardId) => {
-    setCards((prev) => prev.filter((c) => c.id !== cardId));
-  };
-
-  const handleSetDefault = (cardId) => {
-    setCards((prev) =>
-      prev.map((c) => ({ ...c, isDefault: c.id === cardId }))
-    );
   };
 
   const handleAddAddress = async (addr) => {
@@ -528,21 +446,6 @@ function ProfilePage() {
             <span className="summary-card__arrow">{icons.chevron}</span>
           </button>
 
-          <button
-            className="summary-card"
-            onClick={() => document.getElementById("payment-methods-section")?.scrollIntoView({ behavior: "smooth" })}
-            id="profile-payment-card"
-          >
-            <div className="summary-card__icon summary-card__icon--payment">
-              {icons.creditCard}
-            </div>
-            <div className="summary-card__body">
-              <span className="summary-card__label">Payment Methods</span>
-              <span className="summary-card__value">{cards.length} card{cards.length !== 1 ? "s" : ""}</span>
-              <span className="summary-card__desc">Your saved payment cards</span>
-            </div>
-            <span className="summary-card__arrow">{icons.chevron}</span>
-          </button>
         </div>
 
         {user.role === "customer" && discountNotifications.length > 0 && (
@@ -635,62 +538,6 @@ function ProfilePage() {
         </div>
 
         <div className="profile-grid profile-grid--account-management">
-          {/* ── Payment Methods ───────────────────────────── */}
-          <section className="profile-card" id="payment-methods-section">
-            <div className="profile-card__header">
-              <h2 className="profile-card__title">Payment Methods</h2>
-              <button className="profile-card__edit profile-card__edit--add" onClick={() => setShowAddCard(true)}>
-                {icons.plus}
-                <span>Add Card</span>
-              </button>
-            </div>
-            <div className="profile-card__body">
-              {cards.length === 0 ? (
-                <div className="payment-empty">
-                  <span className="payment-empty__icon">{icons.creditCard}</span>
-                  <p>No saved payment methods</p>
-                  <button className="payment-empty__add" onClick={() => setShowAddCard(true)}>
-                    Add a Card
-                  </button>
-                </div>
-              ) : (
-                <div className="payment-list">
-                  {cards.map((card) => (
-                    <div key={card.id} className={`payment-card ${card.isDefault ? "payment-card--default" : ""}`}>
-                      <div className="payment-card__brand">
-                        {card.brand === "visa" ? icons.visa : icons.mastercard}
-                      </div>
-                      <div className="payment-card__info">
-                        <span className="payment-card__number">•••• {card.last4}</span>
-                        <span className="payment-card__expiry">Expires {card.expiry}</span>
-                      </div>
-                      {card.isDefault && (
-                        <span className="payment-card__badge">Default</span>
-                      )}
-                      <div className="payment-card__actions">
-                        {!card.isDefault && (
-                          <button
-                            className="payment-card__action payment-card__action--default"
-                            onClick={() => handleSetDefault(card.id)}
-                          >
-                            Set Default
-                          </button>
-                        )}
-                        <button
-                          className="payment-card__action payment-card__action--remove"
-                          onClick={() => handleRemoveCard(card.id)}
-                        >
-                          {icons.trash}
-                          <span>Remove</span>
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </section>
-
         {/* ── Delivery Addresses ─────────────────────────── */}
         <section className="profile-card profile-card--full" id="delivery-addresses-section">
           <div className="profile-card__header">
@@ -730,9 +577,6 @@ function ProfilePage() {
                       <span className="address-card__city">
                         {addr.city}{addr.state ? `, ${addr.state}` : ""} {addr.zip}, {addr.country}
                       </span>
-                      {addr.phone && (
-                        <span className="address-card__phone">{addr.phone}</span>
-                      )}
                     </div>
                     <div className="address-card__actions">
                       {!addr.isDefault && (
@@ -765,6 +609,7 @@ function ProfilePage() {
           </div>
         </section>
       </div>
+      </div>
 
       {/* ── Modals ──────────────────────────────────────── */}
       {showEditModal && (
@@ -772,12 +617,6 @@ function ProfilePage() {
           user={{ ...user, ...profileData }}
           onClose={() => setShowEditModal(false)}
           onSave={handleSaveProfile}
-        />
-      )}
-      {showAddCard && (
-        <AddCardModal
-          onClose={() => setShowAddCard(false)}
-          onSave={handleAddCard}
         />
       )}
       {showAddressModal && (
