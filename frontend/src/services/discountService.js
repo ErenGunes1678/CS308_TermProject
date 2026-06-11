@@ -19,3 +19,8 @@ export const deleteDiscountCode = async (id) => {
   const { data } = await api.delete(`/discount/${id}`);
   return data;
 };
+
+export const validateDiscountCode = async (payload) => {
+  const { data } = await api.post(`/discount/validate`, payload);
+  return data;
+};

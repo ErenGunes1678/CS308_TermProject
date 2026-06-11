@@ -18,7 +18,9 @@ export const getDiscountCodes = async (req: AuthRequest, res: Response) => {
 
         const codes = await DiscountCode.findAll({ order: [["createdAt", "DESC"]] });
 
-        return res.status(200).json({ message: "Discount codes fetched successfully", codes });
+        const mapped = codes.map(mapDiscountForFrontend);
+
+        return res.status(200).json({ message: "Discount codes fetched successfully", codes: mapped });
     } catch (error) {
         console.error("Get discount codes error:", error);
         return res.status(500).json({ message: "Server error while fetching discount codes" });
@@ -72,7 +74,7 @@ export const createDiscountCode = async (req: AuthRequest, res: Response) => {
             expiry_date: expiryDate,
         });
 
-        return res.status(201).json({ message: "Discount code created successfully", discountCode });
+        return res.status(201).json({ message: "Discount code created successfully", discountCode: mapDiscountForFrontend(discountCode) });
     } catch (error) {
         console.error("Create discount code error:", error);
         return res.status(500).json({ message: "Server error while creating discount code" });
@@ -102,7 +104,7 @@ export const toggleDiscountCode = async (req: AuthRequest, res: Response) => {
 
         return res.status(200).json({
             message: `Discount code ${nextActive ? "activated" : "deactivated"} successfully.`,
-            discountCode,
+            discountCode: mapDiscountForFrontend(discountCode),
         });
     } catch (error) {
         console.error("Toggle discount code error:", error);
@@ -186,4 +188,21 @@ export const validateDiscountCode = async (req: Request, res: Response) => {
         console.error("Validate discount code error:", error);
         return res.status(500).json({ message: "Server error while validating discount code" });
     }
+};
+
+/* helper: map DB snake_case fields to frontend-friendly camelCase */
+const mapDiscountForFrontend = (instance: any) => {
+    const plain = instance?.get ? instance.get({ plain: true }) : instance;
+
+    return {
+        id: plain.id,
+        code: plain.code,
+        type: plain.type,
+        value: plain.value !== null && plain.value !== undefined ? Number(plain.value) : null,
+        minOrder: plain.min_order !== null && plain.min_order !== undefined ? Number(plain.min_order) : null,
+        expires: plain.expiry_date ? new Date(plain.expiry_date).toISOString() : null,
+        active: Boolean(plain.is_active),
+        uses: Number(plain.uses_count ?? 0),
+        createdAt: plain.createdAt ?? plain.created_at,
+    };
 };

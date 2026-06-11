@@ -4,6 +4,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { useCart } from "../../hooks/useCart";
 import { createAddress, getAddresses } from "../../services/addressService";
 import { placeOrder } from "../../services/orderService";
+import { validateDiscountCode } from "../../services/discountService";
 import "./CheckoutPage.css";
 
 const sortAddresses = (addressList = []) =>
@@ -192,7 +193,7 @@ function AddressStep({ addressData, fieldErrors, savedAddresses, saveAccountInfo
   );
 }
 
-function PaymentStep({ paymentMethod, paymentData, fieldErrors, onPaymentMethodChange, onPaymentChange, onBack, onNext }) {
+function PaymentStep({ paymentMethod, paymentData, fieldErrors, onPaymentMethodChange, onPaymentChange, onBack, onNext, discountCode, onDiscountChange, onApplyDiscount, isApplyingDiscount, discountError, discountInfo }) {
   return (
     <div className="checkout-card">
       <h2>Payment Details</h2>
@@ -260,6 +261,17 @@ function PaymentStep({ paymentMethod, paymentData, fieldErrors, onPaymentMethodC
         </div>
       )}
       <div className="checkout-info-box">🔒 Your payment info is encrypted and secure. We never store your card details.</div>
+      <div className="form-group">
+        <label>Discount Code</label>
+        <div className="discount-row">
+          <input className="checkout-input" name="discount" placeholder="Enter code (e.g. SUMMER25)" value={discountCode} onChange={(e) => onDiscountChange(e.target.value)} />
+          <button className="checkout-primary-btn" onClick={onApplyDiscount} disabled={isApplyingDiscount || !discountCode}>{isApplyingDiscount ? "Applying..." : "Apply"}</button>
+        </div>
+        {discountError ? <p className="checkout-field-error">{discountError}</p> : null}
+        {discountInfo ? (
+          <p className="checkout-field-info">Applied: {discountInfo.type === 'free_shipping' ? 'Free shipping' : `$${discountInfo.discountAmount} discount (${discountInfo.type})`}</p>
+        ) : null}
+      </div>
       <div className="checkout-actions">
         <button className="checkout-secondary-btn" onClick={onBack}>Back</button>
         <button className="checkout-primary-btn" onClick={onNext}>Continue →</button>
@@ -372,6 +384,10 @@ export default function CheckoutPage() {
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [saveAccountInfo, setSaveAccountInfo] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [discountCode, setDiscountCode] = useState("");
+  const [discountInfo, setDiscountInfo] = useState(null);
+  const [discountError, setDiscountError] = useState("");
+  const [isApplyingDiscount, setIsApplyingDiscount] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const paymentLabel =
@@ -441,6 +457,13 @@ export default function CheckoutPage() {
 
   const validateStep2 = () => {
     if (paymentMethod !== "card") {
+      <div className="form-group">
+        <label>Discount Code</label>
+        <div className="discount-row">
+          <input className="checkout-input" name="discount" placeholder="Enter code (e.g. SUMMER25)" />
+          <button className="checkout-primary-btn">Apply</button>
+        </div>
+      </div>
       setFieldErrors({});
       return true;
     }
@@ -588,6 +611,7 @@ export default function CheckoutPage() {
               ? paymentData.cardNumber.replace(/\s/g, "").slice(-4)
               : null,
         },
+        ...(discountInfo && discountCode ? { discount_code: discountCode } : {}),
       };
 
       const response = await placeOrder(checkoutPayload);
@@ -607,6 +631,28 @@ export default function CheckoutPage() {
       );
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDiscountChange = (value) => {
+    setDiscountCode(value.toUpperCase());
+    setDiscountError("");
+    setDiscountInfo(null);
+  };
+
+  const handleApplyDiscount = async () => {
+    if (!discountCode) return;
+    setIsApplyingDiscount(true);
+    setDiscountError("");
+    try {
+      const orderTotal = Number(subtotal) + Number(shipping);
+      const resp = await validateDiscountCode({ code: discountCode, orderTotal });
+      setDiscountInfo({ type: resp.type, discountAmount: resp.discountAmount });
+    } catch (err) {
+      setDiscountError(err?.response?.data?.message || "Invalid discount code.");
+      setDiscountInfo(null);
+    } finally {
+      setIsApplyingDiscount(false);
     }
   };
 
@@ -642,6 +688,12 @@ export default function CheckoutPage() {
               onPaymentChange={handlePaymentChange}
               onBack={goToPrevStep}
               onNext={goToNextStep}
+              discountCode={discountCode}
+              onDiscountChange={handleDiscountChange}
+              onApplyDiscount={handleApplyDiscount}
+              isApplyingDiscount={isApplyingDiscount}
+              discountError={discountError}
+              discountInfo={discountInfo}
             />
           )}
 
@@ -663,8 +715,12 @@ export default function CheckoutPage() {
         <CheckoutSummary
           cartItems={cartItems}
           subtotal={subtotal}
-          shipping={shipping}
-          total={total}
+          shipping={discountInfo && discountInfo.type === 'free_shipping' ? 0 : shipping}
+          total={(() => {
+            const appliedShipping = discountInfo && discountInfo.type === 'free_shipping' ? 0 : shipping;
+            const appliedDiscount = discountInfo && discountInfo.discountAmount ? Number(discountInfo.discountAmount) : 0;
+            return Number(subtotal) + Number(appliedShipping) - appliedDiscount;
+          })()}
         />
       </div>
     </div>
