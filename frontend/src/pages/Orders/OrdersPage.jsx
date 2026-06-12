@@ -14,10 +14,10 @@ const RefundModal = ({ item, onConfirm, onClose, isSubmitting }) => {
                 <h3 className="refund-modal__title">Request Refund</h3>
                 <p className="refund-modal__product">{item.product?.name}</p>
                 <label className="refund-modal__label">
-                    Reason for return
+                    Reason for refund
                     <textarea
                         className="refund-modal__textarea"
-                        placeholder="Please describe why you want to return this item…"
+                        placeholder="Please describe why you want to refund this item…"
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
                         rows={4}
@@ -104,6 +104,12 @@ const isWithinReturnWindow = (createdAt) => {
     return ageMs <= 30 * 24 * 60 * 60 * 1000;
 };
 
+const hasApprovedRefund = (order) =>
+    order.items?.some((item) => item.refundRequest?.status === 'approved');
+
+const getOrderDisplayStatus = (order) =>
+    hasApprovedRefund(order) ? 'cancelled' : order.status;
+
 const OrderItem = ({ item, canRequestRefund, onReturn, returningItemId }) => {
     const [showRefundForm, setShowRefundForm] = useState(false);
     const [reason, setReason] = useState('');
@@ -144,7 +150,7 @@ const OrderItem = ({ item, canRequestRefund, onReturn, returningItemId }) => {
                             onClick={() => setShowRefundForm((v) => !v)}
                             disabled={returningItemId === item.id}
                         >
-                            {returningItemId === item.id ? 'Sending…' : showRefundForm ? 'Cancel' : 'Return'}
+                            {returningItemId === item.id ? 'Sending…' : showRefundForm ? 'Cancel' : 'Refund'}
                         </button>
                     ) : null}
                 </div>
@@ -153,7 +159,7 @@ const OrderItem = ({ item, canRequestRefund, onReturn, returningItemId }) => {
                 <form className="order-item__refund-form" onSubmit={handleSubmit}>
                     <textarea
                         className="order-item__refund-reason"
-                        placeholder="Why are you returning this item? (optional)"
+                        placeholder="Why are you requesting a refund for this item? (optional)"
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
                         rows={2}
@@ -170,7 +176,8 @@ const OrderItem = ({ item, canRequestRefund, onReturn, returningItemId }) => {
 
 const OrderCard = ({ order, canCancel, onCancel, onReturn, returningItemId, autoExpand, cardRef }) => {
     const [expanded, setExpanded] = useState(autoExpand);
-    const canRequestRefund = order.status === 'delivered' && isWithinReturnWindow(order.createdAt);
+    const displayStatus = getOrderDisplayStatus(order);
+    const canRequestRefund = displayStatus !== 'cancelled' && isWithinReturnWindow(order.createdAt);
     const hasRefundable = order.items.some((item) => !item.refundRequest && canRequestRefund);
 
     return (
@@ -190,10 +197,10 @@ const OrderCard = ({ order, canCancel, onCancel, onReturn, returningItemId, auto
                 </div>
                 <div className="order-card__summary-right">
                     <span className="order-card__total-value">${Number(order.total_amount || 0).toFixed(2)}</span>
-                    {hasRefundable && <span className="order-card__refund-hint">Return available</span>}
-                    <div className={`order-status order-status--${order.status}`}>
+                    {hasRefundable && <span className="order-card__refund-hint">Refund available</span>}
+                    <div className={`order-status order-status--${displayStatus}`}>
                         <span className="order-status__dot" />
-                        {STATUS_LABELS[order.status]}
+                        {STATUS_LABELS[displayStatus]}
                     </div>
                     <span className="order-card__chevron">{expanded ? '▲' : '▼'}</span>
                 </div>
@@ -201,7 +208,7 @@ const OrderCard = ({ order, canCancel, onCancel, onReturn, returningItemId, auto
 
             {expanded && (
                 <div className="order-card__expanded">
-                    <OrderProgress status={order.status} />
+                    <OrderProgress status={displayStatus} />
                     <div className="order-card__items">
                         {order.items.map((item) => (
                             <OrderItem
@@ -287,7 +294,7 @@ const OrdersPage = () => {
         let list = orders;
 
         if (activeTab !== 'all') {
-            list = list.filter((o) => o.status === activeTab);
+            list = list.filter((o) => getOrderDisplayStatus(o) === activeTab);
         }
 
         if (searchQuery.trim()) {
@@ -307,7 +314,8 @@ const OrdersPage = () => {
     const counts = useMemo(() => {
         const map = { all: orders.length };
         orders.forEach((o) => {
-            map[o.status] = (map[o.status] || 0) + 1;
+            const displayStatus = getOrderDisplayStatus(o);
+            map[displayStatus] = (map[displayStatus] || 0) + 1;
         });
         return map;
     }, [orders]);
@@ -367,6 +375,7 @@ const OrdersPage = () => {
             setErrorMessage('');
             // Show toast immediately — don't wait for the background fetch
             showToast({
+                id: `refund-${data.refundRequest.id}-received`,
                 type: 'refund',
                 icon: '🔄',
                 title: 'Refund request received',

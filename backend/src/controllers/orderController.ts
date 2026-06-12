@@ -162,7 +162,23 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
 
         // Create order using allowed status values only
         const order = await db.orders.create(
-            { user_id: userId, total_amount: totalAmount, status: bankConfirmation.approved ? "processing" : "cancelled" },
+            {
+                user_id: userId,
+                total_amount: totalAmount,
+                status: bankConfirmation.approved ? "processing" : "cancelled",
+                delivery_address: {
+                    name: getShippingCustomerName(shippingAddress),
+                    email: shippingAddress.email,
+                    phone: shippingAddress.phone,
+                    taxId: shippingAddress.taxId,
+                    street: shippingAddress.street,
+                    city: shippingAddress.city,
+                    state: shippingAddress.state,
+                    zip: shippingAddress.zip,
+                    country: shippingAddress.country,
+                    label: buildAddressLabel(shippingAddress),
+                },
+            },
             { transaction: t }
         );
 
@@ -318,6 +334,11 @@ export const getAllOrders = async (req: AuthRequest, res: Response): Promise<voi
                         { model: db.refund_requests, as: "refundRequest" },
                     ],
                 },
+                {
+                    model: db.invoices,
+                    as: "invoice",
+                    attributes: ["id", "invoice_number", "file_name", "amount", "createdAt"],
+                },
             ],
             order: [["createdAt", "DESC"]],
         });
@@ -346,11 +367,6 @@ export const cancelUserOrder = async (req: AuthRequest, res: Response): Promise<
 
         if (!order) {
             res.status(404).json({ message: "Order not found." });
-            return;
-        }
-
-        if (order.status !== "processing") {
-            res.status(400).json({ message: "Only processing orders can be cancelled." });
             return;
         }
 
@@ -442,11 +458,6 @@ export const requestRefund = async (req: AuthRequest, res: Response): Promise<vo
 
         if (!orderItem) {
             res.status(404).json({ message: "Purchased product not found in your order history." });
-            return;
-        }
-
-        if (orderItem.order.status !== "delivered") {
-            res.status(400).json({ message: "Only delivered products can be returned." });
             return;
         }
 

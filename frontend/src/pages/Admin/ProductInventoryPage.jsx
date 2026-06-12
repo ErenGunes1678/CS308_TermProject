@@ -41,6 +41,32 @@ const buildPayload = (form) => ({
   badge: form.badge || null,
 });
 
+const getCategoryKey = (value = '') =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+const formatCategoryName = (value = '') =>
+  value
+    .trim()
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ');
+
+const preferCategoryName = (currentName = '', nextName = '') => {
+  if (!currentName) return nextName;
+  if (!nextName) return currentName;
+
+  const currentLooksSlugged = /[-_]/.test(currentName);
+  const nextLooksSlugged = /[-_]/.test(nextName);
+  if (currentLooksSlugged && !nextLooksSlugged) return nextName;
+
+  return currentName;
+};
+
 const ProductInventoryPage = () => {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -102,17 +128,68 @@ const ProductInventoryPage = () => {
   const categoryUsage = useMemo(() => {
     const usage = {};
     products.forEach((product) => {
-      usage[product.category] = (usage[product.category] || 0) + 1;
+      const key = getCategoryKey(product.category);
+      if (key) {
+        usage[key] = (usage[key] || 0) + 1;
+      }
     });
     return usage;
   }, [products]);
+
+  const displayCategories = useMemo(() => {
+    const grouped = new Map();
+
+    categories.forEach((category) => {
+      const key = getCategoryKey(category.name);
+      if (!key) return;
+
+      const existing = grouped.get(key);
+      if (existing) {
+        grouped.set(key, {
+          ...existing,
+          name: preferCategoryName(existing.name, category.name),
+          ids: [...existing.ids, category.id],
+          rawNames: [...existing.rawNames, category.name],
+        });
+        return;
+      }
+
+      grouped.set(key, {
+        key,
+        id: category.id,
+        ids: [category.id],
+        name: category.name,
+        rawNames: [category.name],
+      });
+    });
+
+    products.forEach((product) => {
+      const key = getCategoryKey(product.category);
+      if (!key || grouped.has(key)) return;
+
+      grouped.set(key, {
+        key,
+        id: `product-${key}`,
+        ids: [],
+        name: formatCategoryName(product.category),
+        rawNames: [product.category],
+      });
+    });
+
+    return Array.from(grouped.values())
+      .map((category) => ({
+        ...category,
+        name: formatCategoryName(category.name),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [categories, products]);
 
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
     return products.filter((product) => {
       const stock = Number(product.quantity_in_stock || 0);
-      const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
+      const matchesCategory = selectedCategory === 'all' || getCategoryKey(product.category) === selectedCategory;
       const matchesStock =
         stockFilter === 'all' ||
         (stockFilter === 'low' && stock > 0 && stock <= 10) ||
@@ -167,10 +244,51 @@ const ProductInventoryPage = () => {
   const handleEdit = (product) => {
     setEditingProduct(product);
     setForm(toForm(product));
-    setInventoryMode('manage');
     setMessage('');
     setErrorMessage('');
   };
+
+  const renderProductForm = () => (
+    <form className="inv-form" onSubmit={handleSaveProduct}>
+      <div className="inv-form__header">
+        <div>
+          <p className="inv-form__eyebrow">Edit Product</p>
+          <h3 className="inv-form__title">{editingProduct ? editingProduct.name : 'Edit product details'}</h3>
+        </div>
+        <div className="inv-form__header-actions">
+          <button type="button" className="inv-form__cancel" onClick={resetForm}>Cancel</button>
+          <button className="inv-form__submit" type="submit" disabled={isSaving}>
+            {isSaving ? 'Saving…' : 'Save changes'}
+          </button>
+        </div>
+      </div>
+      <div className="inv-form__grid">
+        <label className="inv-form__field inv-form__field--2">Name<input name="name" value={form.name} onChange={handleFormChange} required /></label>
+        <label className="inv-form__field">Brand<input name="brand" value={form.brand} onChange={handleFormChange} required /></label>
+        <label className="inv-form__field">Category<input name="category" value={form.category} onChange={handleFormChange} required disabled={Boolean(editingProduct)} /></label>
+        <label className="inv-form__field">Subcategory<input name="subcategory" value={form.subcategory} onChange={handleFormChange} required disabled={Boolean(editingProduct)} /></label>
+        <label className="inv-form__field">Model<input name="model" value={form.model} onChange={handleFormChange} required /></label>
+        <label className="inv-form__field">Serial #<input name="serial_number" value={form.serial_number} onChange={handleFormChange} required /></label>
+        <label className="inv-form__field">Stock<input name="quantity_in_stock" type="number" min="0" value={form.quantity_in_stock} onChange={handleFormChange} required /></label>
+        <label className="inv-form__field">Badge
+          <select name="badge" value={form.badge} onChange={handleFormChange}>
+            <option value="">None</option>
+            <option value="BEST">BEST</option>
+            <option value="NEW">NEW</option>
+            <option value="LIMITED">LIMITED</option>
+            <option value="SALE">SALE</option>
+          </select>
+        </label>
+        <label className="inv-form__field inv-form__field--full">Image URL<input name="image" value={form.image} onChange={handleFormChange} required /></label>
+        <label className="inv-form__field inv-form__field--2">Distributor<input name="distributor_info" value={form.distributor_info} onChange={handleFormChange} /></label>
+        <label className="inv-form__field inv-form__field--2">Description<textarea name="description" value={form.description} onChange={handleFormChange} rows="2" /></label>
+        <label className="inv-form__field inv-form__check">
+          <input name="warranty_status" type="checkbox" checked={form.warranty_status} onChange={handleFormChange} />
+          Warranty
+        </label>
+      </div>
+    </form>
+  );
 
   const handleSaveProduct = async (event) => {
     event.preventDefault();
@@ -238,10 +356,17 @@ const ProductInventoryPage = () => {
 
   const handleAddCategory = async (event) => {
     event.preventDefault();
+    const nextCategoryName = categoryName.trim();
+    const nextCategoryKey = getCategoryKey(nextCategoryName);
+
+    if (displayCategories.some((category) => category.key === nextCategoryKey)) {
+      setErrorMessage('This category already exists.');
+      return;
+    }
 
     try {
       setErrorMessage('');
-      const category = await createCategory({ name: categoryName });
+      const category = await createCategory({ name: nextCategoryName });
       setCategories((current) => [...current, category].sort((a, b) => a.name.localeCompare(b.name)));
       setCategoryName('');
       setForm((current) => ({ ...current, category: current.category || category.name }));
@@ -251,13 +376,12 @@ const ProductInventoryPage = () => {
     }
   };
 
-  const handleDeleteCategory = async (id) => {
-    const categoryToDelete = categories.find((category) => category.id === id);
+  const handleDeleteCategory = async (categoryToDelete) => {
     if (!categoryToDelete) {
       return;
     }
 
-    const productCount = categoryUsage[categoryToDelete.name] || 0;
+    const productCount = categoryUsage[categoryToDelete.key] || 0;
     const confirmMessage = productCount > 0
       ? `Deleting category "${categoryToDelete.name}" will also delete ${productCount} product${productCount === 1 ? '' : 's'} in this category. Are you sure?`
       : `Delete category "${categoryToDelete.name}"?`;
@@ -268,12 +392,13 @@ const ProductInventoryPage = () => {
 
     try {
       setErrorMessage('');
-      await deleteCategory(id);
-      setCategories((current) => current.filter((category) => category.id !== id));
-      setProducts((current) => current.filter((product) => product.category !== categoryToDelete.name));
-      if (categoryToDelete.name && selectedCategory === categoryToDelete.name) setSelectedCategory('all');
-      if (form.category === categoryToDelete.name) {
-        setForm((current) => ({ ...current, category: categories.find((category) => category.id !== id)?.name || '' }));
+      await Promise.all(categoryToDelete.ids.map((id) => deleteCategory(id)));
+      setCategories((current) => current.filter((category) => !categoryToDelete.ids.includes(category.id)));
+      setProducts((current) => current.filter((product) => getCategoryKey(product.category) !== categoryToDelete.key));
+      if (selectedCategory === categoryToDelete.key) setSelectedCategory('all');
+      if (getCategoryKey(form.category) === categoryToDelete.key) {
+        const nextCategory = displayCategories.find((category) => category.key !== categoryToDelete.key);
+        setForm((current) => ({ ...current, category: nextCategory?.name || '' }));
       }
       setMessage('Category removed.');
     } catch (error) {
@@ -304,7 +429,7 @@ const ProductInventoryPage = () => {
               <span>Total: {stockCounts.total}</span>
               <span>Low stock: {stockCounts.low}</span>
               <span>Out of stock: {stockCounts.out}</span>
-              <span>Categories: {categories.length}</span>
+              <span>Categories: {displayCategories.length}</span>
             </div>
             <div className="product-inventory-mode-switch" aria-label="Inventory view">
               <button
@@ -344,68 +469,30 @@ const ProductInventoryPage = () => {
                     <button type="submit" disabled={!categoryName.trim()}>Add</button>
                   </form>
                   <div className="product-inventory-categories">
-                    {categories.map((category) => (
+                    {displayCategories.map((category) => (
                       <div key={category.id} className="product-inventory-category-row">
                         <button
                           type="button"
-                          className={selectedCategory === category.name ? 'is-active' : ''}
-                          onClick={() => setSelectedCategory(category.name)}
+                          className={selectedCategory === category.key ? 'is-active' : ''}
+                          onClick={() => setSelectedCategory(category.key)}
                         >
-                          {category.name} <span>{categoryUsage[category.name] || 0}</span>
+                          {category.name} <span>{categoryUsage[category.key] || 0}</span>
                         </button>
                         <button
                           type="button"
                           className="product-inventory-category-row__delete"
-                          onClick={() => handleDeleteCategory(category.id)}
+                          onClick={() => handleDeleteCategory(category)}
                           title="Delete category"
                         >
                           Delete
                         </button>
                       </div>
                     ))}
-                    {categories.length === 0 && <p className="product-inventory-state">No categories yet.</p>}
+                    {displayCategories.length === 0 && <p className="product-inventory-state">No categories yet.</p>}
                   </div>
                 </section>
 
-                <form className="inv-form" onSubmit={handleSaveProduct}>
-                  <div className="inv-form__header">
-                    <div>
-                      <p className="inv-form__eyebrow">{editingProduct ? 'Edit Product' : 'Add Product'}</p>
-                      <h3 className="inv-form__title">{editingProduct ? editingProduct.name : 'New catalog item'}</h3>
-                    </div>
-                    <div className="inv-form__header-actions">
-                      {editingProduct ? <button type="button" className="inv-form__cancel" onClick={resetForm}>Cancel</button> : null}
-                      <button className="inv-form__submit" type="submit" disabled={isSaving || (!editingProduct && categories.length === 0)}>
-                        {isSaving ? 'Saving…' : editingProduct ? 'Save changes' : 'Add product'}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="inv-form__grid">
-                    <label className="inv-form__field inv-form__field--2">Name<input name="name" value={form.name} onChange={handleFormChange} required /></label>
-                    <label className="inv-form__field">Brand<input name="brand" value={form.brand} onChange={handleFormChange} required /></label>
-                    <label className="inv-form__field">Category<input name="category" value={form.category} onChange={handleFormChange} required disabled={Boolean(editingProduct)} /></label>
-                    <label className="inv-form__field">Subcategory<input name="subcategory" value={form.subcategory} onChange={handleFormChange} required disabled={Boolean(editingProduct)} /></label>
-                    <label className="inv-form__field">Model<input name="model" value={form.model} onChange={handleFormChange} required /></label>
-                    <label className="inv-form__field">Serial #<input name="serial_number" value={form.serial_number} onChange={handleFormChange} required /></label>
-                    <label className="inv-form__field">Stock<input name="quantity_in_stock" type="number" min="0" value={form.quantity_in_stock} onChange={handleFormChange} required /></label>
-                    <label className="inv-form__field">Badge
-                      <select name="badge" value={form.badge} onChange={handleFormChange}>
-                        <option value="">None</option>
-                        <option value="BEST">BEST</option>
-                        <option value="NEW">NEW</option>
-                        <option value="LIMITED">LIMITED</option>
-                        <option value="SALE">SALE</option>
-                      </select>
-                    </label>
-                    <label className="inv-form__field inv-form__field--full">Image URL<input name="image" value={form.image} onChange={handleFormChange} required /></label>
-                    <label className="inv-form__field inv-form__field--2">Distributor<input name="distributor_info" value={form.distributor_info} onChange={handleFormChange} /></label>
-                    <label className="inv-form__field inv-form__field--2">Description<textarea name="description" value={form.description} onChange={handleFormChange} rows="2" /></label>
-                    <label className="inv-form__field inv-form__check">
-                      <input name="warranty_status" type="checkbox" checked={form.warranty_status} onChange={handleFormChange} />
-                      Warranty
-                    </label>
-                  </div>
-                </form>
+                {renderProductForm()}
               </div>
             </div>
           ) : (
@@ -443,12 +530,12 @@ const ProductInventoryPage = () => {
                   >
                     Out of stock
                   </button>
-                  {categories.map((category) => (
+                  {displayCategories.map((category) => (
                     <button
                       key={category.id}
                       type="button"
-                      className={selectedCategory === category.name ? 'is-active' : ''}
-                      onClick={() => setSelectedCategory(category.name)}
+                      className={selectedCategory === category.key ? 'is-active' : ''}
+                      onClick={() => setSelectedCategory(category.key)}
                     >
                       {category.name}
                     </button>
@@ -461,48 +548,55 @@ const ProductInventoryPage = () => {
               ) : filteredProducts.length === 0 ? (
                 <div className="product-inventory-state">No products found.</div>
               ) : (
-                <div className="inv-table">
-                  <div className="inv-table__head" aria-hidden="true">
-                    <span>Product</span>
-                    <span>Brand</span>
-                    <span>Category</span>
-                    <span>Price</span>
-                    <span>Stock</span>
-                    <span>Status</span>
-                    <span>Actions</span>
+                <div className={`product-inventory-list-shell${editingProduct ? ' has-edit-panel' : ''}`}>
+                  <div className="inv-table">
+                    <div className="inv-table__head" aria-hidden="true">
+                      <span>Product</span>
+                      <span>Brand</span>
+                      <span>Category</span>
+                      <span>Price</span>
+                      <span>Stock</span>
+                      <span>Status</span>
+                      <span>Actions</span>
+                    </div>
+                    {filteredProducts.map((product) => {
+                      const stock = Number(product.quantity_in_stock || 0);
+                      const isOut = stock === 0;
+                      const isLow = !isOut && stock <= 10;
+                      return (
+                        <div key={product.id} className="inv-table__row">
+                          <div className="inv-row__product">
+                            <img src={product.image} alt={product.name} />
+                            <span>{product.name}</span>
+                          </div>
+                          <span className="inv-row__brand">{product.brand}</span>
+                          <span className="inv-row__category">{product.category}</span>
+                          <strong className="inv-row__price">
+                            {Number(product.price) <= 0 ? 'Pending' : `$${Number(product.price).toFixed(2)}`}
+                          </strong>
+                          <span className={`inv-row__stock${isLow ? ' is-low' : isOut ? ' is-out' : ''}`}>
+                            {isOut ? '–' : stock}
+                          </span>
+                          <span className={`inv-row__status${Number(product.price) <= 0 ? ' is-pending' : isOut ? ' is-out' : ''}`}>
+                            {Number(product.price) <= 0 ? 'Pending Price' : isOut ? 'Out of Stock' : 'In Stock'}
+                          </span>
+                          <div className="inv-row__actions">
+                            <button type="button" className="inv-row__icon-btn" title="Edit" onClick={() => handleEdit(product)}>
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                            <button type="button" className="inv-row__icon-btn inv-row__icon-btn--danger" title="Delete" onClick={() => handleDeleteProduct(product.id)}>
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  {filteredProducts.map((product) => {
-                    const stock = Number(product.quantity_in_stock || 0);
-                    const isOut = stock === 0;
-                    const isLow = !isOut && stock <= 10;
-                    return (
-                      <div key={product.id} className="inv-table__row">
-                        <div className="inv-row__product">
-                          <img src={product.image} alt={product.name} />
-                          <span>{product.name}</span>
-                        </div>
-                        <span className="inv-row__brand">{product.brand}</span>
-                        <span className="inv-row__category">{product.category}</span>
-                        <strong className="inv-row__price">
-                          {Number(product.price) <= 0 ? 'Pending' : `$${Number(product.price).toFixed(2)}`}
-                        </strong>
-                        <span className={`inv-row__stock${isLow ? ' is-low' : isOut ? ' is-out' : ''}`}>
-                          {isOut ? '–' : stock}
-                        </span>
-                        <span className={`inv-row__status${Number(product.price) <= 0 ? ' is-pending' : isOut ? ' is-out' : ''}`}>
-                          {Number(product.price) <= 0 ? 'Pending Price' : isOut ? 'Out of Stock' : 'In Stock'}
-                        </span>
-                        <div className="inv-row__actions">
-                          <button type="button" className="inv-row__icon-btn" title="Edit" onClick={() => handleEdit(product)}>
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                          </button>
-                          <button type="button" className="inv-row__icon-btn inv-row__icon-btn--danger" title="Delete" onClick={() => handleDeleteProduct(product.id)}>
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {editingProduct && (
+                    <aside className="product-inventory-edit-panel">
+                      {renderProductForm()}
+                    </aside>
+                  )}
                 </div>
               )}
               </section>

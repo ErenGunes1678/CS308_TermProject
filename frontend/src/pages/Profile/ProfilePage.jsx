@@ -9,6 +9,7 @@ import {
   setDefaultAddress,
   updateAddress,
 } from "../../services/addressService";
+import { changePassword } from "../../services/authService";
 import "./ProfilePage.css";
 
 /* ── Inline SVG icons ────────────────────────────────────── */
@@ -236,6 +237,79 @@ const AddressModal = ({ address, onClose, onSave }) => {
   );
 };
 
+/* ── Change Password Modal ───────────────────────────────── */
+const ChangePasswordModal = ({ onClose }) => {
+  const [form, setForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setError("");
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (form.newPassword !== form.confirmPassword) {
+      setError("New passwords do not match.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await changePassword({ currentPassword: form.currentPassword, newPassword: form.newPassword });
+      setSuccess(true);
+    } catch (err) {
+      setError(err?.response?.data?.message || "Failed to change password. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="profile-modal-overlay" onClick={onClose}>
+      <div className="profile-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="profile-modal__header">
+          <h2>Change Password</h2>
+          <button className="profile-modal__close" onClick={onClose} aria-label="Close">&times;</button>
+        </div>
+        {success ? (
+          <div className="profile-modal__form">
+            <p className="profile-modal__success">Password changed successfully!</p>
+            <div className="profile-modal__actions">
+              <button type="button" className="profile-modal__save" onClick={onClose}>Close</button>
+            </div>
+          </div>
+        ) : (
+          <form className="profile-modal__form" onSubmit={handleSubmit}>
+            <label className="profile-modal__label">
+              Current Password
+              <input type="password" name="currentPassword" value={form.currentPassword} onChange={handleChange} required />
+            </label>
+            <label className="profile-modal__label">
+              New Password
+              <input type="password" name="newPassword" value={form.newPassword} onChange={handleChange} required />
+            </label>
+            <label className="profile-modal__label">
+              Confirm New Password
+              <input type="password" name="confirmPassword" value={form.confirmPassword} onChange={handleChange} required />
+            </label>
+            {error && <p className="profile-modal__error">{error}</p>}
+            <div className="profile-modal__actions">
+              <button type="button" className="profile-modal__cancel" onClick={onClose} disabled={loading}>Cancel</button>
+              <button type="submit" className="profile-modal__save" disabled={loading}>
+                {loading ? "Saving…" : "Change Password"}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+};
+
 /* ── Main ProfilePage ────────────────────────────────────── */
 function ProfilePage() {
   const { user, isLoading, updateProfile } = useAuth();
@@ -243,6 +317,7 @@ function ProfilePage() {
   const navigate = useNavigate();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
 
   // Local state for profile details (would come from API in production)
@@ -509,7 +584,7 @@ function ProfilePage() {
               <h2 className="profile-card__title">Support &amp; Security</h2>
             </div>
             <div className="profile-card__body profile-card__body--support">
-              <button className="support-item" id="change-password-btn">
+              <button className="support-item" id="change-password-btn" onClick={() => setShowChangePasswordModal(true)}>
                 <span className="support-item__icon support-item__icon--lock">{icons.lock}</span>
                 <div className="support-item__info">
                   <span className="support-item__title">Change Password</span>
@@ -625,6 +700,9 @@ function ProfilePage() {
           onClose={() => { setShowAddressModal(false); setEditingAddress(null); }}
           onSave={handleAddAddress}
         />
+      )}
+      {showChangePasswordModal && (
+        <ChangePasswordModal onClose={() => setShowChangePasswordModal(false)} />
       )}
     </div>
   );

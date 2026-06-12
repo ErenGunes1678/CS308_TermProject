@@ -245,10 +245,10 @@ const ProductsPage = () => {
     const [priceOpen, setPriceOpen] = useState(true);
     const [brandOpen, setBrandOpen] = useState(true);
 
-    const categoryInfo = category ? CATEGORY_INFO[category] : null;
+    const categoryInfo = category ? CATEGORY_INFO[normalizeSlug(category)] : null;
     const subcategoryInfo =
         category && selectedSubcategory
-            ? SUBCATEGORY_INFO[category]?.[selectedSubcategory]
+            ? SUBCATEGORY_INFO[normalizeSlug(category)]?.[normalizeSlug(selectedSubcategory)]
             : null;
     const heroInfo = subcategoryInfo || categoryInfo;
     const brands = useMemo(

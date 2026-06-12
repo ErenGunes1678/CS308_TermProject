@@ -184,6 +184,38 @@ export const getCurrentUser = async (req: AuthRequest, res: Response) => {
     }
 };
 
+export const changePassword = async (req: AuthRequest, res: Response) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ message: "currentPassword and newPassword are required." });
+        }
+
+        if (String(newPassword).length < 6) {
+            return res.status(400).json({ message: "New password must be at least 6 characters." });
+        }
+
+        const user = await db.users.findByPk(req.userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        const isMatch = await bcrypt.compare(String(currentPassword), user.password_hash);
+        if (!isMatch) {
+            return res.status(400).json({ message: "Current password is incorrect." });
+        }
+
+        const password_hash = await bcrypt.hash(String(newPassword), 10);
+        await user.update({ password_hash });
+
+        return res.status(200).json({ message: "Password changed successfully." });
+    } catch (error) {
+        console.error("Change password error:", error);
+        return res.status(500).json({ message: "Server error while changing password." });
+    }
+};
+
 async function mergeGuestCart(sessionId: string, userId: number): Promise<void> {
     await sequelize.transaction(async (t) => {
         const guestCart = await db.carts.findOne({
