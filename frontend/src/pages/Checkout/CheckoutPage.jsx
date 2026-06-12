@@ -457,13 +457,6 @@ export default function CheckoutPage() {
 
   const validateStep2 = () => {
     if (paymentMethod !== "card") {
-      <div className="form-group">
-        <label>Discount Code</label>
-        <div className="discount-row">
-          <input className="checkout-input" name="discount" placeholder="Enter code (e.g. SUMMER25)" />
-          <button className="checkout-primary-btn">Apply</button>
-        </div>
-      </div>
       setFieldErrors({});
       return true;
     }
