@@ -42,14 +42,14 @@ const buildPayload = (form) => ({
 });
 
 const getCategoryKey = (value = '') =>
-  value
+  String(value || '')
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 
 const formatCategoryName = (value = '') =>
-  value
+  String(value || '')
     .trim()
     .split(/[-_\s]+/)
     .filter(Boolean)
@@ -184,6 +184,23 @@ const ProductInventoryPage = () => {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [categories, products]);
 
+  const categoryOptions = useMemo(() => {
+    const grouped = new Map();
+
+    categories.forEach((category) => {
+      const key = getCategoryKey(category.name);
+      if (!key || grouped.has(key)) return;
+
+      grouped.set(key, {
+        key,
+        name: category.name,
+        label: formatCategoryName(category.name),
+      });
+    });
+
+    return Array.from(grouped.values()).sort((a, b) => a.label.localeCompare(b.label));
+  }, [categories]);
+
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
@@ -237,7 +254,7 @@ const ProductInventoryPage = () => {
     setEditingProduct(null);
     setForm({
       ...emptyForm,
-      category: categories[0]?.name || '',
+      category: categoryOptions[0]?.name || '',
     });
   };
 
@@ -265,8 +282,15 @@ const ProductInventoryPage = () => {
       <div className="inv-form__grid">
         <label className="inv-form__field inv-form__field--2">Name<input name="name" value={form.name} onChange={handleFormChange} required /></label>
         <label className="inv-form__field">Brand<input name="brand" value={form.brand} onChange={handleFormChange} required /></label>
-        <label className="inv-form__field">Category<input name="category" value={form.category} onChange={handleFormChange} required disabled={Boolean(editingProduct)} /></label>
-        <label className="inv-form__field">Subcategory<input name="subcategory" value={form.subcategory} onChange={handleFormChange} required disabled={Boolean(editingProduct)} /></label>
+        <label className="inv-form__field">Category
+          <select name="category" value={form.category} onChange={handleFormChange} required>
+            <option value="" disabled>Select category</option>
+            {categoryOptions.map((category) => (
+              <option key={category.key} value={category.name}>{category.label}</option>
+            ))}
+          </select>
+        </label>
+        <label className="inv-form__field">Subcategory<input name="subcategory" value={form.subcategory} onChange={handleFormChange} required /></label>
         <label className="inv-form__field">Model<input name="model" value={form.model} onChange={handleFormChange} required /></label>
         <label className="inv-form__field">Serial #<input name="serial_number" value={form.serial_number} onChange={handleFormChange} required /></label>
         <label className="inv-form__field">Stock<input name="quantity_in_stock" type="number" min="0" value={form.quantity_in_stock} onChange={handleFormChange} required /></label>
@@ -383,7 +407,7 @@ const ProductInventoryPage = () => {
 
     const productCount = categoryUsage[categoryToDelete.key] || 0;
     const confirmMessage = productCount > 0
-      ? `Deleting category "${categoryToDelete.name}" will also delete ${productCount} product${productCount === 1 ? '' : 's'} in this category. Are you sure?`
+      ? `Deleting category "${categoryToDelete.name}" will leave ${productCount} product${productCount === 1 ? '' : 's'} uncategorized. You can assign them to another category from product edit. Continue?`
       : `Delete category "${categoryToDelete.name}"?`;
 
     if (!window.confirm(confirmMessage)) {
@@ -393,12 +417,19 @@ const ProductInventoryPage = () => {
     try {
       setErrorMessage('');
       await Promise.all(categoryToDelete.ids.map((id) => deleteCategory(id)));
-      setCategories((current) => current.filter((category) => !categoryToDelete.ids.includes(category.id)));
-      setProducts((current) => current.filter((product) => getCategoryKey(product.category) !== categoryToDelete.key));
+      const nextProducts = await getManageProducts();
+      const remainingCategories = categories.filter((category) => !categoryToDelete.ids.includes(category.id));
+      setCategories(remainingCategories);
+      setProducts(Array.isArray(nextProducts) ? nextProducts : []);
       if (selectedCategory === categoryToDelete.key) setSelectedCategory('all');
-      if (getCategoryKey(form.category) === categoryToDelete.key) {
-        const nextCategory = displayCategories.find((category) => category.key !== categoryToDelete.key);
-        setForm((current) => ({ ...current, category: nextCategory?.name || '' }));
+      if (editingProduct) {
+        const refreshedProduct = nextProducts.find((product) => product.id === editingProduct.id);
+        if (refreshedProduct) {
+          setEditingProduct(refreshedProduct);
+          setForm(toForm(refreshedProduct));
+        }
+      } else if (getCategoryKey(form.category) === categoryToDelete.key) {
+        setForm((current) => ({ ...current, category: remainingCategories[0]?.name || '' }));
       }
       setMessage('Category removed.');
     } catch (error) {
@@ -570,7 +601,7 @@ const ProductInventoryPage = () => {
                             <span>{product.name}</span>
                           </div>
                           <span className="inv-row__brand">{product.brand}</span>
-                          <span className="inv-row__category">{product.category}</span>
+                          <span className="inv-row__category">{product.category || 'Uncategorized'}</span>
                           <strong className="inv-row__price">
                             {Number(product.price) <= 0 ? 'Pending' : `$${Number(product.price).toFixed(2)}`}
                           </strong>

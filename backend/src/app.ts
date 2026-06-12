@@ -72,7 +72,7 @@ if (require.main === module) {
       return migrateProductCategoryColumn();
     })
     .then(() => {
-      return sequelize.sync({alter: true});
+      return sequelize.sync({force: true});
     })
     .then(() => {
       seedMockCategories();

@@ -96,7 +96,10 @@ export const removeCategory = async (req: Request, res: Response) => {
     const categoryName = String(category.get("name") || "");
 
     await sequelize.transaction(async (transaction) => {
-      await Product.destroy({ where: { category: categoryName }, transaction });
+      await Product.update(
+        { category: null, subcategory: "general" },
+        { where: { category: categoryName }, transaction }
+      );
       await category.destroy({ transaction });
     });
 

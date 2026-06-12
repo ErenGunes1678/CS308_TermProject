@@ -24,12 +24,12 @@ module.exports = (sequelize: Sequelize) => {
 
     category: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
 
     subcategory: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
       defaultValue: "general",
     },
 
