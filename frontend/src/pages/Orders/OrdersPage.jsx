@@ -104,12 +104,6 @@ const isWithinReturnWindow = (createdAt) => {
     return ageMs <= 30 * 24 * 60 * 60 * 1000;
 };
 
-const hasApprovedRefund = (order) =>
-    order.items?.some((item) => item.refundRequest?.status === 'approved');
-
-const getOrderDisplayStatus = (order) =>
-    hasApprovedRefund(order) ? 'cancelled' : order.status;
-
 const OrderItem = ({ item, canRequestRefund, onReturn, returningItemId }) => {
     const [showRefundForm, setShowRefundForm] = useState(false);
     const [reason, setReason] = useState('');
@@ -176,8 +170,7 @@ const OrderItem = ({ item, canRequestRefund, onReturn, returningItemId }) => {
 
 const OrderCard = ({ order, canCancel, onCancel, onReturn, returningItemId, autoExpand, cardRef }) => {
     const [expanded, setExpanded] = useState(autoExpand);
-    const displayStatus = getOrderDisplayStatus(order);
-    const canRequestRefund = displayStatus !== 'cancelled' && isWithinReturnWindow(order.createdAt);
+    const canRequestRefund = order.status !== 'cancelled' && isWithinReturnWindow(order.createdAt);
     const hasRefundable = order.items.some((item) => !item.refundRequest && canRequestRefund);
 
     return (
@@ -198,9 +191,9 @@ const OrderCard = ({ order, canCancel, onCancel, onReturn, returningItemId, auto
                 <div className="order-card__summary-right">
                     <span className="order-card__total-value">${Number(order.total_amount || 0).toFixed(2)}</span>
                     {hasRefundable && <span className="order-card__refund-hint">Refund available</span>}
-                    <div className={`order-status order-status--${displayStatus}`}>
+                    <div className={`order-status order-status--${order.status}`}>
                         <span className="order-status__dot" />
-                        {STATUS_LABELS[displayStatus]}
+                        {STATUS_LABELS[order.status]}
                     </div>
                     <span className="order-card__chevron">{expanded ? '▲' : '▼'}</span>
                 </div>
@@ -208,7 +201,7 @@ const OrderCard = ({ order, canCancel, onCancel, onReturn, returningItemId, auto
 
             {expanded && (
                 <div className="order-card__expanded">
-                    <OrderProgress status={displayStatus} />
+                    <OrderProgress status={order.status} />
                     <div className="order-card__items">
                         {order.items.map((item) => (
                             <OrderItem
@@ -294,7 +287,7 @@ const OrdersPage = () => {
         let list = orders;
 
         if (activeTab !== 'all') {
-            list = list.filter((o) => getOrderDisplayStatus(o) === activeTab);
+            list = list.filter((o) => o.status === activeTab);
         }
 
         if (searchQuery.trim()) {
@@ -314,8 +307,7 @@ const OrdersPage = () => {
     const counts = useMemo(() => {
         const map = { all: orders.length };
         orders.forEach((o) => {
-            const displayStatus = getOrderDisplayStatus(o);
-            map[displayStatus] = (map[displayStatus] || 0) + 1;
+            map[o.status] = (map[o.status] || 0) + 1;
         });
         return map;
     }, [orders]);

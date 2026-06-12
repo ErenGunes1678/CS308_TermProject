@@ -567,25 +567,16 @@ export const resolveRefundRequest = async (req: AuthRequest, res: Response): Pro
 
         const refundAmount = calculateRefundAmount(refundRequest.orderItem);
 
-        if (requestedStatus === "approved") {
-            const product = await db.products.findByPk(refundRequest.orderItem.product_id, { transaction: t });
-            if (!product) {
-                await t.rollback();
-                res.status(404).json({ message: "Returned product no longer exists." });
-                return;
-            }
-
-            await product.update({
-                quantity_in_stock: Number(product.quantity_in_stock) + Number(refundRequest.orderItem.quantity),
-            }, { transaction: t });
-        }
-
         await refundRequest.update({
             status: requestedStatus,
             refund_amount: refundAmount,
             resolved_at: new Date(),
             resolved_by: req.userId,
         }, { transaction: t });
+
+        if (requestedStatus === "approved" && refundRequest.orderItem.order?.status !== "cancelled") {
+            await refundRequest.orderItem.order.update({ status: "cancelled" }, { transaction: t });
+        }
 
         await t.commit();
 
@@ -606,7 +597,7 @@ export const resolveRefundRequest = async (req: AuthRequest, res: Response): Pro
 
         res.json({
             message: requestedStatus === "approved"
-                ? "Refund approved. Stock has been restored and the purchase price has been refunded to the customer's account."
+                ? "Refund approved. The purchase price has been refunded to the customer's account."
                 : "Refund request rejected.",
             refundRequest: resolvedRequest,
         });
