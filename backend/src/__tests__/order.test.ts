@@ -22,7 +22,7 @@ const testUser = {
  
 let authToken: string = "";
 let productId: number = 1;
- 
+
 beforeAll(async () => {
   await request(app).post("/auth/register").send(testUser);
   const res = await request(app).post("/auth/login").send({
@@ -30,6 +30,11 @@ beforeAll(async () => {
     password: testUser.password,
   });
   authToken = res.body.token;
+
+  // Resolve a product that has stock so cart/order tests don't get 400
+  const productsRes = await request(app).get("/product");
+  const inStock = (productsRes.body.products || []).find((p: any) => Number(p.quantity_in_stock) > 5);
+  if (inStock) productId = inStock.id;
 });
  
 afterAll(async () => {
@@ -117,6 +122,7 @@ describe("Orders", () => {
           firstName: "Test",
           lastName: "User",
           email: "testuser_order@example.com",
+          taxId: "12345678901",
           phone: "1234567890",
           country: "Turkey",
           street: "Test Street 1",
