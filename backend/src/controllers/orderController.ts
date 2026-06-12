@@ -630,6 +630,12 @@ export const resolveRefundRequest = async (req: AuthRequest, res: Response): Pro
                 await refundRequest.orderItem.order.update({ status: "cancelled" }, { transaction: t });
             }
 
+            await db.products.increment("quantity_in_stock", {
+                by: Number(refundRequest.orderItem.quantity),
+                where: { id: refundRequest.orderItem.product_id },
+                transaction: t,
+            });
+
             await db.users.increment("wallet_balance", {
                 by: refundAmount,
                 where: { id: refundRequest.user_id },
