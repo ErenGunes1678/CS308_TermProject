@@ -454,3 +454,49 @@
   font-size: 1.1rem;
   color: #6366f1;
 }
+
+/* ── Wallet + card split ────────────────────────────────────── */
+.wallet-split-box {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  background: #f8f7ff;
+  border: 1px solid #c4b5fd;
+  border-radius: var(--radius-md, 8px);
+}
+
+.wallet-split-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4c1d95;
+}
+
+.wallet-split-toggle input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #6366f1;
+  cursor: pointer;
+}
+
+.wallet-split-breakdown {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #ddd6fe;
+}
+
+.wallet-split-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.88rem;
+  color: #374151;
+}
+
+.wallet-split-credit {
+  color: #16a34a;
+}

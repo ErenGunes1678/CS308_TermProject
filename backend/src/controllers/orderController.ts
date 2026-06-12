@@ -159,18 +159,35 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
 
         const totalAmount = formatMoney(subtotal + shipping - discountAmount);
 
-        if (payment.method === "wallet") {
+        // Resolve wallet contribution
+        let walletPortion = 0;
+        let cardPortion = totalAmount;
+
+        if (payment.method === "wallet" || payment.useWallet) {
             const user = await db.users.findByPk(userId, { transaction: t });
-            if (!user || Number(user.wallet_balance) < totalAmount) {
-                await t.rollback();
-                res.status(400).json({
-                    message: `Insufficient wallet balance. Your balance is $${Number(user?.wallet_balance ?? 0).toFixed(2)}, but the order total is $${totalAmount.toFixed(2)}.`,
-                });
-                return;
+            const balance = Number(user?.wallet_balance ?? 0);
+
+            if (payment.method === "wallet") {
+                // Wallet-only: must cover the full amount
+                if (!user || balance < totalAmount) {
+                    await t.rollback();
+                    res.status(400).json({
+                        message: `Insufficient wallet balance. Your balance is $${balance.toFixed(2)}, but the order total is $${totalAmount.toFixed(2)}.`,
+                    });
+                    return;
+                }
+                walletPortion = totalAmount;
+                cardPortion = 0;
+            } else {
+                // Wallet + card: use as much wallet as available
+                walletPortion = formatMoney(Math.min(balance, totalAmount));
+                cardPortion = formatMoney(totalAmount - walletPortion);
             }
         }
 
-        const bankConfirmation = confirmMockBankPayment(totalAmount, payment.method);
+        const bankConfirmation = cardPortion > 0
+            ? confirmMockBankPayment(cardPortion, payment.method)
+            : { approved: true, amount: 0, paymentMethod: "wallet", provider: "Wallet", transactionId: `W-${Date.now()}`, confirmedAt: new Date().toISOString() };
 
         // Create order using allowed status values only
         const order = await db.orders.create(
@@ -214,18 +231,22 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
         // Clear cart after order
         await db.cart_items.destroy({ where: { cart_id: cart.id }, transaction: t });
 
-        if (payment.method === "wallet") {
+        if (walletPortion > 0) {
             await db.users.decrement("wallet_balance", {
-                by: totalAmount,
+                by: walletPortion,
                 where: { id: userId },
                 transaction: t,
             });
 
+            const reason = cardPortion > 0
+                ? `Partial wallet payment for order #${order.id} ($${walletPortion.toFixed(2)} of $${totalAmount.toFixed(2)})`
+                : `Payment for order #${order.id}`;
+
             await db.wallet_transactions.create({
                 user_id: userId,
-                amount: totalAmount,
+                amount: walletPortion,
                 type: "debit",
-                reason: `Payment for order #${order.id}`,
+                reason,
                 reference_id: order.id,
             }, { transaction: t });
         }
@@ -294,6 +315,8 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
         res.status(201).json({
             message: "Payment confirmed and invoice generated.",
             bankConfirmation,
+            walletPortion: walletPortion > 0 ? walletPortion : undefined,
+            cardPortion: cardPortion > 0 ? cardPortion : undefined,
             invoice: {
                 ...invoice,
                 pdfFilename,

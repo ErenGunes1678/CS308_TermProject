@@ -194,8 +194,11 @@ function AddressStep({ addressData, fieldErrors, savedAddresses, saveAccountInfo
   );
 }
 
-function PaymentStep({ paymentMethod, paymentData, fieldErrors, onPaymentMethodChange, onPaymentChange, onBack, onNext, discountCode, onDiscountChange, onApplyDiscount, isApplyingDiscount, discountError, discountInfo, walletBalance, orderTotal }) {
+function PaymentStep({ paymentMethod, paymentData, fieldErrors, onPaymentMethodChange, onPaymentChange, onBack, onNext, discountCode, onDiscountChange, onApplyDiscount, isApplyingDiscount, discountError, discountInfo, walletBalance, orderTotal, useWallet, onUseWalletChange }) {
   const walletInsufficient = paymentMethod === "wallet" && walletBalance < orderTotal;
+  const walletApplied = paymentMethod !== "wallet" && useWallet && walletBalance > 0;
+  const walletDeduction = walletApplied ? Math.min(walletBalance, orderTotal) : 0;
+  const cardCharge = walletApplied ? Math.max(0, orderTotal - walletDeduction) : orderTotal;
 
   return (
     <div className="checkout-card">
@@ -258,6 +261,30 @@ function PaymentStep({ paymentMethod, paymentData, fieldErrors, onPaymentMethodC
               {fieldErrors.cvc ? <p className="checkout-field-error">{fieldErrors.cvc}</p> : null}
             </div>
           </div>
+          {walletBalance > 0 && (
+            <div className="wallet-split-box">
+              <label className="wallet-split-toggle">
+                <input
+                  type="checkbox"
+                  checked={useWallet}
+                  onChange={(e) => onUseWalletChange(e.target.checked)}
+                />
+                <span>Apply wallet balance (${walletBalance.toFixed(2)} available)</span>
+              </label>
+              {useWallet && (
+                <div className="wallet-split-breakdown">
+                  <div className="wallet-split-row">
+                    <span>From wallet</span>
+                    <strong className="wallet-split-credit">− ${walletDeduction.toFixed(2)}</strong>
+                  </div>
+                  <div className="wallet-split-row">
+                    <span>Charged to card</span>
+                    <strong>${cardCharge.toFixed(2)}</strong>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </>
       ) : paymentMethod === "wallet" ? (
         <div className="wallet-payment-info">
@@ -278,6 +305,30 @@ function PaymentStep({ paymentMethod, paymentData, fieldErrors, onPaymentMethodC
       ) : (
         <div className="payment-placeholder">
           {paymentMethod === "paypal" ? "You will continue with PayPal after review." : "You will continue with Apple Pay after review."}
+          {walletBalance > 0 && (
+            <div className="wallet-split-box" style={{ marginTop: "1rem" }}>
+              <label className="wallet-split-toggle">
+                <input
+                  type="checkbox"
+                  checked={useWallet}
+                  onChange={(e) => onUseWalletChange(e.target.checked)}
+                />
+                <span>Apply wallet balance (${walletBalance.toFixed(2)} available)</span>
+              </label>
+              {useWallet && (
+                <div className="wallet-split-breakdown">
+                  <div className="wallet-split-row">
+                    <span>From wallet</span>
+                    <strong className="wallet-split-credit">− ${walletDeduction.toFixed(2)}</strong>
+                  </div>
+                  <div className="wallet-split-row">
+                    <span>Charged to {paymentMethod}</span>
+                    <strong>${cardCharge.toFixed(2)}</strong>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
       <div className="checkout-info-box">🔒 Your payment info is encrypted and secure. We never store your card details.</div>
@@ -411,18 +462,27 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [walletBalance, setWalletBalance] = useState(0);
+  const [useWallet, setUseWallet] = useState(false);
+  const handlePaymentMethodChange = (method) => {
+    setPaymentMethod(method);
+    if (method === "wallet") setUseWallet(false);
+  };
+
   const appliedShipping = discountInfo?.type === "free_shipping" ? 0 : shipping;
   const appliedDiscount = discountInfo?.discountAmount ? Number(discountInfo.discountAmount) : 0;
   const orderTotal = Number(subtotal) + Number(appliedShipping) - appliedDiscount;
 
+  const walletDeduction = useWallet && paymentMethod !== "wallet" ? Math.min(walletBalance, orderTotal) : 0;
+  const cardCharge = Math.max(0, orderTotal - walletDeduction);
+
   const paymentLabel =
-    paymentMethod === "card"
-      ? `💳 •••• •••• •••• ${paymentData.cardNumber.replace(/\s/g, "").slice(-4) || "1234"}`
-      : paymentMethod === "paypal"
-        ? "PayPal"
-        : paymentMethod === "wallet"
-          ? `Wallet ($${walletBalance.toFixed(2)} available)`
-          : "Apple Pay";
+    paymentMethod === "wallet"
+      ? `Wallet ($${walletBalance.toFixed(2)} available)`
+      : paymentMethod === "card"
+        ? `💳 •••• •••• •••• ${paymentData.cardNumber.replace(/\s/g, "").slice(-4) || "1234"}${useWallet && walletDeduction > 0 ? ` + Wallet ($${walletDeduction.toFixed(2)})` : ""}`
+        : paymentMethod === "paypal"
+          ? `PayPal${useWallet && walletDeduction > 0 ? ` + Wallet ($${walletDeduction.toFixed(2)})` : ""}`
+          : `Apple Pay${useWallet && walletDeduction > 0 ? ` + Wallet ($${walletDeduction.toFixed(2)})` : ""}`;
 
   useEffect(() => {
     if (!user) return;
@@ -638,6 +698,7 @@ export default function CheckoutPage() {
             paymentMethod === "card"
               ? paymentData.cardNumber.replace(/\s/g, "").slice(-4)
               : null,
+          useWallet: paymentMethod !== "wallet" && useWallet && walletBalance > 0,
         },
         ...(discountInfo && discountCode ? { discount_code: discountCode } : {}),
       };
@@ -712,7 +773,7 @@ export default function CheckoutPage() {
               paymentMethod={paymentMethod}
               paymentData={paymentData}
               fieldErrors={fieldErrors}
-              onPaymentMethodChange={setPaymentMethod}
+              onPaymentMethodChange={handlePaymentMethodChange}
               onPaymentChange={handlePaymentChange}
               onBack={goToPrevStep}
               onNext={goToNextStep}
@@ -724,6 +785,8 @@ export default function CheckoutPage() {
               discountInfo={discountInfo}
               walletBalance={walletBalance}
               orderTotal={orderTotal}
+              useWallet={useWallet}
+              onUseWalletChange={setUseWallet}
             />
           )}
 
