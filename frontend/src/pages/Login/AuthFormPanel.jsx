@@ -8,6 +8,11 @@ const DEMO_ACCOUNTS = [
     password: "123456",
   },
   {
+    role: "Demo Customer",
+    email: "dogukan.dogan@sabanciuniv.edu",
+    password: "123",
+  },
+  {
     role: "Sales Manager",
     email: "elif.sales@gmail.com",
     password: "123456",
