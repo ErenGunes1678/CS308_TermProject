@@ -158,6 +158,18 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
         }
 
         const totalAmount = formatMoney(subtotal + shipping - discountAmount);
+
+        if (payment.method === "wallet") {
+            const user = await db.users.findByPk(userId, { transaction: t });
+            if (!user || Number(user.wallet_balance) < totalAmount) {
+                await t.rollback();
+                res.status(400).json({
+                    message: `Insufficient wallet balance. Your balance is $${Number(user?.wallet_balance ?? 0).toFixed(2)}, but the order total is $${totalAmount.toFixed(2)}.`,
+                });
+                return;
+            }
+        }
+
         const bankConfirmation = confirmMockBankPayment(totalAmount, payment.method);
 
         // Create order using allowed status values only
@@ -201,6 +213,22 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
 
         // Clear cart after order
         await db.cart_items.destroy({ where: { cart_id: cart.id }, transaction: t });
+
+        if (payment.method === "wallet") {
+            await db.users.decrement("wallet_balance", {
+                by: totalAmount,
+                where: { id: userId },
+                transaction: t,
+            });
+
+            await db.wallet_transactions.create({
+                user_id: userId,
+                amount: totalAmount,
+                type: "debit",
+                reason: `Payment for order #${order.id}`,
+                reference_id: order.id,
+            }, { transaction: t });
+        }
 
         await t.commit();
 
@@ -574,8 +602,24 @@ export const resolveRefundRequest = async (req: AuthRequest, res: Response): Pro
             resolved_by: req.userId,
         }, { transaction: t });
 
-        if (requestedStatus === "approved" && refundRequest.orderItem.order?.status !== "cancelled") {
-            await refundRequest.orderItem.order.update({ status: "cancelled" }, { transaction: t });
+        if (requestedStatus === "approved") {
+            if (refundRequest.orderItem.order?.status !== "cancelled") {
+                await refundRequest.orderItem.order.update({ status: "cancelled" }, { transaction: t });
+            }
+
+            await db.users.increment("wallet_balance", {
+                by: refundAmount,
+                where: { id: refundRequest.user_id },
+                transaction: t,
+            });
+
+            await db.wallet_transactions.create({
+                user_id: refundRequest.user_id,
+                amount: refundAmount,
+                type: "credit",
+                reason: `Refund for order #${refundRequest.orderItem.order?.id}`,
+                reference_id: refundRequest.id,
+            }, { transaction: t });
         }
 
         await t.commit();
@@ -597,7 +641,7 @@ export const resolveRefundRequest = async (req: AuthRequest, res: Response): Pro
 
         res.json({
             message: requestedStatus === "approved"
-                ? "Refund approved. The purchase price has been refunded to the customer's account."
+                ? `Refund approved. $${refundAmount.toFixed(2)} has been credited to the customer's wallet.`
                 : "Refund request rejected.",
             refundRequest: resolvedRequest,
         });

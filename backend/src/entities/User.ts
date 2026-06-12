@@ -32,7 +32,12 @@ module.exports = (sequelize: Sequelize) => {
             type: DataTypes.ENUM("customer", "sales_manager", "product_manager"),
             allowNull: false,
             defaultValue: "customer",
-        }
+        },
+        wallet_balance: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: false,
+            defaultValue: 0.00,
+        },
     }, {
         tableName: "users",
         timestamps: false,

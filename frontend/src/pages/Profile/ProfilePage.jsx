@@ -10,6 +10,7 @@ import {
   updateAddress,
 } from "../../services/addressService";
 import { changePassword } from "../../services/authService";
+import { getWallet } from "../../services/walletService";
 import "./ProfilePage.css";
 
 /* ── Inline SVG icons ────────────────────────────────────── */
@@ -101,6 +102,12 @@ const icons = {
       <circle cx="12" cy="10" r="6" fill="#EB001B" />
       <circle cx="20" cy="10" r="6" fill="#F79E1B" />
       <path d="M16 5.37a6 6 0 0 1 0 9.26 6 6 0 0 1 0-9.26z" fill="#FF5F00" />
+    </svg>
+  ),
+  wallet: (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 12V8a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4" />
+      <path d="M20 12a2 2 0 0 0-2-2h-2a2 2 0 0 0 0 4h2a2 2 0 0 0 2-2z" />
     </svg>
   ),
 };
@@ -326,6 +333,12 @@ function ProfilePage() {
   });
 
   const [addresses, setAddresses] = useState([]);
+  const [wallet, setWallet] = useState({ balance: 0, transactions: [] });
+
+  useEffect(() => {
+    if (!user || user.role !== "customer") return;
+    getWallet().then(setWallet).catch(() => {});
+  }, [user]);
 
   useEffect(() => {
     if (!user || user.role !== "customer") {
@@ -521,6 +534,24 @@ function ProfilePage() {
             <span className="summary-card__arrow">{icons.chevron}</span>
           </button>
 
+          {user.role === "customer" && (
+            <button
+              className="summary-card"
+              onClick={() => document.getElementById("wallet-section")?.scrollIntoView({ behavior: "smooth" })}
+              id="profile-wallet-card"
+            >
+              <div className="summary-card__icon summary-card__icon--wallet">
+                {icons.wallet}
+              </div>
+              <div className="summary-card__body">
+                <span className="summary-card__label">Wallet</span>
+                <span className="summary-card__value">${wallet.balance.toFixed(2)}</span>
+                <span className="summary-card__desc">Available balance</span>
+              </div>
+              <span className="summary-card__arrow">{icons.chevron}</span>
+            </button>
+          )}
+
         </div>
 
         {user.role === "customer" && discountNotifications.length > 0 && (
@@ -684,6 +715,47 @@ function ProfilePage() {
           </div>
         </section>
       </div>
+
+      {/* ── Wallet ────────────────────────────────────── */}
+      {user.role === "customer" && (
+        <div className="profile-grid profile-grid--account-management" id="wallet-section">
+          <section className="profile-card profile-card--full">
+            <div className="profile-card__header">
+              <h2 className="profile-card__title">
+                {icons.wallet}&nbsp; Wallet
+              </h2>
+              <span className="wallet-balance-badge">${wallet.balance.toFixed(2)}</span>
+            </div>
+            <div className="profile-card__body">
+              {wallet.transactions.length === 0 ? (
+                <div className="payment-empty">
+                  <span className="payment-empty__icon">{icons.wallet}</span>
+                  <p>No transactions yet. Approved refunds will appear here.</p>
+                </div>
+              ) : (
+                <div className="wallet-transaction-list">
+                  {wallet.transactions.map((tx) => (
+                    <div key={tx.id} className={`wallet-tx wallet-tx--${tx.type}`}>
+                      <div className="wallet-tx__icon">
+                        {tx.type === "credit" ? "+" : "−"}
+                      </div>
+                      <div className="wallet-tx__info">
+                        <span className="wallet-tx__reason">{tx.reason}</span>
+                        <span className="wallet-tx__date">
+                          {new Date(tx.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                        </span>
+                      </div>
+                      <span className={`wallet-tx__amount wallet-tx__amount--${tx.type}`}>
+                        {tx.type === "credit" ? "+" : "−"}${Number(tx.amount).toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
       </div>
 
       {/* ── Modals ──────────────────────────────────────── */}

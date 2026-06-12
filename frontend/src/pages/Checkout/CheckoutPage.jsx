@@ -5,6 +5,7 @@ import { useCart } from "../../hooks/useCart";
 import { createAddress, getAddresses } from "../../services/addressService";
 import { placeOrder } from "../../services/orderService";
 import { validateDiscountCode } from "../../services/discountService";
+import { getWallet } from "../../services/walletService";
 import "./CheckoutPage.css";
 
 const sortAddresses = (addressList = []) =>
@@ -193,7 +194,9 @@ function AddressStep({ addressData, fieldErrors, savedAddresses, saveAccountInfo
   );
 }
 
-function PaymentStep({ paymentMethod, paymentData, fieldErrors, onPaymentMethodChange, onPaymentChange, onBack, onNext, discountCode, onDiscountChange, onApplyDiscount, isApplyingDiscount, discountError, discountInfo }) {
+function PaymentStep({ paymentMethod, paymentData, fieldErrors, onPaymentMethodChange, onPaymentChange, onBack, onNext, discountCode, onDiscountChange, onApplyDiscount, isApplyingDiscount, discountError, discountInfo, walletBalance, orderTotal }) {
+  const walletInsufficient = paymentMethod === "wallet" && walletBalance < orderTotal;
+
   return (
     <div className="checkout-card">
       <h2>Payment Details</h2>
@@ -201,6 +204,7 @@ function PaymentStep({ paymentMethod, paymentData, fieldErrors, onPaymentMethodC
         <button className={paymentMethod === "card" ? "active-tab" : ""} onClick={() => onPaymentMethodChange("card")}>Credit Card</button>
         <button className={paymentMethod === "paypal" ? "active-tab" : ""} onClick={() => onPaymentMethodChange("paypal")}>PayPal</button>
         <button className={paymentMethod === "applepay" ? "active-tab" : ""} onClick={() => onPaymentMethodChange("applepay")}>Apple Pay</button>
+        <button className={paymentMethod === "wallet" ? "active-tab" : ""} onClick={() => onPaymentMethodChange("wallet")}>Wallet</button>
       </div>
       {paymentMethod === "card" ? (
         <>
@@ -255,6 +259,22 @@ function PaymentStep({ paymentMethod, paymentData, fieldErrors, onPaymentMethodC
             </div>
           </div>
         </>
+      ) : paymentMethod === "wallet" ? (
+        <div className="wallet-payment-info">
+          <div className="wallet-payment-balance">
+            <span>Available balance</span>
+            <strong>${walletBalance.toFixed(2)}</strong>
+          </div>
+          <div className="wallet-payment-balance">
+            <span>Order total</span>
+            <strong>${orderTotal.toFixed(2)}</strong>
+          </div>
+          {walletInsufficient && (
+            <p className="checkout-field-error">
+              Insufficient wallet balance. You need ${(orderTotal - walletBalance).toFixed(2)} more.
+            </p>
+          )}
+        </div>
       ) : (
         <div className="payment-placeholder">
           {paymentMethod === "paypal" ? "You will continue with PayPal after review." : "You will continue with Apple Pay after review."}
@@ -274,7 +294,7 @@ function PaymentStep({ paymentMethod, paymentData, fieldErrors, onPaymentMethodC
       </div>
       <div className="checkout-actions">
         <button className="checkout-secondary-btn" onClick={onBack}>Back</button>
-        <button className="checkout-primary-btn" onClick={onNext}>Continue →</button>
+        <button className="checkout-primary-btn" onClick={onNext} disabled={walletInsufficient}>Continue →</button>
       </div>
     </div>
   );
@@ -390,12 +410,24 @@ export default function CheckoutPage() {
   const [isApplyingDiscount, setIsApplyingDiscount] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [walletBalance, setWalletBalance] = useState(0);
+  const appliedShipping = discountInfo?.type === "free_shipping" ? 0 : shipping;
+  const appliedDiscount = discountInfo?.discountAmount ? Number(discountInfo.discountAmount) : 0;
+  const orderTotal = Number(subtotal) + Number(appliedShipping) - appliedDiscount;
+
   const paymentLabel =
     paymentMethod === "card"
       ? `💳 •••• •••• •••• ${paymentData.cardNumber.replace(/\s/g, "").slice(-4) || "1234"}`
       : paymentMethod === "paypal"
         ? "PayPal"
-        : "Apple Pay";
+        : paymentMethod === "wallet"
+          ? `Wallet ($${walletBalance.toFixed(2)} available)`
+          : "Apple Pay";
+
+  useEffect(() => {
+    if (!user) return;
+    getWallet().then((data) => setWalletBalance(data.balance ?? 0)).catch(() => {});
+  }, [user]);
 
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -456,6 +488,9 @@ export default function CheckoutPage() {
   };
 
   const validateStep2 = () => {
+    if (paymentMethod === "wallet" && walletBalance < orderTotal) {
+      return false;
+    }
     if (paymentMethod !== "card") {
       setFieldErrors({});
       return true;
@@ -687,6 +722,8 @@ export default function CheckoutPage() {
               isApplyingDiscount={isApplyingDiscount}
               discountError={discountError}
               discountInfo={discountInfo}
+              walletBalance={walletBalance}
+              orderTotal={orderTotal}
             />
           )}
 
@@ -708,12 +745,8 @@ export default function CheckoutPage() {
         <CheckoutSummary
           cartItems={cartItems}
           subtotal={subtotal}
-          shipping={discountInfo && discountInfo.type === 'free_shipping' ? 0 : shipping}
-          total={(() => {
-            const appliedShipping = discountInfo && discountInfo.type === 'free_shipping' ? 0 : shipping;
-            const appliedDiscount = discountInfo && discountInfo.discountAmount ? Number(discountInfo.discountAmount) : 0;
-            return Number(subtotal) + Number(appliedShipping) - appliedDiscount;
-          })()}
+          shipping={appliedShipping}
+          total={orderTotal}
         />
       </div>
     </div>

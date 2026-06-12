@@ -929,3 +929,86 @@
   gap: 0.35rem 0.75rem;
   color: #065f46;
 }
+
+
+/* ── Wallet ─────────────────────────────────────────────────── */
+.summary-card__icon--wallet {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #ffffff;
+}
+
+.wallet-balance-badge {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #6366f1;
+  letter-spacing: -0.02em;
+}
+
+.wallet-transaction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.wallet-tx {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md);
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.wallet-tx__icon {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.wallet-tx--credit .wallet-tx__icon {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.wallet-tx--debit .wallet-tx__icon {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.wallet-tx__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.wallet-tx__reason {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wallet-tx__date {
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.wallet-tx__amount {
+  font-size: 1rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.wallet-tx__amount--credit { color: #16a34a; }
+.wallet-tx__amount--debit  { color: #dc2626; }
