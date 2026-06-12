@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { Op } from "sequelize";
 import db from "../entities";
 import { mapProductForFrontend } from "../utils/productMapper";
+import { sendPriceDropEmail } from "../utils/emailService";
 
 const Product = db.products;
 const Category = db.categories;
@@ -122,20 +123,35 @@ export const updateProductPrice = async (req: Request, res: Response) => {
         });
 
         if (nextPrice < oldPrice) {
+            const productName = String(product.get("name"));
+
             const wishlistEntries = await db.wishlists.findAll({
                 where: { product_id: id },
-                attributes: ["user_id"],
+                include: [{ model: db.users, as: "user", attributes: ["email", "name"] }],
             });
 
             await Promise.all(
-                wishlistEntries.map((entry: any) =>
-                    db.price_drop_notifications.create({
+                wishlistEntries.map(async (entry: any) => {
+                    await db.price_drop_notifications.create({
                         user_id: entry.user_id,
                         product_id: id,
                         old_price: oldPrice,
                         new_price: nextPrice,
-                    })
-                )
+                    });
+
+                    if (entry.user?.email) {
+                        sendPriceDropEmail(
+                            entry.user.email,
+                            entry.user.name || "Valued Customer",
+                            productName,
+                            Number(id),
+                            oldPrice,
+                            nextPrice
+                        ).catch((err: Error) =>
+                            console.error(`Price drop email failed for user ${entry.user_id}:`, err)
+                        );
+                    }
+                })
             );
         }
 
