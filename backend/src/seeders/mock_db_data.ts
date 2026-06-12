@@ -673,7 +673,7 @@ export async function seedDemoOrders() {
   if (!user) return;
 
   // Saved home address for Dogukan (shown on profile)
-  await db.addresses.create({
+  const homeAddress = {
     user_id: user.id,
     label: "Home",
     street: "Orhanli Campus, University Ave",
@@ -682,7 +682,17 @@ export async function seedDemoOrders() {
     zip: "34956",
     country: "Turkey",
     is_default: true,
+  };
+
+  const existingHomeAddress = await db.addresses.findOne({
+    where: { user_id: user.id, label: homeAddress.label },
   });
+
+  if (existingHomeAddress) {
+    await existingHomeAddress.update(homeAddress);
+  } else {
+    await db.addresses.create(homeAddress);
+  }
 
   const INVOICES_DIR = path.resolve(process.cwd(), "invoices");
   fs.mkdirSync(INVOICES_DIR, { recursive: true });
@@ -716,6 +726,11 @@ export async function seedDemoOrders() {
     const product = await db.products.findOne({ where: { serial_number: config.serial } });
     if (!product) continue;
 
+    const letter = config.serial.split("-")[1]; // "E", "F", "G", "H"
+    const invoiceNumber = `INV-DEMO-${letter}`;
+    const existingInvoice = await db.invoices.findOne({ where: { invoice_number: invoiceNumber } });
+    if (existingInvoice) continue;
+
     const unitPrice = Number(product.price);
     const shipping = unitPrice < 50 ? 5.99 : 0;
     const totalAmount = Number((unitPrice + shipping).toFixed(2));
@@ -740,8 +755,6 @@ export async function seedDemoOrders() {
       unit_price: unitPrice,
     });
 
-    const letter = config.serial.split("-")[1]; // "E", "F", "G", "H"
-    const invoiceNumber = `INV-DEMO-${letter}`;
     const pdfFilename = `invoice-${invoiceNumber}.pdf`;
 
     const pdfBuffer = createInvoicePdfBuffer({

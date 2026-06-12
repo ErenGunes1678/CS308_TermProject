@@ -42,3 +42,8 @@ export const changePassword = async ({ currentPassword, newPassword }) => {
   const { data } = await api.patch("/auth/change-password", { currentPassword, newPassword });
   return data;
 };
+
+export const getDemoAccounts = async () => {
+  const { data } = await api.get("/auth/demo-accounts");
+  return data.accounts || [];
+};

@@ -26,6 +26,31 @@ const toSafeUser = (user: any) => {
     return safeUser;
 };
 
+const demoAccountDefinitions = [
+    { role: "Customer", email: "elif.customer@gmail.com", password: "123456" },
+    { role: "Demo Customer", email: "dogukan.dogan@sabanciuniv.edu", password: "123" },
+    { role: "Sales Manager", email: "elif.sales@gmail.com", password: "123456" },
+    { role: "Product Manager", email: "elif.product@gmail.com", password: "123456" },
+];
+
+export const getDemoAccounts = async (_req: Request, res: Response) => {
+    try {
+        const emails = demoAccountDefinitions.map((account) => account.email);
+        const users = await db.users.findAll({
+            where: { email: emails },
+            attributes: ["email"],
+        });
+        const existingEmails = new Set(users.map((user: any) => user.email));
+
+        return res.status(200).json({
+            accounts: demoAccountDefinitions.filter((account) => existingEmails.has(account.email)),
+        });
+    } catch (error) {
+        console.error("Get demo accounts error:", error);
+        return res.status(500).json({ message: "Server error while fetching demo accounts" });
+    }
+};
+
 export const register = async (req: Request, res: Response) => {
     try {
         const { name, email, password } = req.body;

@@ -265,20 +265,30 @@ const ProductInventoryPage = () => {
     setErrorMessage('');
   };
 
-  const renderProductForm = () => (
-    <form className="inv-form" onSubmit={handleSaveProduct}>
-      <div className="inv-form__header">
-        <div>
-          <p className="inv-form__eyebrow">Edit Product</p>
-          <h3 className="inv-form__title">{editingProduct ? editingProduct.name : 'Edit product details'}</h3>
+  const renderProductForm = ({ allowCreate = false } = {}) => {
+    const isCreating = !editingProduct;
+    const eyebrow = isCreating ? 'Add Product' : 'Edit Product';
+    const title = isCreating ? 'Add product details' : editingProduct.name;
+    const submitLabel = isCreating ? 'Add product' : 'Save changes';
+
+    if (isCreating && !allowCreate) {
+      return null;
+    }
+
+    return (
+      <form className="inv-form" onSubmit={handleSaveProduct}>
+        <div className="inv-form__header">
+          <div>
+            <p className="inv-form__eyebrow">{eyebrow}</p>
+            <h3 className="inv-form__title">{title}</h3>
+          </div>
+          <div className="inv-form__header-actions">
+            <button type="button" className="inv-form__cancel" onClick={resetForm}>Cancel</button>
+            <button className="inv-form__submit" type="submit" disabled={isSaving}>
+              {isSaving ? 'Saving…' : submitLabel}
+            </button>
+          </div>
         </div>
-        <div className="inv-form__header-actions">
-          <button type="button" className="inv-form__cancel" onClick={resetForm}>Cancel</button>
-          <button className="inv-form__submit" type="submit" disabled={isSaving}>
-            {isSaving ? 'Saving…' : 'Save changes'}
-          </button>
-        </div>
-      </div>
       <div className="inv-form__grid">
         <label className="inv-form__field inv-form__field--2">Name<input name="name" value={form.name} onChange={handleFormChange} required /></label>
         <label className="inv-form__field">Brand<input name="brand" value={form.brand} onChange={handleFormChange} required /></label>
@@ -311,8 +321,9 @@ const ProductInventoryPage = () => {
           Warranty
         </label>
       </div>
-    </form>
-  );
+      </form>
+    );
+  };
 
   const handleSaveProduct = async (event) => {
     event.preventDefault();
@@ -475,7 +486,7 @@ const ProductInventoryPage = () => {
                 className={isManageMode ? 'is-active' : ''}
                 onClick={() => setInventoryMode('manage')}
               >
-                Add / Manage
+                Add Product
               </button>
             </div>
           </div>
@@ -523,7 +534,7 @@ const ProductInventoryPage = () => {
                   </div>
                 </section>
 
-                {renderProductForm()}
+                {renderProductForm({ allowCreate: true })}
               </div>
             </div>
           ) : (

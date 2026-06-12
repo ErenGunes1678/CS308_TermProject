@@ -14,30 +14,6 @@ import "./DashboardPage.css";
 
 const periods = ["7D", "30D", "6M", "1Y"];
 
-const FALLBACK_MONTHLY = [
-  { month: "Oct", revenue: 12800, returns: 520, orders: 88 },
-  { month: "Nov", revenue: 18900, returns: 780, orders: 134 },
-  { month: "Dec", revenue: 32800, returns: 1260, orders: 238 },
-  { month: "Jan", revenue: 22600, returns: 980, orders: 156 },
-  { month: "Feb", revenue: 24800, returns: 1040, orders: 175 },
-  { month: "Mar", revenue: 28900, returns: 1180, orders: 218 },
-];
-
-const FALLBACK_CATEGORIES = [
-  { name: "Skincare", percent: 38, color: "#f43f5e" },
-  { name: "Makeup", percent: 32, color: "#a855f7" },
-  { name: "Haircare", percent: 18, color: "#3b82f6" },
-  { name: "Men Care", percent: 12, color: "#10b981" },
-];
-
-const FALLBACK_TRANSACTIONS = [
-  { customer: "Sophie L.", detail: "Skincare", amount: "+$128", type: "sale" },
-  { customer: "Emma K.", detail: "Makeup", amount: "+$62", type: "sale" },
-  { customer: "Mia T.", detail: "Return", amount: "-$32", type: "return" },
-  { customer: "Anna R.", detail: "Haircare", amount: "+$210", type: "sale" },
-  { customer: "Clara M.", detail: "Return", amount: "-$15", type: "return" },
-];
-
 function fmt(n) {
   if (n >= 1000000) return `$${(n / 1000000).toFixed(1)}M`;
   if (n >= 1000) return `$${(n / 1000).toFixed(1)}K`;
@@ -67,6 +43,10 @@ function createAreaPoints(linePoints, width = 580, height = 170) {
 function InteractiveLineChart({ data, width = 580, height = 170 }) {
   const [tooltip, setTooltip] = useState(null);
   const svgRef = useRef(null);
+
+  if (!data.length) {
+    return <div className="products-empty">No revenue data available.</div>;
+  }
 
   const maxRevenue = Math.max(...data.map((d) => d.revenue), 1);
   const yLabels = Array.from({ length: 5 }, (_, i) =>
@@ -156,6 +136,11 @@ function InteractiveLineChart({ data, width = 580, height = 170 }) {
 
 function InteractiveBarChart({ data }) {
   const [activeIdx, setActiveIdx] = useState(null);
+
+  if (!data.length) {
+    return <div className="products-empty">No order volume data available.</div>;
+  }
+
   const maxOrders = Math.max(...data.map((d) => d.orders), 1);
   const yMax = Math.ceil(maxOrders / 50) * 50 || 50;
   const yLabels = [yMax, Math.round(yMax * 0.75), Math.round(yMax * 0.5), Math.round(yMax * 0.25), 0];
@@ -200,6 +185,10 @@ function InteractiveBarChart({ data }) {
 
 function DonutChart({ categories }) {
   const [hovered, setHovered] = useState(null);
+
+  if (!categories.length) {
+    return <div className="products-empty">No category revenue data available.</div>;
+  }
 
   const gradient = `conic-gradient(${categories
     .reduce(
@@ -249,10 +238,10 @@ function DonutChart({ categories }) {
 export default function RevenuePage() {
   const [selectedPeriod, setSelectedPeriod] = useState("6M");
   const [stats, setStats] = useState(null);
-  const [overTime, setOverTime] = useState(FALLBACK_MONTHLY);
-  const [ordersVolume, setOrdersVolume] = useState(FALLBACK_MONTHLY);
-  const [categories, setCategories] = useState(FALLBACK_CATEGORIES);
-  const [transactions, setTransactions] = useState(FALLBACK_TRANSACTIONS);
+  const [overTime, setOverTime] = useState([]);
+  const [ordersVolume, setOrdersVolume] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -267,15 +256,11 @@ export default function RevenuePage() {
       api.get("/revenue/transactions"),
     ]).then(([statsRes, overTimeRes, ordersRes, catRes, txRes]) => {
       if (cancelled) return;
-      if (statsRes.status === "fulfilled") setStats(statsRes.value.data);
-      if (overTimeRes.status === "fulfilled" && overTimeRes.value.data.data.length)
-        setOverTime(overTimeRes.value.data.data);
-      if (ordersRes.status === "fulfilled" && ordersRes.value.data.data.length)
-        setOrdersVolume(ordersRes.value.data.data);
-      if (catRes.status === "fulfilled" && catRes.value.data.data.length)
-        setCategories(catRes.value.data.data);
-      if (txRes.status === "fulfilled" && txRes.value.data.data.length)
-        setTransactions(txRes.value.data.data);
+      setStats(statsRes.status === "fulfilled" ? statsRes.value.data : null);
+      setOverTime(overTimeRes.status === "fulfilled" ? overTimeRes.value.data.data || [] : []);
+      setOrdersVolume(ordersRes.status === "fulfilled" ? ordersRes.value.data.data || [] : []);
+      setCategories(catRes.status === "fulfilled" ? catRes.value.data.data || [] : []);
+      setTransactions(txRes.status === "fulfilled" ? txRes.value.data.data || [] : []);
       setLoading(false);
     });
 
@@ -402,7 +387,7 @@ export default function RevenuePage() {
             </div>
           </div>
           <div className="transaction-list">
-            {transactions.map((item, i) => (
+            {transactions.length > 0 ? transactions.map((item, i) => (
               <div className="transaction-row" key={i}>
                 <span className={`transaction-icon transaction-icon--${item.type}`}>
                   {item.type === "return" ? <RefreshCw size={17} /> : <BadgeDollarSign size={17} />}
@@ -415,7 +400,9 @@ export default function RevenuePage() {
                   {item.amount}
                 </span>
               </div>
-            ))}
+            )) : (
+              <div className="products-empty">No transactions available.</div>
+            )}
           </div>
         </section>
       </main>

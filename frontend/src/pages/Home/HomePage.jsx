@@ -3,25 +3,52 @@ import { Link } from 'react-router-dom';
 import { getCategories } from '../../services/categoryService';
 import { getProducts } from '../../services/productService';
 import { useWishlist } from '../../hooks/useWishlist';
+import { formatCategoryLabel, normalizeSlug } from '../../utils/categoryUtils';
 import '../../styles/product-card.css';
 import './HomePage.css';
 
-const CATEGORY_ICONS = {
-  makeup: '💄',
-  skincare: '✨',
-  haircare: '💇',
-  'men-care': '🧴',
-  fragrance: '🌸',
-  nails: '💅',
-  eyes: '👁️',
-  lips: '💋',
-  face: '🌟',
-  body: '🛁',
-  tools: '🪞',
-  sets: '🎁',
-};
+const getCategoryInitial = (name = '') => (formatCategoryLabel(name).charAt(0) || 'C').toUpperCase();
 
-const getCategoryIcon = (slug) => CATEGORY_ICONS[slug] || '✨';
+const buildHomeCategories = (categories = [], products = []) => {
+  const bySlug = new Map();
+
+  categories.forEach((category) => {
+    const name = category.name || category.slug || '';
+    const slug = normalizeSlug(name);
+    if (!slug) return;
+    bySlug.set(slug, {
+      id: category.id || slug,
+      slug,
+      name: formatCategoryLabel(name),
+      subcategories: new Set(),
+    });
+  });
+
+  products.forEach((product) => {
+    const slug = normalizeSlug(product.category);
+    if (!slug) return;
+
+    if (!bySlug.has(slug)) {
+      bySlug.set(slug, {
+        id: slug,
+        slug,
+        name: formatCategoryLabel(product.category),
+        subcategories: new Set(),
+      });
+    }
+
+    if (product.subcategory) {
+      bySlug.get(slug).subcategories.add(product.subcategory);
+    }
+  });
+
+  return Array.from(bySlug.values())
+    .map((category) => ({
+      ...category,
+      subcategories: Array.from(category.subcategories),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+};
 
 function ProductCard({ product }) {
   const { isInWishlist, toggleWishlist } = useWishlist();
@@ -87,7 +114,7 @@ export default function HomePage() {
   useEffect(() => {
     Promise.all([getCategories(), getProducts()])
       .then(([cats, products]) => {
-        setCategories(cats);
+        setCategories(buildHomeCategories(cats, products));
 
         const saleProducts = products
           .filter((product) => Number(product.discount) > 0)
@@ -166,7 +193,7 @@ export default function HomePage() {
           <div className="home__category-grid">
             {categories.map((cat) => (
               <Link key={cat.slug} to={`/category/${encodeURIComponent(cat.slug)}`} className="home__category-card">
-                <span className="home__category-icon">{getCategoryIcon(cat.slug)}</span>
+                <span className="home__category-icon">{getCategoryInitial(cat.name)}</span>
                 <span className="home__category-name">{cat.name}</span>
                 {cat.subcategories?.length > 0 && (
                   <span className="home__category-sub">{cat.subcategories.length} types</span>

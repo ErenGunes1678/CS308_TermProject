@@ -69,7 +69,7 @@ const BUBBLE_MOTION_CONFIG = [
   },
 ];
 
-function AuthHeroPanel({ activeTestimonial }) {
+function AuthHeroPanel() {
   const leftPanelRef = useRef(null);
   const pointerTargetRef = useRef({ x: 0, y: 0 });
   const pointerCurrentRef = useRef({ x: 0, y: 0 });
@@ -209,13 +209,13 @@ function AuthHeroPanel({ activeTestimonial }) {
       </div>
 
       <div className="testimonial-card">
-        <div key={activeTestimonial.id} className="testimonial-card__content">
-          <div className="testimonial-avatar">{activeTestimonial.initial}</div>
+        <div className="testimonial-card__content">
+          <div className="testimonial-avatar">L</div>
 
           <div className="testimonial-card__text-block">
-            <h4>{activeTestimonial.author}</h4>
-            <span>{activeTestimonial.role}</span>
-            <p>"{activeTestimonial.content}"</p>
+            <h4>Member Benefits</h4>
+            <span>Connected to your Lumière account</span>
+            <p>Use your account to manage orders, refunds, invoices, wallet balance, and wishlist updates.</p>
           </div>
         </div>
       </div>

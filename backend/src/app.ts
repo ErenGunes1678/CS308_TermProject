@@ -74,7 +74,7 @@ if (require.main === module) {
       return migrateProductCategoryColumn();
     })
     .then(() => {
-      return sequelize.sync({force: true});
+      return sequelize.sync({ alter: true });
     })
     .then(async () => {
       await seedMockCategories();

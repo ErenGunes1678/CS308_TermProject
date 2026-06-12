@@ -4,6 +4,7 @@ import { getProducts } from "../../services/productService";
 import { useWishlist } from "../../hooks/useWishlist";
 import { searchProducts } from "../../services/searchService";
 import { PRODUCT_REVIEW_UPDATED_EVENT } from "../../utils/reviewUpdates";
+import { formatCategoryLabel } from "../../utils/categoryUtils";
 import "../../styles/product-card.css";
 import "../Products/ProductsPage.css";
 import "./SearchPage.css";
@@ -16,23 +17,6 @@ const RATING_OPTIONS = [
 const AVAILABILITY_OPTIONS = [
   { value: "inStock", label: "In stock" },
 ];
-
-const CATEGORY_LABELS = {
-  makeup: "Makeup",
-  skincare: "Skincare",
-  haircare: "Haircare",
-  "men-care": "Men Care",
-  fragrance: "Fragrance",
-};
-
-const formatLabel = (value = "") =>
-  value
-    .toString()
-    .split("-")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-
-const getCategoryLabel = (value = "") => CATEGORY_LABELS[value] || formatLabel(value);
 
 function FilterSection({ label, isOpen, onToggle, children }) {
   return (
@@ -281,7 +265,7 @@ function SearchPage() {
   const categories = useMemo(
     () =>
       Array.from(new Set(catalogProducts.map((product) => product.category).filter(Boolean))).sort(
-        (a, b) => getCategoryLabel(a).localeCompare(getCategoryLabel(b))
+        (a, b) => formatCategoryLabel(a).localeCompare(formatCategoryLabel(b))
       ),
     [catalogProducts]
   );
@@ -309,7 +293,7 @@ function SearchPage() {
     }
 
     return Array.from(subcategoriesByCategory[selectedCategory]).sort((a, b) =>
-      formatLabel(a).localeCompare(formatLabel(b))
+      formatCategoryLabel(a).localeCompare(formatCategoryLabel(b))
     );
   }, [selectedCategory, subcategoriesByCategory]);
 
@@ -591,7 +575,7 @@ function SearchPage() {
                   className="filter-choice__input"
                 />
                 <span className="filter-choice__custom filter-choice__custom--radio" />
-                <span className="filter-choice__label">{getCategoryLabel(category)}</span>
+                <span className="filter-choice__label">{formatCategoryLabel(category)}</span>
               </label>
             ))}
           </FilterSection>
@@ -616,7 +600,7 @@ function SearchPage() {
                       className="filter-choice__input"
                     />
                     <span className="filter-choice__custom filter-choice__custom--radio" />
-                    <span className="filter-choice__label">{formatLabel(subcategory)}</span>
+                    <span className="filter-choice__label">{formatCategoryLabel(subcategory)}</span>
                   </label>
                 ))
               ) : (

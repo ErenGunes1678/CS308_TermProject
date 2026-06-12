@@ -3,47 +3,9 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { getProducts } from '../../services/productService';
 import { useWishlist } from '../../hooks/useWishlist';
 import { PRODUCT_REVIEW_UPDATED_EVENT } from '../../utils/reviewUpdates';
+import { buildCategoryInfo, buildSubcategoryInfo, normalizeSlug } from '../../utils/categoryUtils';
 import '../../styles/product-card.css';
 import './ProductsPage.css';
-
-const CATEGORY_INFO = {
-    makeup: { name: 'Makeup', tagline: 'Express your beauty' },
-    skincare: { name: 'Skincare', tagline: 'Glow from within' },
-    haircare: { name: 'Haircare', tagline: 'Love your locks' },
-    'men-care': { name: 'Men Care', tagline: 'Crafted for him' },
-};
-
-const SUBCATEGORY_INFO = {
-    makeup: {
-        lipstick: { name: 'Lipstick', tagline: 'Color that completes every look' },
-        foundation: { name: 'Foundation', tagline: 'Your base for a flawless finish' },
-        eyeshadow: { name: 'Eyeshadow', tagline: 'Build every eye look from soft to bold' },
-        mascara: { name: 'Mascara', tagline: 'Lift, lengthen, and define' },
-        blush: { name: 'Blush', tagline: 'Fresh color for a natural glow' },
-    },
-    skincare: {
-        moisturizers: { name: 'Moisturizers', tagline: 'Hydration for every skin routine' },
-        serums: { name: 'Serums', tagline: 'Targeted care for visible glow' },
-        cleansers: { name: 'Cleansers', tagline: 'Start fresh with gentle formulas' },
-        sunscreen: { name: 'Sunscreen', tagline: 'Daily protection made simple' },
-        'face-masks': { name: 'Face Masks', tagline: 'A reset for tired skin' },
-    },
-    haircare: {
-        shampoo: { name: 'Shampoo', tagline: 'Cleanse and care for every hair type' },
-        conditioner: { name: 'Conditioner', tagline: 'Smooth, soften, and detangle' },
-        'hair-oil': { name: 'Hair Oil', tagline: 'Shine and softness from root to tip' },
-        styling: { name: 'Styling', tagline: 'Shape your look with confidence' },
-        treatments: { name: 'Treatments', tagline: 'Extra care for stronger hair' },
-    },
-    'men-care': {
-        'beard-care': { name: 'Beard Care', tagline: 'Grooming essentials for a clean finish' },
-        'face-wash': { name: 'Face Wash', tagline: 'Fresh skin after every cleanse' },
-        moisturizer: { name: 'Moisturizer', tagline: 'Lightweight hydration for daily care' },
-        'grooming-kits': { name: 'Grooming Kits', tagline: 'Everything needed for a sharp routine' },
-    },
-};
-
-const normalizeSlug = (value = '') => value.toLowerCase().trim().replace(/\s+/g, '-');
 
 function ProductCard({ product }) {
     const { isInWishlist, toggleWishlist } = useWishlist();
@@ -245,10 +207,10 @@ const ProductsPage = () => {
     const [priceOpen, setPriceOpen] = useState(true);
     const [brandOpen, setBrandOpen] = useState(true);
 
-    const categoryInfo = category ? CATEGORY_INFO[normalizeSlug(category)] : null;
+    const categoryInfo = buildCategoryInfo(category, products);
     const subcategoryInfo =
         category && selectedSubcategory
-            ? SUBCATEGORY_INFO[normalizeSlug(category)]?.[normalizeSlug(selectedSubcategory)]
+            ? buildSubcategoryInfo(category, selectedSubcategory, products)
             : null;
     const heroInfo = subcategoryInfo || categoryInfo;
     const brands = useMemo(

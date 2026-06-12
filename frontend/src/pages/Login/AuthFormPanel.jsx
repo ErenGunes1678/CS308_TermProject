@@ -1,28 +1,7 @@
+import { useEffect, useState } from "react";
 import { ArrowRight, Eye, EyeOff, Lock, Mail, User } from "lucide-react";
+import { getDemoAccounts } from "../../services/authService";
 import "./AuthFormPanel.css";
-
-const DEMO_ACCOUNTS = [
-  {
-    role: "Customer",
-    email: "elif.customer@gmail.com",
-    password: "123456",
-  },
-  {
-    role: "Demo Customer",
-    email: "dogukan.dogan@sabanciuniv.edu",
-    password: "123",
-  },
-  {
-    role: "Sales Manager",
-    email: "elif.sales@gmail.com",
-    password: "123456",
-  },
-  {
-    role: "Product Manager",
-    email: "elif.product@gmail.com",
-    password: "123456",
-  },
-];
 
 function AuthFormPanel({
   mode,
@@ -40,6 +19,24 @@ function AuthFormPanel({
   onLoginSubmit,
   onRegisterSubmit,
 }) {
+  const [demoAccounts, setDemoAccounts] = useState([]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    getDemoAccounts()
+      .then((accounts) => {
+        if (isMounted) setDemoAccounts(accounts);
+      })
+      .catch(() => {
+        if (isMounted) setDemoAccounts([]);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const handleDemoAccountSelect = (account) => {
     onModeChange("login");
     setLoginForm({
@@ -144,7 +141,7 @@ function AuthFormPanel({
                   <a href="#">Forgot password?</a>
                 </div>
 
-                                <button
+                <button
                   type="submit"
                   className="sign-in-btn"
                   disabled={isSubmitting}
@@ -153,30 +150,32 @@ function AuthFormPanel({
                   <ArrowRight size={16} />
                 </button>
 
-                <div className="demo-accounts">
-                  <div className="demo-accounts__header">
-                    <p className="demo-accounts__title">Demo Accounts</p>
-                    <span>Click to fill login details</span>
-                  </div>
+                {demoAccounts.length > 0 && (
+                  <div className="demo-accounts">
+                    <div className="demo-accounts__header">
+                      <p className="demo-accounts__title">Demo Accounts</p>
+                      <span>Click to fill login details</span>
+                    </div>
 
-                  <div className="demo-accounts__list">
-                    {DEMO_ACCOUNTS.map((account) => (
-                      <button
-                        key={account.role}
-                        type="button"
-                        className="demo-account-card"
-                        onClick={() => handleDemoAccountSelect(account)}
-                      >
-                        <span className="demo-account-card__role">
-                          {account.role}
-                        </span>
-                        <span className="demo-account-card__email">
-                          {account.email}
-                        </span>
-                      </button>
-                    ))}
+                    <div className="demo-accounts__list">
+                      {demoAccounts.map((account) => (
+                        <button
+                          key={account.role}
+                          type="button"
+                          className="demo-account-card"
+                          onClick={() => handleDemoAccountSelect(account)}
+                        >
+                          <span className="demo-account-card__role">
+                            {account.role}
+                          </span>
+                          <span className="demo-account-card__email">
+                            {account.email}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </form>
             ) : (
               <form

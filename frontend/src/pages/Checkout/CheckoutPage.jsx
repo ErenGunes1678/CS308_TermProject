@@ -209,8 +209,6 @@ function PaymentStep({ paymentMethod, paymentData, fieldErrors, onPaymentMethodC
       <h2>Payment Details</h2>
       <div className="payment-tabs">
         <button className={paymentMethod === "card" ? "active-tab" : ""} onClick={() => onPaymentMethodChange("card")}>Credit Card</button>
-        <button className={paymentMethod === "paypal" ? "active-tab" : ""} onClick={() => onPaymentMethodChange("paypal")}>PayPal</button>
-        <button className={paymentMethod === "applepay" ? "active-tab" : ""} onClick={() => onPaymentMethodChange("applepay")}>Apple Pay</button>
         <button className={paymentMethod === "wallet" ? "active-tab" : ""} onClick={() => onPaymentMethodChange("wallet")}>Wallet</button>
       </div>
       {paymentMethod === "card" ? (
@@ -315,35 +313,7 @@ function PaymentStep({ paymentMethod, paymentData, fieldErrors, onPaymentMethodC
             </p>
           )}
         </div>
-      ) : (
-        <div className="payment-placeholder">
-          {paymentMethod === "paypal" ? "You will continue with PayPal after review." : "You will continue with Apple Pay after review."}
-          {walletBalance > 0 && (
-            <div className="wallet-split-box" style={{ marginTop: "1rem" }}>
-              <label className="wallet-split-toggle">
-                <input
-                  type="checkbox"
-                  checked={useWallet}
-                  onChange={(e) => onUseWalletChange(e.target.checked)}
-                />
-                <span>Apply wallet balance (${walletBalance.toFixed(2)} available)</span>
-              </label>
-              {useWallet && (
-                <div className="wallet-split-breakdown">
-                  <div className="wallet-split-row">
-                    <span>From wallet</span>
-                    <strong className="wallet-split-credit">− ${walletDeduction.toFixed(2)}</strong>
-                  </div>
-                  <div className="wallet-split-row">
-                    <span>Charged to {paymentMethod}</span>
-                    <strong>${cardCharge.toFixed(2)}</strong>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+      ) : null}
       <div className="checkout-info-box">🔒 Your payment info is encrypted and secure. We never store your card details.</div>
       <div className="form-group">
         <label>Discount Code</label>
@@ -535,11 +505,7 @@ export default function CheckoutPage() {
   const paymentLabel =
     paymentMethod === "wallet"
       ? `Wallet ($${walletBalance.toFixed(2)} available)`
-      : paymentMethod === "card"
-        ? `💳 •••• •••• •••• ${paymentData.cardNumber.replace(/\s/g, "").slice(-4) || "1234"}${useWallet && walletDeduction > 0 ? ` + Wallet ($${walletDeduction.toFixed(2)})` : ""}`
-        : paymentMethod === "paypal"
-          ? `PayPal${useWallet && walletDeduction > 0 ? ` + Wallet ($${walletDeduction.toFixed(2)})` : ""}`
-          : `Apple Pay${useWallet && walletDeduction > 0 ? ` + Wallet ($${walletDeduction.toFixed(2)})` : ""}`;
+      : `💳 •••• •••• •••• ${paymentData.cardNumber.replace(/\s/g, "").slice(-4) || "1234"}${useWallet && walletDeduction > 0 ? ` + Wallet ($${walletDeduction.toFixed(2)})` : ""}`;
 
   useEffect(() => {
     if (!user) return;

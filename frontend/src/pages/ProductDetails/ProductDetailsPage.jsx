@@ -10,20 +10,15 @@ import {
     getApprovedComments,
 } from '../../services/commentService';
 import { emitProductReviewUpdated, PRODUCT_REVIEW_UPDATED_EVENT } from '../../utils/reviewUpdates';
+import { formatCategoryLabel } from '../../utils/categoryUtils';
 
-const CATEGORY_LABELS = {
-    makeup: 'Makeup',
-    skincare: 'Skincare',
-    haircare: 'Haircare',
-    'men-care': 'Men Care',
-};
 
 const mapApiProductToDetails = (apiProduct) => {
     const stock = Number(apiProduct.quantity_in_stock ?? 0);
 
     return {
         ...apiProduct,
-        category: CATEGORY_LABELS[apiProduct.category] || apiProduct.category || 'Products',
+        category: formatCategoryLabel(apiProduct.category) || 'Products',
         price: Number(apiProduct.price ?? 0),
         originalPrice:
             apiProduct.originalPrice === null || apiProduct.originalPrice === undefined

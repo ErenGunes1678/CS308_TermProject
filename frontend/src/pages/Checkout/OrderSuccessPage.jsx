@@ -75,7 +75,7 @@ export default function OrderSuccessPage() {
           <p className="success-eyebrow">Payment Confirmed</p>
           <h1>Invoice Ready</h1>
           <p>
-            The mock banking entity approved your payment and your invoice is ready below.
+            The payment provider approved your payment and your invoice is ready below.
           </p>
 
           <div className="status-grid">

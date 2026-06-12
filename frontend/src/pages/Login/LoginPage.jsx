@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Navbar from "../../components/layout/Navbar/Navbar";
 import Footer from "../../components/layout/Footer/Footer";
@@ -11,33 +11,6 @@ import { useAuth } from "../../hooks/useAuth";
 const getModeFromQuery = (value) =>
   value === "register" ? "register" : "login";
 
-const FALLBACK_TESTIMONIALS = [
-  {
-    id: "fallback-1",
-    author: "Emma K.",
-    role: "Beauty Enthusiast",
-    content:
-      "Lumière has completely transformed my beauty routine. The quality is unmatched!",
-    initial: "E",
-  },
-  {
-    id: "fallback-2",
-    author: "Sofia T.",
-    role: "Skincare Lover",
-    content:
-      "My orders always arrive fast, and the product recommendations feel surprisingly personal.",
-    initial: "S",
-  },
-  {
-    id: "fallback-3",
-    author: "Nina R.",
-    role: "Verified Buyer",
-    content:
-      "I found shades and formulas here that I now use every single day. It feels premium and easy.",
-    initial: "N",
-  },
-];
-
 function LoginPage() {
   const navigate = useNavigate();
   const { login, register, isAuthenticated, isLoading } = useAuth();
@@ -45,8 +18,6 @@ function LoginPage() {
   const queryMode = getModeFromQuery(searchParams.get("mode"));
   const mode = queryMode;
   const [showPassword, setShowPassword] = useState(false);
-  const [testimonials, setTestimonials] = useState(FALLBACK_TESTIMONIALS);
-  const [activeTestimonialIndex, setActiveTestimonialIndex] = useState(0);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -109,11 +80,6 @@ function LoginPage() {
     }
   }
 
-  const activeTestimonial = useMemo(
-    () => testimonials[activeTestimonialIndex] || FALLBACK_TESTIMONIALS[0],
-    [activeTestimonialIndex, testimonials]
-  );
-
   const passwordsMatch =
     registerForm.confirmPassword === "" ||
     registerForm.password === registerForm.confirmPassword;
@@ -127,45 +93,12 @@ function LoginPage() {
     setSuccessMessage("");
     setSearchParams(nextMode === "register" ? { mode: "register" } : {});
   }
-
- /* useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      navigate("/account", { replace: true });
-    }
-  }, [isAuthenticated, isLoading, navigate]);
-*/
-  useEffect(() => {
-    if (testimonials.length <= 1) {
-      return undefined;
-    }
-
-    const rotationTimer = window.setInterval(() => {
-      setActiveTestimonialIndex((currentIndex) => {
-        if (testimonials.length <= 1) {
-          return currentIndex;
-        }
-
-        let nextIndex = currentIndex;
-
-        while (nextIndex === currentIndex) {
-          nextIndex = Math.floor(Math.random() * testimonials.length);
-        }
-
-        return nextIndex;
-      });
-    }, 15000);
-
-    return () => {
-      window.clearInterval(rotationTimer);
-    };
-  }, [testimonials]);
-
   return (
     <div className="login-page-layout">
       <Navbar />
 
       <main className="login-hero">
-        <AuthHeroPanel activeTestimonial={activeTestimonial} />
+        <AuthHeroPanel />
         <AuthFormPanel
           mode={mode}
           showPassword={showPassword}
