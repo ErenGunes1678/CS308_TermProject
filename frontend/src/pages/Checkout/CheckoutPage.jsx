@@ -376,7 +376,7 @@ function ReviewStep({ addressData, paymentLabel, cartItems, saveAccountInfo, onB
   );
 }
 
-function CheckoutSummary({ cartItems, subtotal, total }) {
+function CheckoutSummary({ cartItems, total }) {
   return (
     <div className="checkout-summary">
       <div className="checkout-summary-card">
@@ -391,10 +391,6 @@ function CheckoutSummary({ cartItems, subtotal, total }) {
             <p>${(item.price * item.quantity).toFixed(2)}</p>
           </div>
         ))}
-        <div className="checkout-summary-line">
-          <span>Subtotal</span>
-          <span>${subtotal.toFixed(2)}</span>
-        </div>
         <div className="checkout-summary-total">
           <span>Total</span>
           <span>${total.toFixed(2)}</span>
@@ -832,7 +828,6 @@ export default function CheckoutPage() {
 
         <CheckoutSummary
           cartItems={cartItems}
-          subtotal={subtotal}
           total={orderTotal}
         />
       </div>

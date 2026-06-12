@@ -134,11 +134,6 @@ export default function CartPage() {
         <div className="order-summary">
           <h2>Order Summary</h2>
 
-          <div className="summary-line">
-            <span>Subtotal ({itemCount} items)</span>
-            <span>${subtotal.toFixed(2)}</span>
-          </div>
-
           <div className="summary-total">
             <span>Total</span>
             <span>${total.toFixed(2)}</span>
