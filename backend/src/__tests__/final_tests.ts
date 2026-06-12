@@ -3,19 +3,8 @@ import request from "supertest";
 import app from "../app";
 import { sequelize } from "../entities";
  
-/*
-  FINAL DEMO — 25 TEST CASES (backend route'larına göre düzeltilmiş sürüm)
- 
-  Önemli düzeltmeler:
-  - wishlist: POST/DELETE /wishlist/:productId (body değil URL parametresi)
-  - indirim: PUT /product/:id/price (sales manager) — fiyat düşünce wishlist bildirimleri otomatik
-  - faturalar: GET /invoices, PDF: GET /invoices/:id/download
-  - rapor: GET /revenue/stats
-  - stok güncelleme: PUT /product/:id (editProduct)
-  - teslimat: GET /order/admin + PATCH /order/:id/status
-  - iade: POST /order/items/:itemId/refund-request, onay: PATCH /order/refund-requests/:id
-  - beforeAll içinde "skincare" kategorisi oluşturuluyor (addProduct categoryExists kontrolü yapıyor)
-*/
+
+
  
 const ENDPOINTS = {
   register: "/auth/register",
