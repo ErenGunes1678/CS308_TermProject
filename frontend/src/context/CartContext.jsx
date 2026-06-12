@@ -9,9 +9,6 @@ import {
 
 export const CartContext = createContext(null);
 
-const SHIPPING_COST = 5.99;
-const FREE_SHIPPING_MINIMUM = 50;
-
 const mapCartItem = (item) => ({
   id: item.product?.id,
   cartItemId: item.id,
@@ -95,10 +92,8 @@ export function CartProvider({ children }) {
     (total, item) => total + item.price * item.quantity,
     0
   );
-  const shipping =
-    itemCount > 0 && subtotal < FREE_SHIPPING_MINIMUM ? SHIPPING_COST : 0;
-  const total = subtotal + shipping;
-  const amountUntilFreeShipping = Math.max(0, FREE_SHIPPING_MINIMUM - subtotal);
+  const shipping = 0;
+  const total = subtotal;
 
   const value = useMemo(
     () => ({
@@ -107,7 +102,6 @@ export function CartProvider({ children }) {
       subtotal,
       shipping,
       total,
-      amountUntilFreeShipping,
       refreshCart,
       addToCart,
       removeCartItem,
@@ -116,7 +110,7 @@ export function CartProvider({ children }) {
       decreaseCartItem,
       clearCart,
     }),
-    [cartItems, itemCount, subtotal, shipping, total, amountUntilFreeShipping]
+    [cartItems, itemCount, subtotal, shipping, total]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

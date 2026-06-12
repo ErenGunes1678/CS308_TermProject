@@ -9,8 +9,6 @@ import { sendInvoiceEmail } from "../utils/emailService";
 const INVOICES_DIR = path.resolve(process.cwd(), "invoices");
 fs.mkdirSync(INVOICES_DIR, { recursive: true });
 
-const SHIPPING_COST = 5.99;
-const FREE_SHIPPING_MINIMUM = 50;
 const RETURN_WINDOW_DAYS = 30;
 
 const formatMoney = (value: number): number => Number(value.toFixed(2));
@@ -114,7 +112,7 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
             subtotal += parseFloat(product.price) * item.quantity;
         }
 
-        let shipping = subtotal > 0 && subtotal < FREE_SHIPPING_MINIMUM ? SHIPPING_COST : 0;
+        const shipping = 0;
         let discountAmount = 0;
 
         if (discount_code) {
@@ -146,9 +144,7 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
                 return;
             }
 
-            if (discountCode.type === "free_shipping") {
-                shipping = 0;
-            } else if (discountCode.type === "percentage") {
+            if (discountCode.type === "percentage") {
                 discountAmount = formatMoney((subtotal + shipping) * Number(discountCode.value) / 100);
             } else if (discountCode.type === "fixed") {
                 discountAmount = formatMoney(Math.min(Number(discountCode.value), subtotal + shipping));

@@ -11,9 +11,7 @@ export default function CartPage() {
     cartItems,
     itemCount,
     subtotal,
-    shipping,
     total,
-    amountUntilFreeShipping,
     increaseCartItem,
     decreaseCartItem,
     clearCart,
@@ -140,19 +138,6 @@ export default function CartPage() {
             <span>Subtotal ({itemCount} items)</span>
             <span>${subtotal.toFixed(2)}</span>
           </div>
-
-          <div className="summary-line">
-            <span>Shipping</span>
-            <span>${shipping.toFixed(2)}</span>
-          </div>
-
-          {amountUntilFreeShipping > 0 ? (
-            <p className="free-shipping">
-              Add ${amountUntilFreeShipping.toFixed(2)} more for free shipping
-            </p>
-          ) : (
-            <p className="free-shipping">You have free shipping</p>
-          )}
 
           <div className="summary-total">
             <span>Total</span>
