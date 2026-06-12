@@ -128,7 +128,6 @@ async function loginUser(email: string, password: string) {
 }
  
 async function ensureTestCategory() {
-  // addProduct, kategori DB'de yoksa 400 dönüyor — önce kategoriyi garanti altına al.
   const res = await request(app)
     .post(ENDPOINTS.category)
     .set(authHeader(productManagerToken))
@@ -232,7 +231,6 @@ afterAll(async () => {
 });
  
 // ══════════════════════════════════════════════
-// CUSTOMER PROFILE + WISHLIST
 // ══════════════════════════════════════════════
 describe("Final Demo Tests 1-5 — Customer profile and wishlist", () => {
   test("1. Customer can view own required properties without exposing password", async () => {
@@ -653,14 +651,13 @@ describe("Final Demo Tests 22-25 — Return/refund and security", () => {
   });
  
   test("24. Sales manager can approve a refund request", async () => {
-    // İade talebinin id'si test 22'de yakalanamadıysa listeden bul
+ 
     if (!returnRequestId) {
       const listRes = await request(app)
         .get(ENDPOINTS.refundRequests)
         .set(authHeader(salesToken));
       expect(listRes.status).toBe(200);
       const requests = listRes.body.refundRequests || [];
-      // getRefundRequests DESC sıralıyor → en yeni talep [0]
       returnRequestId = extractId(requests[0]) ?? 0;
     }
     expect(returnRequestId).toBeGreaterThan(0);
@@ -695,7 +692,7 @@ describe("Final Demo Tests 22-25 — Return/refund and security", () => {
  
     expect(responseAsText).not.toContain(validPayment.cardNumber);
     expect(responseAsText).not.toContain(`"cvv"`);
-    // NOT: orijinal /123/ regex'i hatalıydı — "123" alt dizesi masum yerlerde de geçebilir (id, fiyat vs.)
+    
     expect(responseAsText).not.toMatch(/4111111111111111/);
   });
 });
