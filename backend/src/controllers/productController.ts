@@ -13,6 +13,12 @@ const categoryExists = async (categoryName?: string) => {
     return Boolean(category);
 };
 
+const normalizeOptionalCategory = (category: unknown) => {
+    if (category === undefined) return undefined;
+    const normalized = String(category || "").trim();
+    return normalized || null;
+};
+
 export const getAllProducts = async (_req: Request, res: Response) => {
     try {
         const products = await Product.findAll({
@@ -276,10 +282,11 @@ export const editProduct = async (req: Request, res: Response) => {
             distributor_info
         } = req.body;
 
-        const currentCategory = String(product.get("category") || "");
-        const isChangingCategory = category !== undefined && category !== currentCategory;
+        const normalizedCategory = normalizeOptionalCategory(category);
+        const currentCategory = normalizeOptionalCategory(product.get("category"));
+        const isChangingCategory = normalizedCategory !== undefined && normalizedCategory !== currentCategory;
 
-        if (isChangingCategory && !(await categoryExists(category))) {
+        if (isChangingCategory && normalizedCategory && !(await categoryExists(normalizedCategory))) {
             return res.status(400).json({
                 message: "Category does not exist"
             });
@@ -288,7 +295,7 @@ export const editProduct = async (req: Request, res: Response) => {
         await product.update({
             ...(name !== undefined && { name }),
             ...(brand !== undefined && { brand }),
-            ...(category !== undefined && { category }),
+            ...(normalizedCategory !== undefined && { category: normalizedCategory }),
             ...(subcategory !== undefined && { subcategory }),
             ...(model !== undefined && { model }),
             ...(serial_number !== undefined && { serial_number }),

@@ -37,6 +37,7 @@ const toForm = (product) => ({
 
 const buildPayload = (form) => ({
   ...form,
+  category: form.category || null,
   quantity_in_stock: Number(form.quantity_in_stock || 0),
   badge: form.badge || null,
 });
@@ -309,8 +310,10 @@ const ProductInventoryPage = () => {
         <label className="inv-form__field inv-form__field--2">Name<input name="name" value={form.name} onChange={handleFormChange} required /></label>
         <label className="inv-form__field">Brand<input name="brand" value={form.brand} onChange={handleFormChange} required /></label>
         <label className="inv-form__field">Category
-          <select name="category" value={form.category} onChange={handleFormChange} required>
-            <option value="" disabled>Select category</option>
+          <select name="category" value={form.category} onChange={handleFormChange} required={isCreating}>
+            <option value="" disabled={isCreating}>
+              {isCreating ? 'Select category' : 'Uncategorized'}
+            </option>
             {categoryOptions.map((category) => (
               <option key={category.key} value={category.name}>{category.label}</option>
             ))}

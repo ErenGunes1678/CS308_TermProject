@@ -79,7 +79,7 @@ jest.mock("../utils/invoicePdf", () => ({
 import { mapProductForFrontend } from "../utils/productMapper";
 import { addToCart } from "../controllers/cartController";
 import { placeOrder } from "../controllers/orderController";
-import { addProduct } from "../controllers/productController";
+import { addProduct, editProduct } from "../controllers/productController";
 import { sequelize } from "../entities";
 
 /* ──────────────────────── helpers ──────────────────────── */
@@ -189,6 +189,33 @@ describe("Test 1 – Product is created with all required properties", () => {
         expect(product).toHaveProperty("price", 29.99);
         expect(product).toHaveProperty("warranty_status", true);
         expect(product).toHaveProperty("distributor_info", "GlowUp Inc., Istanbul, Turkey");
+    });
+});
+
+describe("Product manager stock updates", () => {
+    it("should update stock for a product without a category", async () => {
+        const product = sampleProductRow({ category: null, quantity_in_stock: 4 });
+        mockProductFindByPk.mockResolvedValue(product);
+
+        const req = mockRequest({
+            params: { id: "1" },
+            body: { category: null, quantity_in_stock: 12 },
+        });
+        const res = mockResponse();
+
+        await editProduct(req as any, res as any);
+
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(product.update).toHaveBeenCalledWith(
+            expect.objectContaining({
+                category: null,
+                quantity_in_stock: 12,
+            })
+        );
+
+        const responseBody = res.json.mock.calls[0][0];
+        expect(responseBody.product.quantity_in_stock).toBe(12);
+        expect(responseBody.product.category).toBeNull();
     });
 });
 
