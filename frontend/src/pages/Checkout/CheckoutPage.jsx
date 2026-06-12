@@ -108,6 +108,8 @@ function AddressStep({ addressData, fieldErrors, savedAddresses, saveAccountInfo
             value={addressData.phone}
             onChange={onAddressChange}
             placeholder="+1 (555) 000-0000"
+            inputMode="tel"
+            autoComplete="tel"
             aria-invalid={Boolean(fieldErrors.phone)}
           />
           {fieldErrors.phone ? <p className="checkout-field-error">{fieldErrors.phone}</p> : null}
@@ -170,6 +172,8 @@ function AddressStep({ addressData, fieldErrors, savedAddresses, saveAccountInfo
             value={addressData.zip}
             onChange={onAddressChange}
             placeholder="10001"
+            inputMode="text"
+            autoComplete="postal-code"
             aria-invalid={Boolean(fieldErrors.zip)}
           />
           {fieldErrors.zip ? <p className="checkout-field-error">{fieldErrors.zip}</p> : null}
@@ -231,6 +235,9 @@ function PaymentStep({ paymentMethod, paymentData, fieldErrors, onPaymentMethodC
               value={paymentData.cardNumber}
               onChange={onPaymentChange}
               placeholder="1234 5678 9012 3456"
+              inputMode="numeric"
+              autoComplete="cc-number"
+              maxLength={19}
               aria-invalid={Boolean(fieldErrors.cardNumber)}
             />
             {fieldErrors.cardNumber ? <p className="checkout-field-error">{fieldErrors.cardNumber}</p> : null}
@@ -243,7 +250,10 @@ function PaymentStep({ paymentMethod, paymentData, fieldErrors, onPaymentMethodC
                 name="expiry"
                 value={paymentData.expiry}
                 onChange={onPaymentChange}
-                placeholder="MM / YY"
+                placeholder="MM/YY"
+                inputMode="numeric"
+                autoComplete="cc-exp"
+                maxLength={5}
                 aria-invalid={Boolean(fieldErrors.expiry)}
               />
               {fieldErrors.expiry ? <p className="checkout-field-error">{fieldErrors.expiry}</p> : null}
@@ -256,6 +266,9 @@ function PaymentStep({ paymentMethod, paymentData, fieldErrors, onPaymentMethodC
                 value={paymentData.cvc}
                 onChange={onPaymentChange}
                 placeholder="•••"
+                inputMode="numeric"
+                autoComplete="cc-csc"
+                maxLength={4}
                 aria-invalid={Boolean(fieldErrors.cvc)}
               />
               {fieldErrors.cvc ? <p className="checkout-field-error">{fieldErrors.cvc}</p> : null}
@@ -425,6 +438,50 @@ function CheckoutSummary({ cartItems, subtotal, shipping, total }) {
   );
 }
 
+// ── Input formatters ────────────────────────────────────────────
+const fmtPhone = (raw) =>
+  raw.replace(/[^\d+\s\-().]/g, '').slice(0, 20);
+
+const fmtZip = (raw) =>
+  raw.replace(/[^a-zA-Z0-9\-]/g, '').slice(0, 10);
+
+const fmtCardNumber = (raw) => {
+  const digits = raw.replace(/\D/g, '').slice(0, 16);
+  return digits.replace(/(.{4})(?=.)/g, '$1 ');
+};
+
+const fmtExpiry = (raw, prev) => {
+  const clean = raw.replace(/\D/g, '');
+  const prevClean = prev.replace(/\D/g, '');
+  if (!clean) return '';
+  const digits = clean.slice(0, 4);
+  if (digits.length <= 2) {
+    if (digits.length === 2 && clean.length > prevClean.length) return digits + '/';
+    return digits;
+  }
+  return digits.slice(0, 2) + '/' + digits.slice(2);
+};
+
+const fmtCvc = (raw) => raw.replace(/\D/g, '').slice(0, 4);
+
+// ── Validators ──────────────────────────────────────────────────
+const validatePhone = (v) => v.replace(/\D/g, '').length >= 7;
+const validateZip   = (v) => v.trim().length >= 3;
+const validateCardNumber = (v) => {
+  const d = v.replace(/\s/g, '');
+  return d.length >= 13 && d.length <= 19 && /^\d+$/.test(d);
+};
+const validateExpiry = (v) => {
+  const [mm, yy] = v.split('/');
+  if (!mm || !yy || mm.length !== 2 || yy.length !== 2) return false;
+  const month = parseInt(mm, 10);
+  const year = 2000 + parseInt(yy, 10);
+  if (month < 1 || month > 12) return false;
+  const now = new Date();
+  return year > now.getFullYear() || (year === now.getFullYear() && month >= now.getMonth() + 1);
+};
+const validateCvc = (v) => v.length >= 3 && v.length <= 4;
+
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { user, updateProfile } = useAuth();
@@ -499,10 +556,13 @@ export default function CheckoutPage() {
 
   const handleAddressChange = (e) => {
     const { name, value } = e.target;
+    let formatted = value;
+    if (name === "phone") formatted = fmtPhone(value);
+    if (name === "zip")   formatted = fmtZip(value);
     setAddressData((prev) => ({
       ...prev,
       ...(name !== "taxId" && name !== "phone" && { addressId: "" }),
-      [name]: value,
+      [name]: formatted,
     }));
     setFieldErrors((prev) => {
       if (!prev[name]) return prev;
@@ -512,9 +572,13 @@ export default function CheckoutPage() {
 
   const handlePaymentChange = (e) => {
     const { name, value } = e.target;
+    let formatted = value;
+    if (name === "cardNumber") formatted = fmtCardNumber(value);
+    if (name === "expiry")     formatted = fmtExpiry(value, paymentData.expiry);
+    if (name === "cvc")        formatted = fmtCvc(value);
     setPaymentData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: formatted,
     }));
     setFieldErrors((prev) => {
       if (!prev[name]) return prev;
@@ -539,9 +603,13 @@ export default function CheckoutPage() {
       if (!addressData[field]?.trim()) {
         errors[field] = message;
       }
-
       return errors;
     }, {});
+
+    if (!nextErrors.phone && !validatePhone(addressData.phone))
+      nextErrors.phone = "Enter a valid phone number (at least 7 digits).";
+    if (!nextErrors.zip && !validateZip(addressData.zip))
+      nextErrors.zip = "Enter a valid ZIP / postal code.";
 
     setFieldErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -556,20 +624,16 @@ export default function CheckoutPage() {
       return true;
     }
 
-    const requiredFields = {
-      cardName: "Cardholder name is required.",
-      cardNumber: "Card number is required.",
-      expiry: "Expiry date is required.",
-      cvc: "CVC is required.",
-    };
+    const nextErrors = {};
 
-    const nextErrors = Object.entries(requiredFields).reduce((errors, [field, message]) => {
-      if (!paymentData[field]?.trim()) {
-        errors[field] = message;
-      }
-
-      return errors;
-    }, {});
+    if (!paymentData.cardName.trim())
+      nextErrors.cardName = "Cardholder name is required.";
+    if (!validateCardNumber(paymentData.cardNumber))
+      nextErrors.cardNumber = "Enter a valid 13–16 digit card number.";
+    if (!validateExpiry(paymentData.expiry))
+      nextErrors.expiry = "Enter a valid expiry date (MM/YY) that hasn't passed.";
+    if (!validateCvc(paymentData.cvc))
+      nextErrors.cvc = "CVC must be 3 or 4 digits.";
 
     setFieldErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
