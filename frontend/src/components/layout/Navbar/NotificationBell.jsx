@@ -20,7 +20,7 @@ const formatAge = (iso) => {
 };
 
 const NotificationBell = ({ userId }) => {
-  const { notifications, unseenCount, seenIds, markRead } = useNotifications();
+  const { notifications, unseenCount, seenIds, markRead, markAllRead } = useNotifications();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const navigate = useNavigate();
@@ -59,8 +59,19 @@ const NotificationBell = ({ userId }) => {
       {open && (
         <div className="notif-dropdown">
           <div className="notif-dropdown__header">
-            <span className="notif-dropdown__title">Unread</span>
-            {unseenCount > 0 && <span className="notif-dropdown__count">{unseenCount}</span>}
+            <div className="notif-dropdown__header-left">
+              <span className="notif-dropdown__title">Unread</span>
+              {unseenCount > 0 && <span className="notif-dropdown__count">{unseenCount}</span>}
+            </div>
+            {unseenCount > 0 && (
+              <button
+                type="button"
+                className="notif-dropdown__mark-all"
+                onClick={markAllRead}
+              >
+                Mark all as read
+              </button>
+            )}
           </div>
 
           <div className="notif-dropdown__list">
