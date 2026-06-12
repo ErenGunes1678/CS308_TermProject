@@ -387,7 +387,7 @@ export const getAllOrders = async (req: AuthRequest, res: Response): Promise<voi
                 {
                     model: db.invoices,
                     as: "invoice",
-                    attributes: ["id", "invoice_number", "file_name", "amount", "createdAt"],
+                    attributes: ["id", "invoice_number", "file_name", "amount", "discount_code", "discount_amount", "createdAt"],
                 },
             ],
             order: [["createdAt", "DESC"]],

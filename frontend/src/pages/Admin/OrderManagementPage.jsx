@@ -172,16 +172,52 @@ const OrderRow = ({ order, onAction, onDownloadInvoice, isUpdating, isDownloadin
 
       {isExpanded ? (
         <div className="admin-order-row__details">
-          {order.items.map((item) => (
+          {order.items.map((item, idx) => (
             <div key={item.id} className="admin-order-detail">
-              <span>Delivery #{order.id}-{item.id}</span>
-              <span>Customer #{order.user?.id || order.user_id}</span>
-              <span>Product #{item.product_id}</span>
-              <span>Qty {item.quantity}</span>
-              <span>${(Number(item.unit_price || 0) * Number(item.quantity || 0)).toFixed(2)}</span>
-              <span>{STATUS_LABELS[order.status]}</span>
-              <span>{order.invoice?.invoice_number || 'No invoice yet'}</span>
+              <span className="admin-order-detail__line">Delivery #{order.id}-{item.id}</span>
+              <span className="admin-order-detail__line">{item.product?.name || `Product #${item.product_id}`}</span>
+              <span className="admin-order-detail__line">Qty {item.quantity}</span>
+              <span className="admin-order-detail__line">Unit ${Number(item.unit_price || 0).toFixed(2)}</span>
+              <span className="admin-order-detail__line">${(Number(item.unit_price || 0) * Number(item.quantity || 0)).toFixed(2)}</span>
+              <span className="admin-order-detail__line">{STATUS_LABELS[order.status]}</span>
+              <span className="admin-order-detail__line">{order.invoice?.invoice_number || 'No invoice yet'}</span>
               <span className="admin-order-detail__address">{formatDeliveryAddress(order.delivery_address)}</span>
+
+              {idx === 0 ? (
+                <div className="admin-order-summary admin-order-summary--inline" aria-hidden>
+                  <div className="admin-order-summary__grid">
+                    <div className="admin-order-summary__left">
+                      <div className="admin-order-summary__row">
+                        <span>Products subtotal</span>
+                        <strong>${order.items.reduce((s, it) => s + Number(it.unit_price || 0) * Number(it.quantity || 0), 0).toFixed(2)}</strong>
+                      </div>
+                      <div className="admin-order-summary__row">
+                        <span>Coupon</span>
+                        <span className="admin-order-summary__muted">{order.invoice?.discount_code ? order.invoice.discount_code : '-'}</span>
+                      </div>
+                      <div className="admin-order-summary__row">
+                        <span>Discount</span>
+                        <strong className="admin-order-summary__discount">-${Number(order.invoice?.discount_amount || 0).toFixed(2)}</strong>
+                      </div>
+                      <div className="admin-order-summary__row">
+                        <span>Shipping</span>
+                        <strong>${(
+                          Number(order.total_amount || 0) -
+                          order.items.reduce((s, it) => s + Number(it.unit_price || 0) * Number(it.quantity || 0), 0) +
+                          Number(order.invoice?.discount_amount || 0)
+                        ).toFixed(2)}</strong>
+                      </div>
+                    </div>
+
+                    <div className="admin-order-summary__right">
+                      <div className="admin-order-summary__row admin-order-summary__total">
+                        <span>Total</span>
+                        <strong>${Number(order.total_amount || 0).toFixed(2)}</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
             </div>
           ))}
         </div>
