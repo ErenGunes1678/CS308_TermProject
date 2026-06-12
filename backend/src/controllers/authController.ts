@@ -80,6 +80,7 @@ export const register = async (req: Request, res: Response) => {
             email,
             password_hash,
             role: "customer",
+            tax_id: req.body.taxId ?? req.body.tax_id ?? null,
         });
 
         // Merge guest cart into user cart on login

@@ -177,8 +177,6 @@ export const validateDiscountCode = async (req: Request, res: Response) => {
         }
         // free_shipping: discountAmount stays 0; the type field signals the frontend to waive shipping
 
-        await discountCode.increment("uses_count");
-
         return res.status(200).json({
             message: "Discount code applied successfully.",
             type: discountCode.type,

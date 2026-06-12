@@ -19,6 +19,7 @@ type InvoicePayload = {
     subtotal: number;
     shipping: number;
     discount?: number;
+    discountCode?: string;
     total: number;
 };
 
@@ -134,7 +135,8 @@ export const createInvoicePdfBuffer = (invoice: InvoicePayload): Buffer => {
     y -= 18;
     if (invoice.discount && Number(invoice.discount) > 0) {
         y -= 18;
-        lines.push(toPdfLine(`Discount: -$${Number(invoice.discount).toFixed(2)}`, 380, y));
+        const codeLabel = invoice.discountCode ? ` (${invoice.discountCode})` : "";
+        lines.push(toPdfLine(`Discount${codeLabel}: -$${Number(invoice.discount).toFixed(2)}`, 380, y));
     }
     y -= 18;
     lines.push(toPdfLine(`Grand Total: $${invoice.total.toFixed(2)}`, 380, y, 14));

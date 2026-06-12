@@ -139,8 +139,9 @@ describe("Discount validation", () => {
       is_active: true,
     });
 
-    // add product 1 to cart
-    const product = await db.products.findByPk(1);
+    // add an in-stock product to cart
+    const { Op } = require("sequelize");
+    const product = await db.products.findOne({ where: { quantity_in_stock: { [Op.gt]: 5 } } });
     expect(product).toBeDefined();
 
     await request(app).post("/cart/add").set("Authorization", `Bearer ${token}`).send({ product_id: product.id, quantity: 1 });
@@ -151,6 +152,7 @@ describe("Discount validation", () => {
         firstName: "Order",
         lastName: "User",
         email: uniqueEmail,
+        taxId: "00011122233",
         phone: "1234567890",
         country: "Turkey",
         street: "Some Street",

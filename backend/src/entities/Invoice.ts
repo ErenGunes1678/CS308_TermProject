@@ -24,6 +24,15 @@ module.exports = (sequelize: Sequelize) => {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: false,
         },
+        discount_code: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        discount_amount: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: true,
+            defaultValue: 0,
+        },
         order_id: {
             type: DataTypes.INTEGER,
             allowNull: false,

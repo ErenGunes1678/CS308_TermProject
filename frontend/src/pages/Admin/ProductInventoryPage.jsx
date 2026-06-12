@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { createCategory, deleteCategory, getCategories } from '../../services/categoryService';
@@ -257,6 +257,22 @@ const ProductInventoryPage = () => {
       category: categoryOptions[0]?.name || '',
     });
   };
+
+  const editPanelRef = useRef(null);
+
+  useEffect(() => {
+    if (!editingProduct) return;
+    // wait a tick for DOM update, then scroll the edit panel into view
+    const id = setTimeout(() => {
+      try {
+        editPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (e) {
+        // ignore
+      }
+    }, 80);
+
+    return () => clearTimeout(id);
+  }, [editingProduct]);
 
   const handleEdit = (product) => {
     setEditingProduct(product);
@@ -635,7 +651,7 @@ const ProductInventoryPage = () => {
                     })}
                   </div>
                   {editingProduct && (
-                    <aside className="product-inventory-edit-panel">
+                    <aside ref={editPanelRef} className="product-inventory-edit-panel">
                       {renderProductForm()}
                     </aside>
                   )}
