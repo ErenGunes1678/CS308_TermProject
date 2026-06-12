@@ -44,17 +44,7 @@ function InteractiveLineChart({ data, width = 580, height = 170 }) {
   const [tooltip, setTooltip] = useState(null);
   const svgRef = useRef(null);
 
-  if (!data.length) {
-    return <div className="products-empty">No revenue data available.</div>;
-  }
-
   const maxRevenue = Math.max(...data.map((d) => d.revenue), 1);
-  const yLabels = Array.from({ length: 5 }, (_, i) =>
-    fmt(maxRevenue - (maxRevenue / 4) * i)
-  );
-
-  const revenuePoints = createLinePoints(data, "revenue", maxRevenue, width, height);
-  const returnPoints = createLinePoints(data, "returns", maxRevenue, width, height);
 
   const handleMouseMove = useCallback(
     (e) => {
@@ -73,6 +63,17 @@ function InteractiveLineChart({ data, width = 580, height = 170 }) {
     },
     [data, width, height, maxRevenue]
   );
+
+  if (!data.length) {
+    return <div className="products-empty">No revenue data available.</div>;
+  }
+
+  const yLabels = Array.from({ length: 5 }, (_, i) =>
+    fmt(maxRevenue - (maxRevenue / 4) * i)
+  );
+
+  const revenuePoints = createLinePoints(data, "revenue", maxRevenue, width, height);
+  const returnPoints = createLinePoints(data, "returns", maxRevenue, width, height);
 
   return (
     <div className="revenue-chart revenue-chart--large">
