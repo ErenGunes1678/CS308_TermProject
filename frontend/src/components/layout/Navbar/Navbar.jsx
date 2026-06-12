@@ -91,6 +91,7 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef(null);
   const categoryMenuRef = useRef(null);
+  const userMenuRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
@@ -158,6 +159,20 @@ const Navbar = () => {
 
     return () => {
       document.removeEventListener('mousedown', handleDocumentClick);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleOutsideUserClick = (event) => {
+      if (!userMenuRef.current?.contains(event.target)) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideUserClick);
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideUserClick);
     };
   }, []);
 
@@ -443,7 +458,7 @@ const Navbar = () => {
           )}
 
           {/* User Menu */}
-          <div className="navbar__user-wrapper">
+          <div ref={userMenuRef} className="navbar__user-wrapper">
             <button
               type="button"
               className={`navbar__user-btn ${isAuthenticated ? 'navbar__user-btn--logged-in' : ''} ${isManager ? 'navbar__user-btn--static' : ''}`}

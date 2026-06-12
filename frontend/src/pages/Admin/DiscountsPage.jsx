@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { Search, Check, X } from "lucide-react";
 import { getManageProducts, updateProductPrice } from "../../services/productService";
+import { createDiscountCode } from "../../services/discountService";
 import "./DiscountsPage.css";
 
 /* ─── helpers ────────────────────────────────────────────────────────────── */
@@ -78,6 +79,73 @@ export default function DiscountsPage() {
       isMounted = false;
     };
   }, []);
+
+  // coupon creation state
+  const [couponCode, setCouponCode] = useState("");
+  const [couponType, setCouponType] = useState("percentage");
+  const [couponValue, setCouponValue] = useState("");
+  const [couponMinOrder, setCouponMinOrder] = useState("");
+  const [couponExpires, setCouponExpires] = useState("");
+  const [couponMessage, setCouponMessage] = useState("");
+  const [couponError, setCouponError] = useState("");
+  const [isCreatingCoupon, setIsCreatingCoupon] = useState(false);
+
+  const handleCreateCoupon = async () => {
+    setCouponMessage("");
+    setCouponError("");
+
+    const code = String(couponCode || "").trim().toUpperCase();
+    if (!code) {
+      setCouponError("Enter a coupon code.");
+      return;
+    }
+
+    if (!couponExpires) {
+      setCouponError("Select an expiry date.");
+      return;
+    }
+
+    if (!["percentage", "fixed", "free_shipping"].includes(couponType)) {
+      setCouponError("Invalid coupon type.");
+      return;
+    }
+
+    if (couponType !== "free_shipping") {
+      const v = Number(couponValue);
+      if (!Number.isFinite(v) || v <= 0) {
+        setCouponError("Enter a valid coupon value.");
+        return;
+      }
+      if (couponType === "percentage" && (v <= 0 || v > 100)) {
+        setCouponError("Percentage must be between 1 and 100.");
+        return;
+      }
+    }
+
+    try {
+      setIsCreatingCoupon(true);
+
+      const payload = {
+        code,
+        type: couponType,
+        value: couponType === "free_shipping" ? null : Number(couponValue),
+        min_order: couponMinOrder ? Number(couponMinOrder) : null,
+        expiry_date: couponExpires,
+      };
+
+      const res = await createDiscountCode(payload);
+      setCouponMessage(`Created ${res.code}`);
+      setCouponCode("");
+      setCouponValue("");
+      setCouponMinOrder("");
+      setCouponExpires("");
+      setCouponType("percentage");
+    } catch (err) {
+      setCouponError(err?.response?.data?.message || "Unable to create coupon.");
+    } finally {
+      setIsCreatingCoupon(false);
+    }
+  };
 
   const toggleProductSelection = (productId) => {
     setProductMessage("");
@@ -209,6 +277,8 @@ export default function DiscountsPage() {
           </div>
         </header>
 
+        {/* coupon creation card will be rendered below product-specific discount to match site layout */}
+
         <section className="disc-product-card">
           <div className="disc-product-card__header">
             <div>
@@ -333,6 +403,32 @@ export default function DiscountsPage() {
           </div>
         </section>
 
+        <section className="disc-form-card">
+          <div className="disc-form-header">
+            <svg className="disc-form-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" strokeWidth="2"><path d="M21 10v6a2 2 0 0 1-2 2h-6"/><path d="M3 7v6a2 2 0 0 0 2 2h6"/><path d="M7 7V5a2 2 0 0 1 2-2h6"/></svg>
+            <h3>Create Coupon Code</h3>
+          </div>
+
+          <div className="disc-form-grid">
+            <input className="disc-input" placeholder="Code (e.g. SUMMER25)" value={couponCode} onChange={(e) => setCouponCode(e.target.value)} />
+            <select className="disc-input disc-select" value={couponType} onChange={(e) => setCouponType(e.target.value)}>
+              <option value="percentage">Percentage</option>
+              <option value="fixed">Fixed</option>
+              <option value="free_shipping">Free Shipping</option>
+            </select>
+            <input className="disc-input" placeholder="Value" value={couponValue} onChange={(e) => setCouponValue(e.target.value)} type="number" min="0" />
+            <input className="disc-input" placeholder="Minimum order (optional)" value={couponMinOrder} onChange={(e) => setCouponMinOrder(e.target.value)} type="number" min="0" step="0.01" />
+            <input className="disc-input" placeholder="Expiry date" value={couponExpires} onChange={(e) => setCouponExpires(e.target.value)} type="date" />
+          </div>
+
+          <div className="disc-form-actions">
+            <button type="button" className="disc-btn disc-btn--ghost" onClick={() => { setCouponCode(""); setCouponValue(""); setCouponMinOrder(""); setCouponExpires(""); setCouponType("percentage"); }}>Reset</button>
+            <button type="button" className="disc-btn disc-btn--primary" onClick={handleCreateCoupon} disabled={isCreatingCoupon}>{isCreatingCoupon ? 'Creating...' : 'Create Coupon'}</button>
+          </div>
+
+          {couponError && <p className="disc-form-error">{couponError}</p>}
+          {couponMessage && <p className="disc-product-success">{couponMessage}</p>}
+        </section>
       </main>
     </div>
   );
