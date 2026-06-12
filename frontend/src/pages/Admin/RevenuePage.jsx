@@ -7,7 +7,7 @@ import {
   Package,
   RefreshCw,
   TrendingUp,
-  UsersRound,
+  Users,
 } from "lucide-react";
 import api from "../../services/api";
 import "./DashboardPage.css";
@@ -298,7 +298,7 @@ export default function RevenuePage() {
       change: null,
       tone: "negative",
       color: "amber",
-      Icon: UsersRound,
+      Icon: Users,
     },
   ];
 

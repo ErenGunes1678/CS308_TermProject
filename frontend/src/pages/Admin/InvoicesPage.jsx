@@ -43,7 +43,9 @@ function shapeInvoice(raw) {
 
   const subtotal = items.reduce((sum, it) => sum + it.lineTotal, 0);
   const amount = parseFloat(raw.amount);
-  const shipping = Math.max(0, parseFloat((amount - subtotal).toFixed(2)));
+  const discount = parseFloat(raw.discount_amount) || 0;
+  // amount = subtotal + shipping - discount  => shipping = amount + discount - subtotal
+  const shipping = Math.max(0, parseFloat((amount + discount - subtotal).toFixed(2)));
 
   return {
     id: raw.id,
@@ -54,6 +56,8 @@ function shapeInvoice(raw) {
     customerPhone: "",
     shippingAddress: "",
     amount,
+    discount,
+    discountCode: raw.discount_code || null,
     subtotal,
     shipping,
     orderId: raw.order_id,
@@ -133,6 +137,10 @@ function invoicePageLines(inv) {
   y -= 15;
   ops.push(pdfLine(`Shipping : $${inv.shipping.toFixed(2)}`, 380, y));
   y -= 15;
+  if (inv.discount && Number(inv.discount) > 0) {
+    ops.push(pdfLine(`Discount${inv.discountCode ? ` (${inv.discountCode})` : ""} : -$${Number(inv.discount).toFixed(2)}`, 380, y));
+    y -= 15;
+  }
   ops.push(pdfLine(`Grand Total: $${inv.amount.toFixed(2)}`, 380, y, 13));
   y -= 28;
   ops.push(pdfLine("Status: PAID", 50, y, 11));
@@ -259,6 +267,7 @@ function buildInvoiceHtml(inv) {
         <div class="inv-doc__total-row">
           <span>Shipping</span><span>${fmt(inv.shipping)}</span>
         </div>
+        ${inv.discount && Number(inv.discount) > 0 ? `<div class="inv-doc__total-row"><span>Discount${inv.discountCode ? ` (${inv.discountCode})` : ""}</span><span>-${fmt(inv.discount)}</span></div>` : ''}
         <div class="inv-doc__total-row inv-doc__total-row--grand">
           <span>Total</span><span>${fmt(inv.amount)}</span>
         </div>

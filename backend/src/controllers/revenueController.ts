@@ -36,28 +36,29 @@ export const getRevenueStats = async (req: AuthRequest, res: Response): Promise<
         const period = String(req.query.period || "30D");
         const interval = getPeriodInterval(period);
 
-        const [revenue] = await sequelize.query<any>(
-            `SELECT
-               COALESCE(SUM(oi.unit_price * oi.quantity), 0) AS total_revenue,
-               COUNT(DISTINCT o.id)                          AS total_orders,
-               COALESCE(AVG(o.total_amount), 0)             AS avg_order_value
-             FROM orders o
-             JOIN order_items oi ON oi.order_id = o.id
-             WHERE o.status != 'cancelled'
-               AND o."createdAt" >= NOW() - INTERVAL '${interval}'`,
-            { type: QueryTypes.SELECT }
-        );
+                // Use persisted invoices.amount so order-level discounts are included in totals
+                const [revenue] = await sequelize.query<any>(
+                        `SELECT
+                             COALESCE(SUM(inv.amount), 0) AS total_revenue,
+                             COUNT(DISTINCT o.id)         AS total_orders,
+                             COALESCE(AVG(inv.amount), 0) AS avg_order_value
+                         FROM orders o
+                         JOIN invoices inv ON inv.order_id = o.id
+                         WHERE o.status != 'cancelled'
+                             AND inv."createdAt" >= NOW() - INTERVAL '${interval}'`,
+                        { type: QueryTypes.SELECT }
+                );
 
-        const [prevRevenue] = await sequelize.query<any>(
-            `SELECT COALESCE(SUM(oi.unit_price * oi.quantity), 0) AS total_revenue,
-                    COUNT(DISTINCT o.id)                          AS total_orders
-             FROM orders o
-             JOIN order_items oi ON oi.order_id = o.id
-             WHERE o.status != 'cancelled'
-               AND o."createdAt" >= NOW() - INTERVAL '${interval}' * 2
-               AND o."createdAt" <  NOW() - INTERVAL '${interval}'`,
-            { type: QueryTypes.SELECT }
-        );
+                const [prevRevenue] = await sequelize.query<any>(
+                        `SELECT COALESCE(SUM(inv.amount), 0) AS total_revenue,
+                                        COUNT(DISTINCT o.id)                 AS total_orders
+                         FROM orders o
+                         JOIN invoices inv ON inv.order_id = o.id
+                         WHERE o.status != 'cancelled'
+                             AND inv."createdAt" >= NOW() - INTERVAL '${interval}' * 2
+                             AND inv."createdAt" <  NOW() - INTERVAL '${interval}'`,
+                        { type: QueryTypes.SELECT }
+                );
 
         const [refunds] = await sequelize.query<any>(
             `SELECT COUNT(*) AS approved_refunds
@@ -113,19 +114,20 @@ export const getRevenueOverTime = async (req: AuthRequest, res: Response): Promi
         const bucket = getTimeBucket(period);
         const labelFmt = getLabelFormat(period);
 
-        const rows = await sequelize.query<any>(
-            `SELECT
-               TO_CHAR(DATE_TRUNC('${bucket}', o."createdAt"), '${labelFmt}') AS label,
-               DATE_TRUNC('${bucket}', o."createdAt")                          AS period,
-               COALESCE(SUM(oi.unit_price * oi.quantity), 0)                  AS revenue
-             FROM orders o
-             JOIN order_items oi ON oi.order_id = o.id
-             WHERE o.status != 'cancelled'
-               AND o."createdAt" >= NOW() - INTERVAL '${interval}'
-             GROUP BY DATE_TRUNC('${bucket}', o."createdAt")
-             ORDER BY period ASC`,
-            { type: QueryTypes.SELECT }
-        );
+                // Group by invoice creation date and use invoice.amount to reflect discounts
+                const rows = await sequelize.query<any>(
+                        `SELECT
+                             TO_CHAR(DATE_TRUNC('${bucket}', inv."createdAt"), '${labelFmt}') AS label,
+                             DATE_TRUNC('${bucket}', inv."createdAt")                          AS period,
+                             COALESCE(SUM(inv.amount), 0)                                       AS revenue
+                         FROM invoices inv
+                         JOIN orders o ON o.id = inv.order_id
+                         WHERE o.status != 'cancelled'
+                             AND inv."createdAt" >= NOW() - INTERVAL '${interval}'
+                         GROUP BY DATE_TRUNC('${bucket}', inv."createdAt")
+                         ORDER BY period ASC`,
+                        { type: QueryTypes.SELECT }
+                );
 
         const returnRows = await sequelize.query<any>(
             `SELECT

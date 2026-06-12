@@ -289,6 +289,7 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
             subtotal: formatMoney(subtotal),
             shipping: formatMoney(shipping),
             discount: formatMoney(discountAmount),
+            discountCode: discount_code ? String(discount_code).toUpperCase() : undefined,
             total: totalAmount,
         };
 
@@ -303,6 +304,8 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
             file_name: pdfFilename,
             customer_name: invoice.customerName,
             amount: invoice.total,
+            discount_code: invoice.discountCode || null,
+            discount_amount: invoice.discount,
             order_id: order.id,
         });
 

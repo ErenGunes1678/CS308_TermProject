@@ -165,7 +165,10 @@ export default function OrderSuccessPage() {
             <p><span>Subtotal</span><strong>${invoice.subtotal.toFixed(2)}</strong></p>
             <p><span>Shipping</span><strong>${invoice.shipping.toFixed(2)}</strong></p>
             {invoice.discount && Number(invoice.discount) > 0 ? (
-              <p><span>Discount</span><strong>-${Number(invoice.discount).toFixed(2)}</strong></p>
+              <p>
+                <span>{invoice.discountCode ? `Discount (${invoice.discountCode})` : "Discount"}</span>
+                <strong>-${Number(invoice.discount).toFixed(2)}</strong>
+              </p>
             ) : null}
             <p className="invoice-total"><span>Total Paid</span><strong>${invoice.total.toFixed(2)}</strong></p>
           </div>
