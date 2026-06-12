@@ -376,7 +376,7 @@ function ReviewStep({ addressData, paymentLabel, cartItems, saveAccountInfo, onB
   );
 }
 
-function CheckoutSummary({ cartItems, subtotal, shipping, total }) {
+function CheckoutSummary({ cartItems, total }) {
   return (
     <div className="checkout-summary">
       <div className="checkout-summary-card">
@@ -391,14 +391,6 @@ function CheckoutSummary({ cartItems, subtotal, shipping, total }) {
             <p>${(item.price * item.quantity).toFixed(2)}</p>
           </div>
         ))}
-        <div className="checkout-summary-line">
-          <span>Subtotal</span>
-          <span>${subtotal.toFixed(2)}</span>
-        </div>
-        <div className="checkout-summary-line">
-          <span>Shipping</span>
-          <span>${shipping.toFixed(2)}</span>
-        </div>
         <div className="checkout-summary-total">
           <span>Total</span>
           <span>${total.toFixed(2)}</span>
@@ -495,9 +487,8 @@ export default function CheckoutPage() {
     if (method === "wallet") setUseWallet(false);
   };
 
-  const appliedShipping = discountInfo?.type === "free_shipping" ? 0 : shipping;
   const appliedDiscount = discountInfo?.discountAmount ? Number(discountInfo.discountAmount) : 0;
-  const orderTotal = Number(subtotal) + Number(appliedShipping) - appliedDiscount;
+  const orderTotal = Number(subtotal) - appliedDiscount;
 
   const walletDeduction = useWallet && paymentMethod !== "wallet" ? Math.min(walletBalance, orderTotal) : 0;
   const cardCharge = Math.max(0, orderTotal - walletDeduction);
@@ -837,8 +828,6 @@ export default function CheckoutPage() {
 
         <CheckoutSummary
           cartItems={cartItems}
-          subtotal={subtotal}
-          shipping={appliedShipping}
           total={orderTotal}
         />
       </div>
