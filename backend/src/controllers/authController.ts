@@ -20,7 +20,10 @@ const toSafeUser = (user: any) => {
     };
 
     if (user.role === "customer") {
-        safeUser.taxId = user.tax_id;
+        // Only include taxId if it's present (avoid returning null)
+        if (user.tax_id !== null && user.tax_id !== undefined && String(user.tax_id).trim() !== "") {
+            safeUser.taxId = user.tax_id;
+        }
     }
 
     return safeUser;

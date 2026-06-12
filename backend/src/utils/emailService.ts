@@ -10,6 +10,9 @@ const transporter = nodemailer.createTransport({
     },
 });
 
+const isTestEnv = process.env.NODE_ENV === "test";
+const hasSmtpCredentials = !!(process.env.SMTP_USER && process.env.SMTP_PASS);
+
 export const sendPriceDropEmail = async (
     toEmail: string,
     customerName: string,
@@ -21,6 +24,8 @@ export const sendPriceDropEmail = async (
     const from = process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@store.com";
     const discount = Math.round(((oldPrice - newPrice) / oldPrice) * 100);
     const productUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/product/${productId}`;
+
+    if (isTestEnv || !hasSmtpCredentials) return;
 
     await transporter.sendMail({
         from: `"Lumière Store" <${from}>`,
@@ -56,6 +61,8 @@ export const sendInvoiceEmail = async (
     pdfBuffer: Buffer
 ): Promise<void> => {
     const from = process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@store.com";
+
+    if (isTestEnv || !hasSmtpCredentials) return;
 
     await transporter.sendMail({
         from: `"Lumière Store " <${from}>`,

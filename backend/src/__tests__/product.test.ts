@@ -44,6 +44,12 @@ jest.mock("../entities", () => {
         order_items: {
             create: (...args: any[]) => mockOrderItemCreate(...args),
         },
+        invoices: {
+            create: jest.fn().mockResolvedValue({}),
+        },
+        price_drop_notifications: {
+            create: jest.fn().mockResolvedValue({}),
+        },
         users: {
             findByPk: (...args: any[]) => mockUserFindByPk(...args),
         },

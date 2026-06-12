@@ -58,7 +58,7 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
 
         const requiredAddressFields = [
             "email",
-            "taxId",
+            // taxId is optional for checkout; users may not provide a tax ID.
             "phone",
             "country",
             "street",
