@@ -323,15 +323,15 @@ function SearchPage() {
     );
   }, [brandOptions]);
 
-  const hasActiveSearch = Boolean(
+  const hasActiveSearchCriteria = Boolean(
     query.trim() ||
       appliedFilters.selectedRating !== null ||
       appliedFilters.selectedAvailability.length > 0 ||
       appliedFilters.selectedCategory ||
       appliedFilters.selectedSubcategory ||
       appliedFilters.selectedBrands.length > 0 ||
-      appliedFilters.minPrice !== priceBounds.min ||
-      appliedFilters.maxPrice !== priceBounds.max
+      (appliedFilters.minPrice !== null && appliedFilters.minPrice !== priceBounds.min) ||
+      (appliedFilters.maxPrice !== null && appliedFilters.maxPrice !== priceBounds.max)
   );
 
   const requestParams = useMemo(() => {
@@ -347,8 +347,12 @@ function SearchPage() {
     if (appliedFilters.selectedBrands.length > 0) {
       params.brands = appliedFilters.selectedBrands.join(",");
     }
-    if (appliedFilters.minPrice !== priceBounds.min) params.minPrice = appliedFilters.minPrice;
-    if (appliedFilters.maxPrice !== priceBounds.max) params.maxPrice = appliedFilters.maxPrice;
+    if (appliedFilters.minPrice !== null && appliedFilters.minPrice !== priceBounds.min) {
+      params.minPrice = appliedFilters.minPrice;
+    }
+    if (appliedFilters.maxPrice !== null && appliedFilters.maxPrice !== priceBounds.max) {
+      params.maxPrice = appliedFilters.maxPrice;
+    }
     if (sortBy === "newest") params.sortBy = "newest";
     if (sortBy === "price-low") params.sortBy = "price_asc";
     if (sortBy === "price-high") params.sortBy = "price_desc";
@@ -367,12 +371,6 @@ function SearchPage() {
     let isMounted = true;
 
     const loadSearchResults = async () => {
-      if (!hasActiveSearch) {
-        setProducts([]);
-        setIsLoadingResults(false);
-        return;
-      }
-
       setIsLoadingResults(true);
       setLoadError("");
 
@@ -406,7 +404,7 @@ function SearchPage() {
       isMounted = false;
       window.removeEventListener(PRODUCT_REVIEW_UPDATED_EVENT, handleProductReviewUpdated);
     };
-  }, [hasActiveSearch, requestParams]);
+  }, [requestParams]);
 
   const heroInfo = query
     ? {
@@ -414,8 +412,8 @@ function SearchPage() {
         tagline: "Search across the catalog and refine with filters.",
       }
     : {
-        name: "Search Products",
-        tagline: "Use the search field and filters to find matching products.",
+        name: "All Products",
+        tagline: "Browse the full catalog or refine it with search and filters.",
       };
 
   const toggleSection = (section) => {
@@ -467,7 +465,8 @@ function SearchPage() {
     });
   };
 
-  const isLoading = isLoadingCatalog || isLoadingResults;
+  const isInitialLoading = isLoadingCatalog && products.length === 0;
+  const isRefreshingResults = isLoadingResults && products.length > 0;
 
   return (
     <div className="products-page search-page">
@@ -635,23 +634,27 @@ function SearchPage() {
 
         <div className="products-main">
           <ProductsToolbar
-            productCount={isLoading ? "Loading" : products.length}
+            productCount={isInitialLoading ? "Loading" : products.length}
             viewMode={viewMode}
             sortBy={sortBy}
             onViewModeChange={setViewMode}
             onSortChange={setSortBy}
           />
 
-          {!isLoading ? (
+          {!isInitialLoading ? (
             <div className="search-page__summary">
               <p className="products-toolbar__count">
-                {hasActiveSearch ? (
+                {hasActiveSearchCriteria ? (
                   <>
                     Showing <strong>{products.length}</strong> matching products
                     {query ? ` for "${query}"` : ""}
+                    {isRefreshingResults ? "..." : ""}
                   </>
                 ) : (
-                  "Use the search field or choose filters to request products."
+                  <>
+                    Showing <strong>{products.length}</strong> products
+                    {isRefreshingResults ? "..." : ""}
+                  </>
                 )}
               </p>
             </div>
@@ -663,26 +666,10 @@ function SearchPage() {
             </div>
           ) : null}
 
-          {!isLoading && hasActiveSearch && products.length > 0 ? (
+          {products.length > 0 ? (
             <ProductsGrid products={products} viewMode={viewMode} />
-          ) : !isLoading && !hasActiveSearch ? (
-            <div className="products-empty search-page__empty-state">
-              <svg
-                width="48"
-                height="48"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="var(--color-gray-300)"
-                strokeWidth="1.5"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.35-4.35" />
-              </svg>
-              <h3>Search for a product</h3>
-              <p>Use the search field or filters to find matching items in the catalog.</p>
-            </div>
           ) : (
-            !isLoading && <ProductsEmptyState />
+            !isInitialLoading && !isLoadingResults && <ProductsEmptyState />
           )}
         </div>
       </div>

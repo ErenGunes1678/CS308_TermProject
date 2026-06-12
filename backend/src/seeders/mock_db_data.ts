@@ -25,7 +25,7 @@ const mockProducts = [
     price: 32,
     original_price: null,
     rating: 4.5,
-    review_count: 7,
+    review_count: 2,
     image: "https://images.unsplash.com/photo-1512496015851-a90fb38ba796",
     badge: null,
     warranty_status: true,
@@ -42,8 +42,8 @@ const mockProducts = [
     quantity_in_stock: 1,
     price: 45,
     original_price: 55,
-    rating: 4.6,
-    review_count: 9,
+    rating: 4.5,
+    review_count: 2,
     image: "https://images.unsplash.com/photo-1571781926291-c477ebfd024b",
     badge: "NEW",
     warranty_status: true,
@@ -60,8 +60,8 @@ const mockProducts = [
     quantity_in_stock: 8,
     price: 28,
     original_price: null,
-    rating: 4.4,
-    review_count: 6,
+    rating: 4.5,
+    review_count: 2,
     image: "https://m.media-amazon.com/images/I/61wkQbHSoHL._AC_UF1000,1000_QL80_.jpg",
     badge: null,
     warranty_status: true,
@@ -78,8 +78,8 @@ const mockProducts = [
     quantity_in_stock: 12,
     price: 24,
     original_price: null,
-    rating: 4.3,
-    review_count: 5,
+    rating: 4.5,
+    review_count: 2,
     image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348",
     badge: null,
     warranty_status: true,
@@ -96,8 +96,8 @@ const mockProducts = [
     quantity_in_stock: 15,
     price: 22,
     original_price: null,
-    rating: 4.2,
-    review_count: 8,
+    rating: 4.0,
+    review_count: 2,
     image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be",
     badge: null,
     warranty_status: true,
@@ -114,8 +114,8 @@ const mockProducts = [
     quantity_in_stock: 18,
     price: 48,
     original_price: 60,
-    rating: 4.7,
-    review_count: 11,
+    rating: 4.5,
+    review_count: 2,
     image: "https://images.unsplash.com/photo-1556228578-8c89e6adf883",
     badge: "BEST",
     warranty_status: true,
@@ -132,14 +132,67 @@ const mockProducts = [
     quantity_in_stock: 20,
     price: 55,
     original_price: 70,
-    rating: 4.8,
-    review_count: 14,
+    rating: 5.0,
+    review_count: 2,
     image: "https://images.unsplash.com/photo-1598440947619-2c35fc9aa908",
     badge: "BEST",
     warranty_status: true,
     distributor_info: "GlowLab Cosmetics",
   },
 ];
+
+const mockProductComments: Record<string, Array<{ rating: number; comment_text: string }>> = {
+  "DEMO-A-001": [
+    { rating: 5, comment_text: "Beautiful shimmer and easy to blend." },
+    { rating: 4, comment_text: "Nice glow without looking too glittery." },
+  ],
+  "DEMO-B-001": [
+    { rating: 5, comment_text: "Feels light and keeps my under-eye area hydrated." },
+    { rating: 4, comment_text: "Good texture, absorbs quickly before makeup." },
+  ],
+  "DEMO-C-001": [
+    { rating: 5, comment_text: "Fresh rose scent and very gentle on my skin." },
+    { rating: 4, comment_text: "A solid toner for daily use." },
+  ],
+  "DEMO-E-001": [
+    { rating: 4, comment_text: "Creamy finish and the color looks natural." },
+    { rating: 5, comment_text: "Very easy to apply on the go." },
+  ],
+  "DEMO-F-001": [
+    { rating: 4, comment_text: "Refreshing mist, especially during the day." },
+    { rating: 4, comment_text: "Simple and hydrating." },
+  ],
+  "DEMO-G-001": [
+    { rating: 5, comment_text: "My skin looks brighter after regular use." },
+    { rating: 4, comment_text: "Nice serum, no sticky feeling." },
+  ],
+  "DEMO-H-001": [
+    { rating: 5, comment_text: "Leaves my skin soft the next morning." },
+    { rating: 5, comment_text: "Rich mask but still comfortable overnight." },
+  ],
+};
+
+const getBaseRatingStats = (product: any) => {
+  const comments = mockProductComments[product.serial_number] || [];
+  const visibleReviewCount = comments.length;
+  const totalReviewCount = Number(product.review_count) || 0;
+  const baseReviewCount = Math.max(totalReviewCount - visibleReviewCount, 0);
+
+  if (baseReviewCount === 0) {
+    return {
+      base_rating: product.rating,
+      base_review_count: 0,
+    };
+  }
+
+  const commentRatingTotal = comments.reduce((sum, comment) => sum + comment.rating, 0);
+  const totalRatingValue = Number(product.rating) * totalReviewCount;
+
+  return {
+    base_rating: Number(((totalRatingValue - commentRatingTotal) / baseReviewCount).toFixed(1)),
+    base_review_count: baseReviewCount,
+  };
+};
 
 export async function seedMockCategories() {
   const categoryNames = Array.from(new Set(mockProducts.map((product) => product.category)));
@@ -164,8 +217,7 @@ export async function seedMockProducts() {
     // Preserve the original mock rating separately.
     // rating/review_count will be the displayed live values.
     // base_rating/base_review_count will stay as the starting mock values.
-    base_rating: product.rating,
-    base_review_count: product.review_count,
+    ...getBaseRatingStats(product),
   }));
 
   const serials = preparedMockProducts.map((item) => item.serial_number);
@@ -288,6 +340,63 @@ export async function seedMockUsers() {
   console.log(
     `Seeded ${toCreate.length} and updated ${toUpdate.length} mock users.`
   );
+}
+
+export async function seedMockComments() {
+  const customer = await db.users.findOne({ where: { email: "elif.customer@gmail.com" } });
+  const productManager = await db.users.findOne({ where: { email: "elif.product@gmail.com" } });
+
+  if (!customer || !productManager) {
+    console.log("Skipped mock comments because mock users were not found.");
+    return;
+  }
+
+  const serials = Object.keys(mockProductComments);
+  const products = await db.products.findAll({
+    where: { serial_number: { [Op.in]: serials } },
+  });
+
+  const productsBySerial = new Map<string, any>(
+    products.map((product: any) => [product.serial_number, product])
+  );
+
+  let seededCount = 0;
+
+  for (const serial of serials) {
+    const product = productsBySerial.get(serial);
+    if (!product) continue;
+
+    const comments = mockProductComments[serial];
+
+    for (const comment of comments) {
+      const existingComment = await db.comments.findOne({
+        where: {
+          product_id: product.id,
+          user_id: customer.id,
+          comment_text: comment.comment_text,
+        },
+      });
+
+      const commentData = {
+        product_id: product.id,
+        user_id: customer.id,
+        rating: comment.rating,
+        comment_text: comment.comment_text,
+        status: "approved",
+        approved_by: productManager.id,
+        approved_at: new Date(),
+      };
+
+      if (existingComment) {
+        await existingComment.update(commentData);
+      } else {
+        await db.comments.create(commentData);
+        seededCount += 1;
+      }
+    }
+  }
+
+  console.log(`Seeded ${seededCount} mock comments.`);
 }
 
 export async function seedDemoOrders() {

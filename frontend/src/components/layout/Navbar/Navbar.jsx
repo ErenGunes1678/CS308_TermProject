@@ -196,14 +196,13 @@ const Navbar = () => {
     }
 
     const currentQuery = new URLSearchParams(location.search).get('q') || '';
-    const trimmedQuery = searchQuery.trim();
-    if (trimmedQuery === currentQuery.trim()) {
+    if (searchQuery === currentQuery) {
       return;
     }
 
     const timer = window.setTimeout(() => {
-      const target = trimmedQuery
-        ? `/search?q=${encodeURIComponent(trimmedQuery)}`
+      const target = searchQuery.trim()
+        ? `/search?q=${encodeURIComponent(searchQuery)}`
         : '/search';
       navigate(target, { replace: true });
     }, 300);
@@ -215,10 +214,9 @@ const Navbar = () => {
 
   const handleSearchSubmit = (event) => {
     event.preventDefault();
-    const trimmedQuery = searchQuery.trim();
 
-    if (trimmedQuery) {
-      navigate(`/search?q=${encodeURIComponent(trimmedQuery)}`);
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
       setSearchOpen(true);
       return;
     }
@@ -229,7 +227,7 @@ const Navbar = () => {
 
   const openSearchPage = () => {
     if (location.pathname !== '/search') {
-      navigate(searchQuery.trim() ? `/search?q=${encodeURIComponent(searchQuery.trim())}` : '/search');
+      navigate(searchQuery.trim() ? `/search?q=${encodeURIComponent(searchQuery)}` : '/search');
     }
     setSearchOpen(true);
   };

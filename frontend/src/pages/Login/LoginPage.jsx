@@ -41,16 +41,8 @@ function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      const data = await login(loginForm);
-      const role = data?.user?.role;
-
-      if (role === "sales_manager") {
-        navigate("/admin/sales-manager/revenue", { replace: true });
-      } else if (role === "product_manager") {
-        navigate("/admin/product-manager/deliveries", { replace: true });
-      } else {
-        navigate("/account", { replace: true });
-      }
+      await login(loginForm);
+      navigate("/", { replace: true });
     } catch (error) {
       setErrorMessage(getAuthErrorMessage(error, "Unable to sign in."));
     } finally {

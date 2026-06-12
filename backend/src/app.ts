@@ -19,7 +19,7 @@ import wishlistRoutes from "./routes/wishlistRoutes";
 import discountRoutes from "./routes/discountRoutes";
 import invoiceRoutes from "./routes/invoiceRoutes";
 import walletRoutes from "./routes/walletRoutes";
-import { seedMockCategories, seedMockProducts, seedMockUsers, seedDemoOrders } from "./seeders/mock_db_data"; // Mock data seeding function
+import { seedMockCategories, seedMockProducts, seedMockUsers, seedMockComments, seedDemoOrders } from "./seeders/mock_db_data"; // Mock data seeding function
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -80,6 +80,7 @@ if (require.main === module) {
       await seedMockCategories();
       await seedMockProducts();
       await seedMockUsers();
+      await seedMockComments();
       await seedDemoOrders();
       console.log("Database synced successfully");
 

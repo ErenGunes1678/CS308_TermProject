@@ -325,7 +325,27 @@ export const removeProduct = async (req: Request, res: Response) => {
             });
         }
 
-        await product.destroy();
+        const orderItemCount = await db.order_items.count({
+            where: { product_id: id }
+        });
+
+        if (orderItemCount > 0) {
+            return res.status(409).json({
+                message: "Product cannot be removed because it exists in order history"
+            });
+        }
+
+        await db.sequelize.transaction(async (transaction: any) => {
+            await Promise.all([
+                db.comments.destroy({ where: { product_id: id }, transaction }),
+                db.cart_items.destroy({ where: { product_id: id }, transaction }),
+                db.wishlists.destroy({ where: { product_id: id }, transaction }),
+                db.price_drop_notifications.destroy({ where: { product_id: id }, transaction }),
+                db.hidden_review_prompts.destroy({ where: { product_id: id }, transaction }),
+            ]);
+
+            await product.destroy({ transaction });
+        });
 
         return res.status(200).json({
             message: "Product removed successfully"
